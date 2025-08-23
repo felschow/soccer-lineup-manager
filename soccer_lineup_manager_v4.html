@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Youth Soccer Lineup Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+            padding: 20px;
+            color: #334155;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .period-nav {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+
+        .period-nav button {
+            background: none;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .period-nav button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .period-nav button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .current-period {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #64748b;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            min-height: 600px;
+        }
+
+        .sidebar {
+            background: #f1f5f9;
+            padding: 20px;
+            border-right: 1px solid #e2e8f0;
+        }
+
+        .player-pool {
+            margin-bottom: 30px;
+        }
+
+        .pool-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .player-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .player-card {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            cursor: grab;
+            transition: all 0.2s;
+            user-select: none;
+            margin-bottom: 8px;
+        }
+
+        .player-card:hover {
+            border-color: #3b82f6;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+        }
+
+        .player-card.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+        }
+
+        .player-card.assigned {
+            background: #f0f9ff;
+            border-color: #3b82f6;
+        }
+
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .player-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .player-time {
+            font-size: 0.75rem;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .player-stats {
+            font-size: 0.7rem;
+            color: #64748b;
+            line-height: 1.2;
+        }
+
+        .stat-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+        }
+
+        .position-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            margin-top: 4px;
+        }
+
+        .position-badge {
+            background: #e2e8f0;
+            color: #475569;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 0.6rem;
+            font-weight: 500;
+        }
+
+        .position-badge.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .field-container {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .period-info {
+            text-align: center;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .period-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .period-time {
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .soccer-field {
+            background: 
+                /* Grass texture with stripes */
+                repeating-linear-gradient(
+                    0deg,
+                    #2d5a3d 0px,
+                    #2d5a3d 15px,
+                    #236e3a 15px,
+                    #236e3a 30px
+                );
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+            width: 400px;
+            height: 600px;
+            border: 4px solid white;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            margin: 0 auto;
+        }
+
+        .field-lines {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+            pointer-events: none;
+        }
+
+        /* Center line */
+        .field-lines::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background: white;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+        }
+
+        /* Center circle */
+        .field-lines::after {
+            content: '';
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border: 3px solid white;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Penalty areas and goal areas */
+        .field-lines .penalty-area-top {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 220px;
+            height: 100px;
+            border: 3px solid white;
+            border-top: none;
+        }
+
+        .field-lines .penalty-area-bottom {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 220px;
+            height: 100px;
+            border: 3px solid white;
+            border-bottom: none;
+        }
+
+        .field-lines .goal-area-top {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 35px;
+            border: 3px solid white;
+            border-top: none;
+        }
+
+        .field-lines .goal-area-bottom {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 35px;
+            border: 3px solid white;
+            border-bottom: none;
+        }
+
+        /* Corner arcs */
+        .field-lines .corner-arc {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid white;
+            border-radius: 50%;
+        }
+
+        .field-lines .corner-arc.top-left {
+            top: -10px;
+            left: -10px;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .field-lines .corner-arc.top-right {
+            top: -10px;
+            right: -10px;
+            border-left: none;
+            border-bottom: none;
+        }
+
+        .field-lines .corner-arc.bottom-left {
+            bottom: -10px;
+            left: -10px;
+            border-right: none;
+            border-top: none;
+        }
+
+        .field-lines .corner-arc.bottom-right {
+            bottom: -10px;
+            right: -10px;
+            border-left: none;
+            border-top: none;
+        }
+
+        .position-slot {
+            position: absolute;
+            width: 80px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .position-slot:hover {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .position-slot.filled {
+            background: white;
+            border: 2px solid #10b981;
+            color: #1e293b;
+        }
+
+        .position-slot.drop-target {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.2);
+            transform: scale(1.05);
+        }
+
+        /* Position Layout - Vertical field orientation */
+        .striker { top: 40px; left: 50%; transform: translateX(-50%); }
+        .left-wing { top: 120px; left: 30px; }
+        .right-wing { top: 120px; right: 30px; }
+        .center-mid-left { top: 220px; left: 25%; transform: translateX(-50%); }
+        .center-mid-right { top: 220px; right: 25%; transform: translateX(50%); }
+        .left-back { top: 380px; left: 30px; }
+        .center-back { top: 380px; left: 50%; transform: translateX(-50%); }
+        .right-back { top: 380px; right: 30px; }
+        .goalkeeper { bottom: 40px; left: 50%; transform: translateX(-50%); background: rgba(255, 193, 7, 0.9); }
+
+        .bench-area {
+            background: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 15px;
+            width: 400px;
+            min-height: 80px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .bench-area.drop-target {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .bench-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #64748b;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        .bench-player {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid #fecaca;
+            transition: all 0.2s;
+        }
+
+        .bench-player:hover {
+            background: #fecaca;
+            transform: translateY(-1px);
+        }
+
+        .stats-summary {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .stats-row:last-child {
+            border-bottom: none;
+        }
+
+        .empty-message {
+            color: #94a3b8;
+            font-style: italic;
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                border-right: none;
+                border-bottom: 1px solid #e2e8f0;
+            }
+            
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .period-nav {
+                order: -1;
+            }
+        }
+
+        .tooltip {
+            position: absolute;
+            background: #1e293b;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .tooltip.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>⚽ Soccer Lineup Manager</h1>
+            
+            <div class="period-nav">
+                <button onclick="previousPeriod()" id="prevBtn">‹</button>
+                <span class="current-period" id="currentPeriodText">Period 1</span>
+                <button onclick="nextPeriod()" id="nextBtn">›</button>
+            </div>
+            
+            <div class="quick-actions">
+                <button class="btn" onclick="autoFill()">Auto Fill</button>
+                <button class="btn btn-secondary" onclick="clearPeriod()">Clear</button>
+                <button class="btn btn-secondary" onclick="exportLineup()">Export</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="player-pool">
+                    <div class="pool-title">
+                        👥 Available Players
+                    </div>
+                    <div class="player-list" id="playerList">
+                        <!-- Players will be populated here -->
+                    </div>
+                </div>
+
+                <div class="stats-summary">
+                    <div class="pool-title">📊 Quick Stats</div>
+                    <div id="quickStats">
+                        <!-- Stats will be shown here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="field-container">
+                <div class="period-info">
+                    <div class="period-title" id="periodTitle">Period 1</div>
+                    <div class="period-time" id="periodTime">0:00 - 7:30</div>
+                </div>
+
+                <div class="soccer-field">
+                    <div class="field-lines">
+                        <div class="penalty-area-top"></div>
+                        <div class="penalty-area-bottom"></div>
+                        <div class="goal-area-top"></div>
+                        <div class="goal-area-bottom"></div>
+                        <div class="corner-arc top-left"></div>
+                        <div class="corner-arc top-right"></div>
+                        <div class="corner-arc bottom-left"></div>
+                        <div class="corner-arc bottom-right"></div>
+                    </div>
+                    
+                    <div class="position-slot striker" data-position="striker">
+                        <div class="position-label">ST</div>
+                        <div class="player-name"></div>
+                    </div>
+                    
+                    <div class="position-slot left-wing" data-position="left-wing">
+                        <div class="position-label">LW</div>
+                        <div class="player-name"></div>
+                    </div>
+                    
+                    <div class="position-slot right-wing" data-position="right-wing">
+                        <div class="position-label">RW</div>
+                        <div class="player-name"></div>
+                    </div>
+                    
+                    <div class="position-slot center-mid-left" data-position="center-mid-left">
+                        <div class="position-label">CM</div>
+                        <div class="player-name"></div>
+                    </div>
+                    
+                    <div class="position-slot center-mid-right" data-position="center-mid-right">
+                        <div class="position-label">CM</div>
+                        <div class="player-name"></div>
+                    </div>
+                    
+                    <div class="position-slot left-back" data-position="left-back">
+                        <div class="position-label">LB</div>
+                        <div class="player-name"></div>
+                    </div>
+                    
+                    <div class="position-slot center-back" data-position="center-back">
+                        <div class="position-label">CB</div>
+                        <div class="player-name"></div>
+                    </div>
+                    
+                    <div class="position-slot right-back" data-position="right-back">
+                        <div class="position-label">RB</div>
+                        <div class="player-name"></div>
+                    </div>
+                    
+                    <div class="position-slot goalkeeper" data-position="goalkeeper">
+                        <div class="position-label">GK</div>
+                        <div class="player-name"></div>
+                    </div>
+                </div>
+
+                <div class="bench-area" id="benchArea">
+                    <div class="bench-title">🪑 Sitting Out This Period</div>
+                    <div class="empty-message" id="benchEmpty">Drop players here to sit them out</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        const players = {
+            'Kennedy': ['Striker', 'Wing', 'Midfield'],
+            'Brinley': ['Striker', 'Wing', 'Midfield'],
+            'Olivia': ['Back'],
+            'Chisom': ['Back'],
+            'SK': ['Back', 'Goalkeeper'],
+            'Aubree': ['All'],
+            'Skyler': ['Midfield', 'Defense'],
+            'Jordan': ['All'],
+            'Addie': ['All'],
+            'Charlotte': ['All except GK'],
+            'Isabella': ['All except GK'],
+            'Angelicka': ['Midfield', 'Defense']
+        };
+
+        const positions = [
+            'striker', 'left-wing', 'right-wing', 
+            'center-mid-left', 'center-mid-right',
+            'left-back', 'center-back', 'right-back', 'goalkeeper'
+        ];
+
+        let currentPeriod = 1;
+        let lineup = {};
+        let draggedPlayer = null;
+
+        // Initialize lineup structure
+        function initializeLineup() {
+            for (let period = 1; period <= 8; period++) {
+                lineup[period] = {
+                    positions: {},
+                    bench: []
+                };
+                positions.forEach(pos => {
+                    lineup[period].positions[pos] = null;
+                });
+            }
+        }
+
+        // Initialize the app
+        function init() {
+            initializeLineup();
+            renderPlayerList();
+            updateDisplay();
+            setupDragAndDrop();
+        }
+
+        // Render player list
+        function renderPlayerList() {
+            const playerList = document.getElementById('playerList');
+            const playerCards = Object.keys(players).map(playerName => {
+                const stats = calculateDetailedPlayerStats(playerName);
+                const positionBadges = Object.entries(stats.positions)
+                    .filter(([pos, count]) => count > 0)
+                    .map(([pos, count]) => `<span class="position-badge">${getPositionAbbrev(pos)}:${count}</span>`)
+                    .join('');
+                
+                return `
+                    <div class="player-card" draggable="true" data-player="${playerName}">
+                        <div class="player-header">
+                            <span class="player-name">${playerName}</span>
+                            <span class="player-time">${stats.totalMinutes}min</span>
+                        </div>
+                        <div class="player-stats">
+                            <div class="stat-line">
+                                <span>Periods sat:</span>
+                                <span>${stats.benchPeriods}</span>
+                            </div>
+                            <div class="position-badges">
+                                ${positionBadges || '<span class="position-badge">Not assigned</span>'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            playerList.innerHTML = playerCards;
+        }
+
+        // Calculate detailed player statistics
+        function calculateDetailedPlayerStats(playerName) {
+            const stats = {
+                totalMinutes: 0,
+                benchPeriods: 0,
+                positions: {
+                    'striker': 0,
+                    'left-wing': 0,
+                    'right-wing': 0,
+                    'center-mid-left': 0,
+                    'center-mid-right': 0,
+                    'left-back': 0,
+                    'center-back': 0,
+                    'right-back': 0,
+                    'goalkeeper': 0
+                }
+            };
+
+            for (let period = 1; period <= 8; period++) {
+                const periodData = lineup[period];
+                
+                // Check if player is on bench
+                if (periodData.bench.includes(playerName)) {
+                    stats.benchPeriods++;
+                    continue;
+                }
+                
+                // Check which position player is in
+                for (const [position, assignedPlayer] of Object.entries(periodData.positions)) {
+                    if (assignedPlayer === playerName) {
+                        stats.totalMinutes += 7.5;
+                        stats.positions[position]++;
+                        break;
+                    }
+                }
+            }
+
+            return stats;
+        }
+
+        // Get position abbreviation
+        function getPositionAbbrev(position) {
+            const abbrevMap = {
+                'striker': 'ST',
+                'left-wing': 'LW',
+                'right-wing': 'RW',
+                'center-mid-left': 'CM',
+                'center-mid-right': 'CM',
+                'left-back': 'LB',
+                'center-back': 'CB',
+                'right-back': 'RB',
+                'goalkeeper': 'GK'
+            };
+            return abbrevMap[position] || position;
+        }
+
+        // Calculate player total minutes
+        function calculatePlayerMinutes(playerName) {
+            let totalMinutes = 0;
+            for (let period = 1; period <= 8; period++) {
+                const periodData = lineup[period];
+                const isPlaying = Object.values(periodData.positions).includes(playerName);
+                if (isPlaying) {
+                    totalMinutes += 7.5;
+                }
+            }
+            return totalMinutes;
+        }
+
+        // Setup drag and drop
+        function setupDragAndDrop() {
+            // Player card drag events
+            document.addEventListener('dragstart', (e) => {
+                if (e.target.classList.contains('player-card')) {
+                    draggedPlayer = e.target.dataset.player;
+                    e.target.classList.add('dragging');
+                }
+            });
+
+            document.addEventListener('dragend', (e) => {
+                if (e.target.classList.contains('player-card')) {
+                    e.target.classList.remove('dragging');
+                    draggedPlayer = null;
+                }
+            });
+
+            // Position slot drop events
+            positions.forEach(position => {
+                const slot = document.querySelector(`[data-position="${position}"]`);
+                
+                slot.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    slot.classList.add('drop-target');
+                });
+
+                slot.addEventListener('dragleave', () => {
+                    slot.classList.remove('drop-target');
+                });
+
+                slot.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    slot.classList.remove('drop-target');
+                    
+                    if (draggedPlayer && canPlayerPlayPosition(draggedPlayer, position)) {
+                        assignPlayerToPosition(draggedPlayer, position);
+                    }
+                });
+
+                // Click to assign/remove
+                slot.addEventListener('click', () => {
+                    if (lineup[currentPeriod].positions[position]) {
+                        removePlayerFromPosition(position);
+                    }
+                });
+            });
+
+            // Bench area drop events
+            const benchArea = document.getElementById('benchArea');
+            benchArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                benchArea.classList.add('drop-target');
+            });
+
+            benchArea.addEventListener('dragleave', () => {
+                benchArea.classList.remove('drop-target');
+            });
+
+            benchArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                benchArea.classList.remove('drop-target');
+                
+                if (draggedPlayer) {
+                    addPlayerToBench(draggedPlayer);
+                }
+            });
+        }
+
+        // Check if player can play position
+        function canPlayerPlayPosition(playerName, position) {
+            const preferences = players[playerName];
+            if (!preferences) return false;
+
+            if (preferences.includes('All')) return true;
+            if (preferences.includes('All except GK') && position !== 'goalkeeper') return true;
+            
+            const positionMap = {
+                'striker': 'Striker',
+                'left-wing': 'Wing',
+                'right-wing': 'Wing',
+                'center-mid-left': 'Midfield',
+                'center-mid-right': 'Midfield',
+                'left-back': ['Back', 'Defense'],
+                'center-back': ['Back', 'Defense'],
+                'right-back': ['Back', 'Defense'],
+                'goalkeeper': 'Goalkeeper'
+            };
+
+            const requiredSkills = positionMap[position];
+            if (Array.isArray(requiredSkills)) {
+                return requiredSkills.some(skill => preferences.includes(skill));
+            }
+            
+            return preferences.includes(requiredSkills);
+        }
+
+        // Assign player to position
+        function assignPlayerToPosition(playerName, position) {
+            // Remove player from current position/bench
+            removePlayerFromAll(playerName);
+            
+            // Assign to new position
+            lineup[currentPeriod].positions[position] = playerName;
+            updateDisplay();
+        }
+
+        // Remove player from position
+        function removePlayerFromPosition(position) {
+            lineup[currentPeriod].positions[position] = null;
+            updateDisplay();
+        }
+
+        // Add player to bench
+        function addPlayerToBench(playerName) {
+            // Remove from current position/bench
+            removePlayerFromAll(playerName);
+            
+            // Add to bench
+            if (!lineup[currentPeriod].bench.includes(playerName)) {
+                lineup[currentPeriod].bench.push(playerName);
+            }
+            updateDisplay();
+        }
+
+        // Remove player from all positions and bench
+        function removePlayerFromAll(playerName) {
+            // Remove from positions
+            positions.forEach(pos => {
+                if (lineup[currentPeriod].positions[pos] === playerName) {
+                    lineup[currentPeriod].positions[pos] = null;
+                }
+            });
+            
+            // Remove from bench
+            lineup[currentPeriod].bench = lineup[currentPeriod].bench.filter(p => p !== playerName);
+        }
+
+        // Update display
+        function updateDisplay() {
+            updatePeriodInfo();
+            updatePositions();
+            updateBench();
+            updatePlayerList();
+            updateQuickStats();
+            updateNavigationButtons();
+        }
+
+        // Update period info
+        function updatePeriodInfo() {
+            const startTime = (currentPeriod - 1) * 7.5;
+            const endTime = currentPeriod * 7.5;
+            
+            document.getElementById('currentPeriodText').textContent = `Period ${currentPeriod}`;
+            document.getElementById('periodTitle').textContent = `Period ${currentPeriod}`;
+            document.getElementById('periodTime').textContent = `${startTime}:00 - ${endTime < 10 ? '0' : ''}${Math.floor(endTime)}:${(endTime % 1 * 60).toString().padStart(2, '0')}`;
+        }
+
+        // Update position displays
+        function updatePositions() {
+            positions.forEach(position => {
+                const slot = document.querySelector(`[data-position="${position}"]`);
+                const playerName = lineup[currentPeriod].positions[position];
+                const playerNameDiv = slot.querySelector('.player-name');
+                const label = slot.querySelector('.position-label');
+                
+                if (playerName) {
+                    playerNameDiv.textContent = playerName;
+                    label.style.fontSize = '0.6rem';
+                    slot.classList.add('filled');
+                } else {
+                    playerNameDiv.textContent = '';
+                    label.style.fontSize = '0.75rem';
+                    slot.classList.remove('filled');
+                }
+            });
+        }
+
+        // Update bench display
+        function updateBench() {
+            const benchArea = document.getElementById('benchArea');
+            const emptyMessage = document.getElementById('benchEmpty');
+            const benchPlayers = lineup[currentPeriod].bench;
+            
+            // Remove existing bench players
+            benchArea.querySelectorAll('.bench-player').forEach(el => el.remove());
+            
+            if (benchPlayers.length === 0) {
+                emptyMessage.style.display = 'block';
+            } else {
+                emptyMessage.style.display = 'none';
+                benchPlayers.forEach(playerName => {
+                    const playerDiv = document.createElement('div');
+                    playerDiv.className = 'bench-player';
+                    playerDiv.textContent = playerName;
+                    playerDiv.addEventListener('click', () => {
+                        removePlayerFromAll(playerName);
+                        updateDisplay();
+                    });
+                    benchArea.appendChild(playerDiv);
+                });
+            }
+        }
+
+        // Update player list with assignment status
+        function updatePlayerList() {
+            const playerCards = document.querySelectorAll('.player-card');
+            playerCards.forEach(card => {
+                const playerName = card.dataset.player;
+                const stats = calculateDetailedPlayerStats(playerName);
+                
+                // Update time display
+                const timeSpan = card.querySelector('.player-time');
+                timeSpan.textContent = `${stats.totalMinutes}min`;
+                
+                // Update bench periods
+                const benchStat = card.querySelector('.stat-line span:last-child');
+                benchStat.textContent = stats.benchPeriods;
+                
+                // Update position badges
+                const positionBadges = card.querySelector('.position-badges');
+                const activeBadges = Object.entries(stats.positions)
+                    .filter(([pos, count]) => count > 0)
+                    .map(([pos, count]) => `<span class="position-badge">${getPositionAbbrev(pos)}:${count}</span>`)
+                    .join('');
+                
+                positionBadges.innerHTML = activeBadges || '<span class="position-badge">Not assigned</span>';
+                
+                // Check if player is assigned in current period
+                const isAssigned = Object.values(lineup[currentPeriod].positions).includes(playerName) ||
+                                 lineup[currentPeriod].bench.includes(playerName);
+                
+                if (isAssigned) {
+                    card.classList.add('assigned');
+                } else {
+                    card.classList.remove('assigned');
+                }
+            });
+        }
+
+        // Update quick stats
+        function updateQuickStats() {
+            const statsDiv = document.getElementById('quickStats');
+            const playersOnField = Object.values(lineup[currentPeriod].positions).filter(p => p !== null).length;
+            const playersOnBench = lineup[currentPeriod].bench.length;
+            const totalPlayers = Object.keys(players).length;
+            const unassigned = totalPlayers - playersOnField - playersOnBench;
+            
+            statsDiv.innerHTML = `
+                <div class="stats-row">
+                    <span>On Field:</span>
+                    <span><strong>${playersOnField}/9</strong></span>
+                </div>
+                <div class="stats-row">
+                    <span>On Bench:</span>
+                    <span><strong>${playersOnBench}</strong></span>
+                </div>
+                <div class="stats-row">
+                    <span>Unassigned:</span>
+                    <span><strong>${unassigned}</strong></span>
+                </div>
+            `;
+        }
+
+        // Update navigation buttons
+        function updateNavigationButtons() {
+            document.getElementById('prevBtn').disabled = currentPeriod === 1;
+            document.getElementById('nextBtn').disabled = currentPeriod === 8;
+        }
+
+        // Navigation functions
+        function previousPeriod() {
+            if (currentPeriod > 1) {
+                currentPeriod--;
+                updateDisplay();
+            }
+        }
+
+        function nextPeriod() {
+            if (currentPeriod < 8) {
+                currentPeriod++;
+                updateDisplay();
+            }
+        }
+
+        // Auto fill current period
+        function autoFill() {
+            const availablePlayers = Object.keys(players).filter(playerName => {
+                return !Object.values(lineup[currentPeriod].positions).includes(playerName) &&
+                       !lineup[currentPeriod].bench.includes(playerName);
+            });
+
+            // Clear current assignments
+            positions.forEach(pos => lineup[currentPeriod].positions[pos] = null);
+            lineup[currentPeriod].bench = [];
+
+            // Try to fill positions intelligently
+            const positionPriority = [
+                'goalkeeper', 'striker', 'center-back', 'left-back', 'right-back',
+                'center-mid-left', 'center-mid-right', 'left-wing', 'right-wing'
+            ];
+
+            const assignedPlayers = new Set();
+
+            positionPriority.forEach(position => {
+                const suitablePlayers = availablePlayers.filter(player => 
+                    !assignedPlayers.has(player) && canPlayerPlayPosition(player, position)
+                );
+                
+                if (suitablePlayers.length > 0) {
+                    const selectedPlayer = suitablePlayers[0];
+                    lineup[currentPeriod].positions[position] = selectedPlayer;
+                    assignedPlayers.add(selectedPlayer);
+                }
+            });
+
+            // Put remaining players on bench
+            availablePlayers.forEach(player => {
+                if (!assignedPlayers.has(player)) {
+                    lineup[currentPeriod].bench.push(player);
+                }
+            });
+
+            updateDisplay();
+        }
+
+        // Clear current period
+        function clearPeriod() {
+            if (confirm('Clear all assignments for this period?')) {
+                positions.forEach(pos => lineup[currentPeriod].positions[pos] = null);
+                lineup[currentPeriod].bench = [];
+                updateDisplay();
+            }
+        }
+
+        // Export lineup
+        function exportLineup() {
+            let exportText = 'YOUTH SOCCER LINEUP\n';
+            exportText += '═'.repeat(40) + '\n\n';
+            
+            for (let period = 1; period <= 8; period++) {
+                const startTime = (period - 1) * 7.5;
+                const endTime = period * 7.5;
+                
+                exportText += `PERIOD ${period} (${startTime}:00 - ${Math.floor(endTime)}:${(endTime % 1 * 60).toString().padStart(2, '0')})\n`;
+                exportText += '─'.repeat(30) + '\n';
+                
+                // Field positions
+                const positionNames = {
+                    'striker': 'Striker',
+                    'left-wing': 'Left Wing',
+                    'right-wing': 'Right Wing',
+                    'center-mid-left': 'Center Mid (L)',
+                    'center-mid-right': 'Center Mid (R)',
+                    'left-back': 'Left Back',
+                    'center-back': 'Center Back',
+                    'right-back': 'Right Back',
+                    'goalkeeper': 'Goalkeeper'
+                };
+                
+                positions.forEach(position => {
+                    const player = lineup[period].positions[position] || 'EMPTY';
+                    exportText += `${positionNames[position]}: ${player}\n`;
+                });
+                
+                exportText += `Bench: ${lineup[period].bench.join(', ') || 'None'}\n`;
+                exportText += '\n';
+            }
+            
+            // Player statistics
+            exportText += 'PLAYER STATISTICS\n';
+            exportText += '─'.repeat(30) + '\n';
+            
+            Object.keys(players).forEach(playerName => {
+                const stats = calculateDetailedPlayerStats(playerName);
+                exportText += `${playerName}: ${stats.totalMinutes} minutes (${stats.benchPeriods} periods on bench)\n`;
+                
+                // Show position breakdown
+                const positionCounts = Object.entries(stats.positions)
+                    .filter(([pos, count]) => count > 0)
+                    .map(([pos, count]) => `${getPositionAbbrev(pos)}:${count}`)
+                    .join(', ');
+                
+                if (positionCounts) {
+                    exportText += `  Positions: ${positionCounts}\n`;
+                }
+                exportText += '\n';
+            });
+            
+            // Create and download file
+            const blob = new Blob([exportText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `soccer-lineup-${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize the app when page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

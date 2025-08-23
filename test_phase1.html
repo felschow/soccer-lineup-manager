@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 1 Test - Soccer Lineup Manager</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .test-button { margin: 5px; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+        .test-success { background: #d4edda; color: #155724; }
+        .test-error { background: #f8d7da; color: #721c24; }
+        .test-info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>Phase 1 Improvements Test Page</h1>
+    
+    <div class="test-section">
+        <h2>1. Toast Notifications Test</h2>
+        <button class="test-button" onclick="testToasts()">Test All Toast Types</button>
+        <button class="test-button" onclick="testLoadingToast()">Test Loading Toast</button>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Enhanced Statistics Test</h2>
+        <button class="test-button" onclick="testStats()">Test Enhanced Stats</button>
+        <button class="test-button" onclick="testBalanceAnalysis()">Test Balance Analysis</button>
+    </div>
+
+    <div class="test-section">
+        <h2>3. History/Undo Test</h2>
+        <button class="test-button" onclick="testHistory()">Test Undo/Redo</button>
+        <button class="test-button" onclick="showHistorySummary()">Show History Summary</button>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Mobile Enhancements Test</h2>
+        <button class="test-button" onclick="testMobileFeatures()">Test Mobile Features</button>
+        <button class="test-button" onclick="testHapticFeedback()">Test Haptic Feedback</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="testResults"></div>
+    </div>
+
+    <!-- Include all the modules -->
+    <script src="js/config.js"></script>
+    <script src="js/toastManager.js"></script>
+    <script src="js/lineupManager.js"></script>
+    <script src="js/historyManager.js"></script>
+    <script src="js/enhancedStats.js"></script>
+    <script src="js/uiManager.js"></script>
+    <script src="js/dragDrop.js"></script>
+    <script src="js/mobileEnhancements.js"></script>
+    <script src="js/autoFill.js"></script>
+    <script src="js/exportUtils.js"></script>
+
+    <script>
+        // Initialize test environment
+        let testResults = [];
+        
+        function addTestResult(test, status, details) {
+            testResults.push({ test, status, details, timestamp: new Date() });
+            updateTestDisplay();
+        }
+        
+        function updateTestDisplay() {
+            const resultsDiv = document.getElementById('testResults');
+            resultsDiv.innerHTML = testResults.map(result => `
+                <div class="test-${result.status}">
+                    <strong>${result.test}</strong>: ${result.status.toUpperCase()}
+                    ${result.details ? `<br><small>${result.details}</small>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Initialize modules for testing
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                ToastManager.init();
+                LineupManager.init();
+                HistoryManager.init();
+                EnhancedStats.init();
+                MobileEnhancements.init();
+                
+                addTestResult('Module Initialization', 'success', 'All modules loaded successfully');
+                ToastManager.success('Test environment ready!', 3000);
+            } catch (error) {
+                addTestResult('Module Initialization', 'error', error.message);
+            }
+        });
+
+        // Test Functions
+        function testToasts() {
+            try {
+                ToastManager.success('This is a success toast!', 3000);
+                setTimeout(() => ToastManager.error('This is an error toast!', 4000), 500);
+                setTimeout(() => ToastManager.warning('This is a warning toast!', 4000), 1000);
+                setTimeout(() => ToastManager.info('This is an info toast!', 3000), 1500);
+                
+                addTestResult('Toast Notifications', 'success', 'All toast types displayed');
+            } catch (error) {
+                addTestResult('Toast Notifications', 'error', error.message);
+            }
+        }
+
+        function testLoadingToast() {
+            try {
+                const loadingToast = ToastManager.loading('Testing loading...');
+                
+                setTimeout(() => {
+                    ToastManager.updateLoadingToast(loadingToast, 'Almost done...');
+                }, 1000);
+                
+                setTimeout(() => {
+                    ToastManager.dismissLoadingToast(loadingToast, 'Loading test completed!', 'success');
+                }, 2500);
+                
+                addTestResult('Loading Toast', 'success', 'Loading toast sequence completed');
+            } catch (error) {
+                addTestResult('Loading Toast', 'error', error.message);
+            }
+        }
+
+        function testStats() {
+            try {
+                // Generate some test data
+                LineupManager.assignPlayerToPosition('Kennedy', 'striker');
+                LineupManager.assignPlayerToPosition('Aubree', 'goalkeeper');
+                LineupManager.addPlayerToBench('Olivia');
+                
+                const teamBalance = EnhancedStats.calculateTeamBalance();
+                const stats = EnhancedStats.generateEnhancedQuickStats();
+                
+                addTestResult('Enhanced Statistics', 'success', 
+                    `Fairness score: ${teamBalance.fairnessScore}%, Generated enhanced stats`);
+            } catch (error) {
+                addTestResult('Enhanced Statistics', 'error', error.message);
+            }
+        }
+
+        function testBalanceAnalysis() {
+            try {
+                const warnings = EnhancedStats.generateLineupWarnings();
+                addTestResult('Balance Analysis', 'success', 
+                    `Generated ${warnings.warnings.length} warnings and ${warnings.suggestions.length} suggestions`);
+            } catch (error) {
+                addTestResult('Balance Analysis', 'error', error.message);
+            }
+        }
+
+        function testHistory() {
+            try {
+                // Test undo/redo functionality
+                const initialState = HistoryManager.captureCurrentState('Test state');
+                
+                // Make some changes
+                LineupManager.assignPlayerToPosition('Jordan', 'left-wing');
+                LineupManager.assignPlayerToPosition('Addie', 'right-wing');
+                
+                // Test undo
+                const undoResult = HistoryManager.undo();
+                const redoResult = HistoryManager.redo();
+                
+                addTestResult('Undo/Redo', 'success', 
+                    `Undo: ${undoResult}, Redo: ${redoResult}, History size: ${HistoryManager.history.length}`);
+            } catch (error) {
+                addTestResult('Undo/Redo', 'error', error.message);
+            }
+        }
+
+        function showHistorySummary() {
+            try {
+                const summary = HistoryManager.getHistorySummary();
+                addTestResult('History Summary', 'info', 
+                    `${summary.totalStates} states, Current: ${summary.currentAction}`);
+            } catch (error) {
+                addTestResult('History Summary', 'error', error.message);
+            }
+        }
+
+        function testMobileFeatures() {
+            try {
+                // Test mobile detection
+                const orientation = MobileEnhancements.getDeviceOrientation();
+                const hapticSupported = MobileEnhancements.hapticSupported;
+                
+                addTestResult('Mobile Features', 'success', 
+                    `Orientation: ${orientation}, Haptic: ${hapticSupported}`);
+            } catch (error) {
+                addTestResult('Mobile Features', 'error', error.message);
+            }
+        }
+
+        function testHapticFeedback() {
+            try {
+                MobileEnhancements.triggerHapticFeedback('light');
+                setTimeout(() => MobileEnhancements.triggerHapticFeedback('medium'), 200);
+                setTimeout(() => MobileEnhancements.triggerHapticFeedback('success'), 400);
+                
+                addTestResult('Haptic Feedback', 'success', 'Haptic feedback sequence triggered');
+            } catch (error) {
+                addTestResult('Haptic Feedback', 'error', error.message);
+            }
+        }
+    </script>
+</body>
+</html>

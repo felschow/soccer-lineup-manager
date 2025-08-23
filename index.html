@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Youth Soccer Lineup Manager</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>⚽ Soccer Lineup Manager</h1>
+            
+            <div class="period-nav">
+                <button onclick="previousPeriod()" id="prevBtn">‹</button>
+                <span class="current-period" id="currentPeriodText">Period 1</span>
+                <button onclick="nextPeriod()" id="nextBtn">›</button>
+            </div>
+            
+            <div class="quick-actions">
+                <button class="btn" onclick="toggleView()" id="viewToggle">📊 Table View</button>
+                <button class="btn" onclick="autoFill()">Auto Fill</button>
+                <button class="btn btn-secondary" onclick="clearPeriod()">Clear</button>
+                <button class="btn btn-secondary" onclick="exportLineup()">Export</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="player-pool">
+                    <div class="pool-title">
+                        👥 Available Players
+                    </div>
+                    <div class="player-list" id="playerList">
+                        <!-- Players will be populated here -->
+                    </div>
+                </div>
+
+                <div class="stats-summary">
+                    <div class="pool-title">📊 Quick Stats</div>
+                    <div id="quickStats">
+                        <!-- Stats will be shown here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="field-container" id="fieldView">
+                <div class="period-info">
+                    <div class="period-title" id="periodTitle">Period 1</div>
+                    <div class="period-time" id="periodTime">0:00 - 7:30</div>
+                </div>
+
+                <div class="soccer-field">
+                    <div class="field-lines">
+                        <div class="penalty-area-top"></div>
+                        <div class="penalty-area-bottom"></div>
+                        <div class="goal-area-top"></div>
+                        <div class="goal-area-bottom"></div>
+                        <div class="corner-arc top-left"></div>
+                        <div class="corner-arc top-right"></div>
+                        <div class="corner-arc bottom-left"></div>
+                        <div class="corner-arc bottom-right"></div>
+                    </div>
+                    
+                    <div class="position-slot striker" data-position="striker">
+                        <div class="position-label">ST</div>
+                        <div class="player-name"></div>
+                    </div>
+                    
+                    <div class="position-slot left-wing" data-position="left-wing">
+                        <div class="position-label">LW</div>
+                        <div class="player-name"></div>
+                    </div>
+                    
+                    <div class="position-slot right-wing" data-position="right-wing">
+                        <div class="position-label">RW</div>
+                        <div class="player-name"></div>
+                    </div>
+                    
+                    <div class="position-slot center-mid-left" data-position="center-mid-left">
+                        <div class="position-label">CM</div>
+                        <div class="player-name"></div>
+                    </div>
+                    
+                    <div class="position-slot center-mid-right" data-position="center-mid-right">
+                        <div class="position-label">CM</div>
+                        <div class="player-name"></div>
+                    </div>
+                    
+                    <div class="position-slot left-back" data-position="left-back">
+                        <div class="position-label">LB</div>
+                        <div class="player-name"></div>
+                    </div>
+                    
+                    <div class="position-slot center-back" data-position="center-back">
+                        <div class="position-label">CB</div>
+                        <div class="player-name"></div>
+                    </div>
+                    
+                    <div class="position-slot right-back" data-position="right-back">
+                        <div class="position-label">RB</div>
+                        <div class="player-name"></div>
+                    </div>
+                    
+                    <div class="position-slot goalkeeper" data-position="goalkeeper">
+                        <div class="position-label">GK</div>
+                        <div class="player-name"></div>
+                    </div>
+                </div>
+
+                <div class="bench-area" id="benchArea">
+                    <div class="bench-title">🪑 Sitting Out This Period</div>
+                    <div class="empty-message" id="benchEmpty">Drop players here to sit them out</div>
+                </div>
+
+                <div class="bench-area" id="jerseyArea" style="border-color: #8B5CF6; background: #F3E8FF;">
+                    <div class="bench-title" style="color: #8B5CF6;">👕 Preparing Jersey (Next GK)</div>
+                    <div class="empty-message" id="jerseyEmpty" style="color: #8B5CF6;">Drop players here for goalkeeper preparation</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-view" id="tableView">
+            <div class="table-controls">
+                <div class="table-title">📊 Complete Game Overview</div>
+                <div>
+                    <button class="btn btn-secondary" onclick="clearAllPeriods()">Clear All</button>
+                    <button class="btn" onclick="autoFillAll()">Auto Fill All</button>
+                </div>
+            </div>
+            
+            <table class="lineup-table" id="lineupTable">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th class="period-header">Period 1<br><small>0:00-7:30</small></th>
+                        <th class="period-header">Period 2<br><small>7:30-15:00</small></th>
+                        <th class="period-header">Period 3<br><small>15:00-22:30</small></th>
+                        <th class="period-header">Period 4<br><small>22:30-30:00</small></th>
+                        <th class="period-header">Period 5<br><small>30:00-37:30</small></th>
+                        <th class="period-header">Period 6<br><small>37:30-45:00</small></th>
+                        <th class="period-header">Period 7<br><small>45:00-52:30</small></th>
+                        <th class="period-header">Period 8<br><small>52:30-60:00</small></th>
+                        <th>Summary Stats</th>
+                    </tr>
+                </thead>
+                <tbody id="lineupTableBody">
+                    <!-- Table rows will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <!-- External Dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- Application Modules -->
+    <script src="js/config.js"></script>
+    <script src="js/toastManager.js"></script>
+    <script src="js/lineupManager.js"></script>
+    <script src="js/historyManager.js"></script>
+    <script src="js/enhancedStats.js"></script>
+    <script src="js/uiManager.js"></script>
+    <script src="js/dragDrop.js"></script>
+    <script src="js/mobileEnhancements.js"></script>
+    <script src="js/autoFill.js"></script>
+    <script src="js/exportUtils.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
