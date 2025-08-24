@@ -1166,7 +1166,7 @@ body {
 .mobile-position-slot {
     position: absolute;
     width: 60px;
-    height: 44px;
+    height: 50px;
     background: rgba(255, 255, 255, 0.95);
     border: 2px dashed #cbd5e1;
     border-radius: 8px;
@@ -1179,6 +1179,7 @@ body {
     font-size: 10px;
     text-align: center;
     touch-action: manipulation;
+    padding: 2px;
 }
 
 .mobile-position-slot:active {
@@ -1202,11 +1203,19 @@ body {
     font-size: 8px;
     color: #059669;
     font-weight: 500;
-    line-height: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.1;
+    text-align: center;
     width: 100%;
+    max-height: 24px;
+    overflow: hidden;
+}
+
+.mobile-substitution-info {
+    font-size: 6px;
+    color: #6b7280;
+    font-weight: 400;
+    margin-top: 1px;
+    line-height: 1;
 }
 
 /* Mobile field position coordinates */

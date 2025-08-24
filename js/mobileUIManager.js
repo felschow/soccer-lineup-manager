@@ -503,7 +503,19 @@ const MobileUIManager = {
             const player = currentLineup.positions[position];
             
             if (element) {
-                element.textContent = player || 'Tap';
+                if (player) {
+                    // Check for substitution info
+                    const substitutedPlayer = LineupManager.getSubstitutionInfo(currentPeriod, position);
+                    
+                    if (substitutedPlayer) {
+                        element.innerHTML = `${player}<div class="mobile-substitution-info">(${substitutedPlayer})</div>`;
+                    } else {
+                        element.textContent = player;
+                    }
+                } else {
+                    element.textContent = 'Tap';
+                }
+                
                 const slot = element.closest('.mobile-position-slot');
                 if (slot) {
                     slot.classList.toggle('filled', !!player);
