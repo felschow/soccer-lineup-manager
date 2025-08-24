@@ -152,76 +152,89 @@
                 </div>
             </div>
 
-            <!-- NEW: Mobile-Optimized Field View -->
-            <div class="mobile-field-container" id="mobileFieldView">
-                <div class="mobile-position-card" data-position="goalkeeper">
-                    <div class="position-label">Goalkeeper (GK)</div>
-                    <div class="player-name" id="mobile-goalkeeper">Tap to assign</div>
+            <!-- Mobile Soccer Field View -->
+            <div class="mobile-soccer-field" id="mobileFieldView">
+                <div class="mobile-field-lines">
+                    <div class="mobile-penalty-area-top"></div>
+                    <div class="mobile-penalty-area-bottom"></div>
+                    <div class="mobile-goal-area-top"></div>
+                    <div class="mobile-goal-area-bottom"></div>
                 </div>
-
-                <div class="mobile-position-card" data-position="left-back">
-                    <div class="position-label">Left Back (LB)</div>
-                    <div class="player-name" id="mobile-left-back">Tap to assign</div>
+                
+                <!-- Field Positions -->
+                <div class="mobile-position-slot mobile-striker" data-position="striker">
+                    <div class="mobile-position-label">ST</div>
+                    <div class="mobile-player-name" id="mobile-striker">Tap</div>
                 </div>
-
-                <div class="mobile-position-card" data-position="center-back">
-                    <div class="position-label">Center Back (CB)</div>
-                    <div class="player-name" id="mobile-center-back">Tap to assign</div>
+                
+                <div class="mobile-position-slot mobile-left-wing" data-position="left-wing">
+                    <div class="mobile-position-label">LW</div>
+                    <div class="mobile-player-name" id="mobile-left-wing">Tap</div>
                 </div>
-
-                <div class="mobile-position-card" data-position="right-back">
-                    <div class="position-label">Right Back (RB)</div>
-                    <div class="player-name" id="mobile-right-back">Tap to assign</div>
+                
+                <div class="mobile-position-slot mobile-right-wing" data-position="right-wing">
+                    <div class="mobile-position-label">RW</div>
+                    <div class="mobile-player-name" id="mobile-right-wing">Tap</div>
                 </div>
-
-                <div class="mobile-position-card" data-position="center-mid-left">
-                    <div class="position-label">Center Mid Left (CM)</div>
-                    <div class="player-name" id="mobile-center-mid-left">Tap to assign</div>
+                
+                <div class="mobile-position-slot mobile-center-mid-left" data-position="center-mid-left">
+                    <div class="mobile-position-label">CM</div>
+                    <div class="mobile-player-name" id="mobile-center-mid-left">Tap</div>
                 </div>
-
-                <div class="mobile-position-card" data-position="center-mid-right">
-                    <div class="position-label">Center Mid Right (CM)</div>
-                    <div class="player-name" id="mobile-center-mid-right">Tap to assign</div>
+                
+                <div class="mobile-position-slot mobile-center-mid-right" data-position="center-mid-right">
+                    <div class="mobile-position-label">CM</div>
+                    <div class="mobile-player-name" id="mobile-center-mid-right">Tap</div>
                 </div>
-
-                <div class="mobile-position-card" data-position="left-wing">
-                    <div class="position-label">Left Wing (LW)</div>
-                    <div class="player-name" id="mobile-left-wing">Tap to assign</div>
+                
+                <div class="mobile-position-slot mobile-left-back" data-position="left-back">
+                    <div class="mobile-position-label">LB</div>
+                    <div class="mobile-player-name" id="mobile-left-back">Tap</div>
                 </div>
-
-                <div class="mobile-position-card" data-position="striker">
-                    <div class="position-label">Striker (ST)</div>
-                    <div class="player-name" id="mobile-striker">Tap to assign</div>
+                
+                <div class="mobile-position-slot mobile-center-back" data-position="center-back">
+                    <div class="mobile-position-label">CB</div>
+                    <div class="mobile-player-name" id="mobile-center-back">Tap</div>
                 </div>
-
-                <div class="mobile-position-card" data-position="right-wing">
-                    <div class="position-label">Right Wing (RW)</div>
-                    <div class="player-name" id="mobile-right-wing">Tap to assign</div>
+                
+                <div class="mobile-position-slot mobile-right-back" data-position="right-back">
+                    <div class="mobile-position-label">RB</div>
+                    <div class="mobile-player-name" id="mobile-right-back">Tap</div>
                 </div>
+                
+                <div class="mobile-position-slot mobile-goalkeeper" data-position="goalkeeper">
+                    <div class="mobile-position-label">GK</div>
+                    <div class="mobile-player-name" id="mobile-goalkeeper">Tap</div>
+                </div>
+            </div>
 
-                <!-- Bench Section -->
-                <div style="margin-top: 24px;">
-                    <h3 style="margin-bottom: 16px; color: #374151;">Bench Players</h3>
-                    <div class="mobile-position-card" data-position="bench-1">
-                        <div class="position-label">Bench #1</div>
-                        <div class="player-name" id="mobile-bench-1">Tap to assign</div>
+            <!-- Mobile Bench Area -->
+            <div class="mobile-bench-container">
+                <div class="mobile-bench-section">
+                    <h3 class="mobile-bench-title">🪑 Bench</h3>
+                    <div class="mobile-bench-slots">
+                        <div class="mobile-position-slot mobile-bench" data-position="bench-1">
+                            <div class="mobile-position-label">Bench</div>
+                            <div class="mobile-player-name" id="mobile-bench-1">Tap</div>
+                        </div>
+                        <div class="mobile-position-slot mobile-bench" data-position="bench-2">
+                            <div class="mobile-position-label">Bench</div>
+                            <div class="mobile-player-name" id="mobile-bench-2">Tap</div>
+                        </div>
+                        <div class="mobile-position-slot mobile-bench" data-position="bench-3">
+                            <div class="mobile-position-label">Bench</div>
+                            <div class="mobile-player-name" id="mobile-bench-3">Tap</div>
+                        </div>
                     </div>
-                    <div class="mobile-position-card" data-position="bench-2">
-                        <div class="position-label">Bench #2</div>
-                        <div class="player-name" id="mobile-bench-2">Tap to assign</div>
-                    </div>
-                    <div class="mobile-position-card" data-position="bench-3">
-                        <div class="position-label">Bench #3</div>
-                        <div class="player-name" id="mobile-bench-3">Tap to assign</div>
-                    </div>
                 </div>
 
-                <!-- Jersey Prep Section -->
-                <div style="margin-top: 24px;">
-                    <h3 style="margin-bottom: 16px; color: #374151;">Jersey Preparation</h3>
-                    <div class="mobile-position-card" data-position="jersey-1">
-                        <div class="position-label">Jersey Prep</div>
-                        <div class="player-name" id="mobile-jersey-1">Tap to assign</div>
+                <div class="mobile-bench-section">
+                    <h3 class="mobile-bench-title">👕 Jersey Prep</h3>
+                    <div class="mobile-bench-slots">
+                        <div class="mobile-position-slot mobile-jersey" data-position="jersey-1">
+                            <div class="mobile-position-label">Jersey</div>
+                            <div class="mobile-player-name" id="mobile-jersey-1">Tap</div>
+                        </div>
                     </div>
                 </div>
             </div>

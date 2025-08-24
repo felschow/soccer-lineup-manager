@@ -58,22 +58,22 @@ const MobileUIManager = {
     },
     
     setupMobileInteractions() {
-        // Setup click handlers for mobile position cards
+        // Setup click handlers for mobile position slots (new field layout)
         document.addEventListener('click', (e) => {
-            const mobileCard = e.target.closest('.mobile-position-card');
-            if (mobileCard) {
-                const position = mobileCard.dataset.position;
-                this.handleMobilePositionClick(position, mobileCard);
+            const mobileSlot = e.target.closest('.mobile-position-slot');
+            if (mobileSlot) {
+                const position = mobileSlot.dataset.position;
+                this.handleMobilePositionClick(position, mobileSlot);
             }
         });
     },
     
-    handleMobilePositionClick(position, card) {
+    handleMobilePositionClick(position, slot) {
         console.log('Mobile position clicked:', position);
-        const playerNameElement = card.querySelector('.player-name');
+        const playerNameElement = slot.querySelector('.mobile-player-name');
         const currentPlayer = playerNameElement.textContent;
         
-        if (currentPlayer === 'Tap to assign' || currentPlayer.trim() === '') {
+        if (currentPlayer === 'Tap' || currentPlayer.trim() === '' || currentPlayer === 'Tap to assign') {
             this.showPlayerSelectionModal(position);
         } else {
             this.showPlayerActionModal(position, currentPlayer);
@@ -222,17 +222,18 @@ const MobileUIManager = {
     },
     
     showImmediateAssignmentFeedback(playerName, position) {
-        // Update the mobile position card immediately for instant feedback
+        // Update the mobile position slot immediately for instant feedback
         const positionElement = document.getElementById(`mobile-${position}`);
         if (positionElement) {
             positionElement.textContent = playerName;
-            const card = positionElement.closest('.mobile-position-card');
-            if (card) {
-                card.classList.add('filled');
+            const slot = positionElement.closest('.mobile-position-slot');
+            if (slot) {
+                slot.classList.add('filled');
                 // Add a brief flash effect
-                card.style.background = '#10b981';
+                const originalBg = slot.style.background;
+                slot.style.background = '#10b981';
                 setTimeout(() => {
-                    card.style.background = '';
+                    slot.style.background = originalBg;
                 }, 200);
             }
         }
@@ -363,7 +364,7 @@ const MobileUIManager = {
             periodTime.textContent = `${startMins}:${startSecs.toString().padStart(2, '0')} - ${endMins}:${endSecs.toString().padStart(2, '0')}`;
         }
         
-        // Update mobile position cards
+        // Update mobile position slots  
         const positions = ['goalkeeper', 'left-back', 'center-back', 'right-back', 
                           'center-mid-left', 'center-mid-right', 'left-wing', 'striker', 'right-wing'];
         
@@ -372,10 +373,10 @@ const MobileUIManager = {
             const player = currentLineup.positions[position];
             
             if (element) {
-                element.textContent = player || 'Tap to assign';
-                const card = element.closest('.mobile-position-card');
-                if (card) {
-                    card.classList.toggle('filled', !!player);
+                element.textContent = player || 'Tap';
+                const slot = element.closest('.mobile-position-slot');
+                if (slot) {
+                    slot.classList.toggle('filled', !!player);
                 }
             }
         });
@@ -386,10 +387,10 @@ const MobileUIManager = {
             const player = currentLineup.bench[i - 1];
             
             if (element) {
-                element.textContent = player || 'Tap to assign';
-                const card = element.closest('.mobile-position-card');
-                if (card) {
-                    card.classList.toggle('filled', !!player);
+                element.textContent = player || 'Tap';
+                const slot = element.closest('.mobile-position-slot');
+                if (slot) {
+                    slot.classList.toggle('filled', !!player);
                 }
             }
         }
@@ -399,10 +400,10 @@ const MobileUIManager = {
         const jerseyPlayer = currentLineup.jersey && currentLineup.jersey[0];
         
         if (jerseyElement) {
-            jerseyElement.textContent = jerseyPlayer || 'Tap to assign';
-            const card = jerseyElement.closest('.mobile-position-card');
-            if (card) {
-                card.classList.toggle('filled', !!jerseyPlayer);
+            jerseyElement.textContent = jerseyPlayer || 'Tap';
+            const slot = jerseyElement.closest('.mobile-position-slot');
+            if (slot) {
+                slot.classList.toggle('filled', !!jerseyPlayer);
             }
         }
         
@@ -572,7 +573,7 @@ const MobileUIManager = {
     addHapticFeedback() {
         // Add haptic feedback to all clickable elements
         document.addEventListener('click', (e) => {
-            if (e.target.closest('.mobile-nav-button, .mobile-action-button, .mobile-position-card, .mobile-player-card')) {
+            if (e.target.closest('.mobile-nav-button, .mobile-action-button, .mobile-position-slot, .mobile-player-card')) {
                 this.triggerHaptic('light');
             }
         });
