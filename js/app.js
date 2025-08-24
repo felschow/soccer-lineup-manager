@@ -21,6 +21,14 @@ let soccerLineupApp = {
             DragDropManager.init();
             MobileEnhancements.init();
             
+            // Initialize mobile-specific features if on mobile
+            if (window.MobileUIManager) {
+                MobileUIManager.init();
+            }
+            
+            // Initialize PWA features
+            this.initializePWA();
+            
             // Set up additional features
             DragDropManager.setupTouchSupport();
             DragDropManager.setupEnhancedDragFeedback();
@@ -48,6 +56,56 @@ let soccerLineupApp = {
             Please refresh the page and try again.
         `;
         alert(errorMessage);
+    },
+    
+    // Initialize PWA features
+    initializePWA() {
+        // Register service worker for offline support
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').then(registration => {
+                console.log('Service Worker registered:', registration);
+            }).catch(error => {
+                console.warn('Service Worker registration failed:', error);
+            });
+        }
+        
+        // Handle install prompt for PWA
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            window.deferredPrompt = e;
+            this.showInstallPrompt();
+        });
+        
+        // Handle app installed event
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA installed successfully');
+            ToastManager.success('App installed! You can now use it offline.', 5000);
+        });
+        
+        // Handle URL parameters for deep linking
+        this.handleUrlParameters();
+    },
+    
+    // Show PWA install prompt
+    showInstallPrompt() {
+        if (window.innerWidth <= 768 && window.deferredPrompt) {
+            setTimeout(() => {
+                ToastManager.info('Add to Home Screen for better experience!', 8000);
+            }, 5000);
+        }
+    },
+    
+    // Handle URL parameters for actions
+    handleUrlParameters() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const action = urlParams.get('action');
+        const view = urlParams.get('view');
+        
+        if (action === 'autofill') {
+            setTimeout(() => autoFillAll(), 1000);
+        } else if (view === 'table') {
+            setTimeout(() => toggleView(), 500);
+        }
     }
 };
 
