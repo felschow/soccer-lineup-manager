@@ -35,9 +35,13 @@ const UIManager = {
         const period = LineupManager.getCurrentPeriod();
         const timeInfo = SoccerConfig.utils.getPeriodTime(period);
         
-        document.getElementById('currentPeriodText').textContent = `Period ${period}`;
-        document.getElementById('periodTitle').textContent = `Period ${period}`;
-        document.getElementById('periodTime').textContent = timeInfo.display;
+        const currentPeriodText = document.getElementById('currentPeriodText');
+        const periodTitle = document.getElementById('periodTitle');
+        const periodTime = document.getElementById('periodTime');
+        
+        if (currentPeriodText) currentPeriodText.textContent = `Period ${period}`;
+        if (periodTitle) periodTitle.textContent = `Period ${period}`;
+        if (periodTime) periodTime.textContent = timeInfo.display;
     },
 
     // Update field position displays
@@ -50,6 +54,12 @@ const UIManager = {
             const playerName = currentLineup.positions[position];
             const playerNameDiv = slot.querySelector('.player-name');
             const label = slot.querySelector('.position-label');
+            
+            // Skip if essential elements don't exist
+            if (!playerNameDiv) {
+                console.warn(`Player name div not found for position: ${position}`);
+                return;
+            }
             
             if (playerName) {
                 // Check for substitution info
@@ -64,11 +74,11 @@ const UIManager = {
                     playerNameDiv.textContent = playerName;
                 }
                 
-                label.style.fontSize = '0.6rem';
+                if (label) label.style.fontSize = '0.6rem';
                 slot.classList.add('filled');
             } else {
                 playerNameDiv.textContent = '';
-                label.style.fontSize = '0.75rem';
+                if (label) label.style.fontSize = '0.75rem';
                 slot.classList.remove('filled');
             }
         });
@@ -86,6 +96,12 @@ const UIManager = {
     updateBenchArea(areaId, emptyId, dataKey, playerClass, customStyle = {}) {
         const area = document.getElementById(areaId);
         const emptyMessage = document.getElementById(emptyId);
+        
+        if (!area) {
+            console.warn(`Bench area not found: ${areaId}`);
+            return;
+        }
+        
         const currentLineup = LineupManager.getCurrentLineup();
         const players = currentLineup[dataKey] || [];
         
@@ -93,9 +109,9 @@ const UIManager = {
         area.querySelectorAll(`.${playerClass}`).forEach(el => el.remove());
         
         if (players.length === 0) {
-            emptyMessage.style.display = 'block';
+            if (emptyMessage) emptyMessage.style.display = 'block';
         } else {
-            emptyMessage.style.display = 'none';
+            if (emptyMessage) emptyMessage.style.display = 'none';
             players.forEach(playerName => {
                 const playerDiv = document.createElement('div');
                 playerDiv.className = playerClass;
@@ -118,6 +134,11 @@ const UIManager = {
     // Render player list in sidebar
     renderPlayerList() {
         const playerList = document.getElementById('playerList');
+        if (!playerList) {
+            console.warn('Player list element not found');
+            return;
+        }
+        
         const playerNames = SoccerConfig.utils.getPlayerNames();
         
         const playerCards = playerNames.map(playerName => {
@@ -137,20 +158,22 @@ const UIManager = {
             
             // Update time display
             const timeSpan = card.querySelector('.player-time');
-            timeSpan.textContent = `${stats.totalMinutes}min`;
+            if (timeSpan) timeSpan.textContent = `${stats.totalMinutes}min`;
             
             // Update bench periods
             const benchStat = card.querySelector('.stat-line span:last-child');
-            benchStat.textContent = stats.benchPeriods + stats.jerseyPeriods;
+            if (benchStat) benchStat.textContent = stats.benchPeriods + stats.jerseyPeriods;
             
             // Update position badges
             const positionBadges = card.querySelector('.position-badges');
-            const activeBadges = Object.entries(stats.positions)
-                .filter(([pos, count]) => count > 0)
-                .map(([pos, count]) => `<span class="position-badge">${SoccerConfig.utils.getPositionAbbrev(pos)}:${count}</span>`)
-                .join('');
-            
-            positionBadges.innerHTML = activeBadges || '<span class="position-badge">Not assigned</span>';
+            if (positionBadges) {
+                const activeBadges = Object.entries(stats.positions)
+                    .filter(([pos, count]) => count > 0)
+                    .map(([pos, count]) => `<span class="position-badge">${SoccerConfig.utils.getPositionAbbrev(pos)}:${count}</span>`)
+                    .join('');
+                
+                positionBadges.innerHTML = activeBadges || '<span class="position-badge">Not assigned</span>';
+            }
             
             // Update assignment status
             if (isAssigned) {
@@ -173,8 +196,11 @@ const UIManager = {
     // Update navigation button states
     updateNavigationButtons() {
         const currentPeriod = LineupManager.getCurrentPeriod();
-        document.getElementById('prevBtn').disabled = currentPeriod === 1;
-        document.getElementById('nextBtn').disabled = currentPeriod === SoccerConfig.gameSettings.totalPeriods;
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        
+        if (prevBtn) prevBtn.disabled = currentPeriod === 1;
+        if (nextBtn) nextBtn.disabled = currentPeriod === SoccerConfig.gameSettings.totalPeriods;
     },
 
     // View switching
@@ -187,22 +213,27 @@ const UIManager = {
         const periodNav = document.querySelector('.period-nav');
         
         if (this.isTableView) {
-            mainContent.style.display = 'none';
-            tableView.style.display = 'block';
-            periodNav.classList.add('hidden');
-            viewToggle.textContent = '⚽ Field View';
+            if (mainContent) mainContent.style.display = 'none';
+            if (tableView) tableView.style.display = 'block';
+            if (periodNav) periodNav.classList.add('hidden');
+            if (viewToggle) viewToggle.textContent = '⚽ Field View';
             this.renderLineupTable();
         } else {
-            mainContent.style.display = 'grid';
-            tableView.style.display = 'none';
-            periodNav.classList.remove('hidden');
-            viewToggle.textContent = '📊 Table View';
+            if (mainContent) mainContent.style.display = 'grid';
+            if (tableView) tableView.style.display = 'none';
+            if (periodNav) periodNav.classList.remove('hidden');
+            if (viewToggle) viewToggle.textContent = '📊 Table View';
         }
     },
 
     // Render complete lineup table
     renderLineupTable() {
         const tbody = document.getElementById('lineupTableBody');
+        if (!tbody) {
+            console.warn('Lineup table body not found');
+            return;
+        }
+        
         const playerNames = SoccerConfig.utils.getPlayerNames();
         const fullLineup = LineupManager.getFullLineup();
         
