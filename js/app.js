@@ -74,21 +74,8 @@ function toggleView() {
 
 // Auto-fill functions
 function autoFill() {
-    const loadingToast = ToastManager.loading('Auto-filling current period...');
-    
-    try {
-        // Small delay to show loading state
-        setTimeout(() => {
-            AutoFillManager.autoFillCurrentPeriod();
-            UIManager.updateDisplay();
-            
-            ToastManager.dismissLoadingToast(loadingToast, 'Current period auto-filled successfully!', 'success');
-            console.log('Auto-fill completed for current period');
-        }, 300);
-    } catch (error) {
-        console.error('Auto-fill failed:', error);
-        ToastManager.dismissLoadingToast(loadingToast, 'Auto-fill failed. Please try again.', 'error');
-    }
+    // Redirect to the new 5-rule algorithm
+    autoFillAll();
 }
 
 function autoFillAll() {
