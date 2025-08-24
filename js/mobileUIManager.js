@@ -144,7 +144,7 @@ const MobileUIManager = {
                 <div class="modal-body">
                     ${availablePlayers.map(player => `
                         <button class="modal-player-option" 
-                                onclick="MobileUIManager.assignMobilePlayerToPosition('${player}', '${position}'); this.closest('.mobile-selection-modal').remove();">
+                                onclick="MobileUIManager.assignMobilePlayerToPosition('${player}', '${position}');">
                             ${player}
                         </button>
                     `).join('')}
@@ -168,11 +168,11 @@ const MobileUIManager = {
                 </div>
                 <div class="modal-body">
                     <button class="modal-player-option danger" 
-                            onclick="MobileUIManager.removeMobilePlayerFromPosition('${playerName}', '${position}'); this.closest('.mobile-selection-modal').remove();">
+                            onclick="MobileUIManager.removeMobilePlayerFromPosition('${playerName}', '${position}');">
                         Remove Player
                     </button>
                     <button class="modal-player-option" 
-                            onclick="this.closest('.mobile-selection-modal').remove(); MobileUIManager.showPlayerSelectionModal('${position}');">
+                            onclick="MobileUIManager.closeAllModals(); MobileUIManager.showPlayerSelectionModal('${position}');">
                         Change Player
                     </button>
                 </div>
@@ -183,38 +183,88 @@ const MobileUIManager = {
         this.triggerHaptic('medium');
     },
     
+    closeAllModals() {
+        document.querySelectorAll('.mobile-selection-modal').forEach(modal => {
+            modal.remove();
+        });
+    },
+    
     assignMobilePlayerToPosition(playerName, position) {
         console.log('Assigning mobile player:', playerName, 'to position:', position);
         
-        if (position.startsWith('bench-')) {
-            const benchIndex = parseInt(position.split('-')[1]) - 1;
-            LineupManager.addPlayerToBench(playerName, benchIndex);
-        } else if (position === 'jersey-1') {
-            LineupManager.addPlayerToJersey(playerName);
-        } else {
-            LineupManager.assignPlayerToPosition(playerName, position);
-        }
+        // Close any open modals immediately for responsive feel
+        this.closeAllModals();
         
-        this.updateMobileDisplay();
-        UIManager.updateDisplay();
+        // Show immediate feedback
         this.triggerHaptic('success');
+        
+        // Show immediate visual feedback on the position card
+        this.showImmediateAssignmentFeedback(playerName, position);
+        
+        // Perform assignment asynchronously to avoid blocking UI
+        setTimeout(() => {
+            if (position.startsWith('bench-')) {
+                const benchIndex = parseInt(position.split('-')[1]) - 1;
+                LineupManager.addPlayerToBench(playerName, benchIndex);
+            } else if (position === 'jersey-1') {
+                LineupManager.addPlayerToJersey(playerName);
+            } else {
+                LineupManager.assignPlayerToPosition(playerName, position);
+            }
+            
+            // Update displays asynchronously
+            this.updateMobileDisplay();
+            // Only update the essential UI, not the full display
+            if (window.UIManager) {
+                UIManager.updatePlayerList();
+            }
+        }, 10);
+    },
+    
+    showImmediateAssignmentFeedback(playerName, position) {
+        // Update the mobile position card immediately for instant feedback
+        const positionElement = document.getElementById(`mobile-${position}`);
+        if (positionElement) {
+            positionElement.textContent = playerName;
+            const card = positionElement.closest('.mobile-position-card');
+            if (card) {
+                card.classList.add('filled');
+                // Add a brief flash effect
+                card.style.background = '#10b981';
+                setTimeout(() => {
+                    card.style.background = '';
+                }, 200);
+            }
+        }
     },
     
     removeMobilePlayerFromPosition(playerName, position) {
         console.log('Removing mobile player:', playerName, 'from position:', position);
         
-        if (position.startsWith('bench-')) {
-            const benchIndex = parseInt(position.split('-')[1]) - 1;
-            LineupManager.removePlayerFromBench(playerName);
-        } else if (position === 'jersey-1') {
-            LineupManager.removePlayerFromJersey(playerName);
-        } else {
-            LineupManager.removePlayerFromPosition(playerName, position);
-        }
+        // Close any open modals immediately for responsive feel
+        this.closeAllModals();
         
-        this.updateMobileDisplay();
-        UIManager.updateDisplay();
+        // Show immediate feedback
         this.triggerHaptic('medium');
+        
+        // Perform removal asynchronously to avoid blocking UI
+        setTimeout(() => {
+            if (position.startsWith('bench-')) {
+                const benchIndex = parseInt(position.split('-')[1]) - 1;
+                LineupManager.removePlayerFromBench(playerName);
+            } else if (position === 'jersey-1') {
+                LineupManager.removePlayerFromJersey(playerName);
+            } else {
+                LineupManager.removePlayerFromPosition(playerName, position);
+            }
+            
+            // Update displays asynchronously
+            this.updateMobileDisplay();
+            // Only update the essential UI, not the full display
+            if (window.UIManager) {
+                UIManager.updatePlayerList();
+            }
+        }, 10);
     },
     
     getAvailablePlayersForPosition(position) {
