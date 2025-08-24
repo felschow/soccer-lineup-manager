@@ -1636,6 +1636,17 @@ body {
     color: #1f2937;
 }
 
+.previous-period-info {
+    font-size: 14px;
+    color: #6b7280;
+    font-style: italic;
+    margin-top: 4px;
+    padding: 4px 8px;
+    background: #f3f4f6;
+    border-radius: 4px;
+    border-left: 3px solid #3b82f6;
+}
+
 .modal-close {
     background: none;
     border: none;
@@ -1676,6 +1687,63 @@ body {
     cursor: pointer;
     transition: all 0.2s;
     text-align: left;
+}
+
+.player-option-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 4px;
+}
+
+.player-option-stats {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 400;
+}
+
+.priority-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 12px;
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+.priority-badge.high {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #f59e0b;
+}
+
+.priority-badge.medium {
+    background: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #3b82f6;
+}
+
+.modal-player-option.high-priority {
+    border-color: #f59e0b;
+    background: #fffbeb;
+}
+
+.modal-player-option.medium-priority {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.modal-player-option.high-priority:hover,
+.modal-player-option.high-priority:active {
+    background: #f59e0b;
+    border-color: #f59e0b;
+    color: white;
+}
+
+.modal-player-option.medium-priority:hover,
+.modal-player-option.medium-priority:active {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
 }
 
 .modal-player-option:hover,
@@ -1741,5 +1809,21 @@ body {
     .modal-player-option:active {
         background: #3b82f6;
         border-color: #3b82f6;
+    }
+    
+    .previous-period-info {
+        background: #374151;
+        border-color: #60a5fa;
+        color: #d1d5db;
+    }
+    
+    .modal-player-option.high-priority {
+        background: #451a03;
+        border-color: #f59e0b;
+    }
+    
+    .modal-player-option.medium-priority {
+        background: #1e3a8a;
+        border-color: #60a5fa;
     }
 }

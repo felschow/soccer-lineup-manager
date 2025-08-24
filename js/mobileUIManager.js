@@ -131,6 +131,7 @@ const MobileUIManager = {
     
     createPlayerSelectionModal(position) {
         const availablePlayers = this.getAvailablePlayersForPosition(position);
+        const previousPeriodInfo = this.getPreviousPeriodPlayerInfo(position);
         
         const modal = document.createElement('div');
         modal.className = 'mobile-selection-modal';
@@ -139,21 +140,95 @@ const MobileUIManager = {
             <div class="modal-content">
                 <div class="modal-header">
                     <h3>Select Player for ${this.getPositionDisplayName(position)}</h3>
+                    ${previousPeriodInfo ? `<div class="previous-period-info">Previous: ${previousPeriodInfo}</div>` : ''}
                     <button class="modal-close" onclick="this.closest('.mobile-selection-modal').remove()">×</button>
                 </div>
                 <div class="modal-body">
-                    ${availablePlayers.map(player => `
-                        <button class="modal-player-option" 
-                                onclick="MobileUIManager.assignMobilePlayerToPosition('${player}', '${position}');">
-                            ${player}
-                        </button>
-                    `).join('')}
+                    ${availablePlayers.map(player => {
+                        const stats = this.getPlayerStats(player);
+                        const fairnessClass = this.getFairnessClass(stats);
+                        const fairnessIndicator = this.getFairnessIndicator(stats);
+                        return `
+                            <button class="modal-player-option ${fairnessClass}" 
+                                    onclick="MobileUIManager.assignMobilePlayerToPosition('${player}', '${position}');">
+                                <div class="player-option-name">
+                                    ${player} ${fairnessIndicator}
+                                </div>
+                                <div class="player-option-stats">${stats.sits} sits • ${stats.positionsPlayed} positions</div>
+                            </button>
+                        `;
+                    }).join('')}
                     ${availablePlayers.length === 0 ? '<p class="no-players">No available players for this position</p>' : ''}
                 </div>
             </div>
         `;
         
         return modal;
+    },
+    
+    getPreviousPeriodPlayerInfo(position) {
+        const currentPeriod = LineupManager.getCurrentPeriod();
+        if (currentPeriod === 1) {
+            return null; // No previous period for period 1
+        }
+        
+        const previousPeriod = currentPeriod - 1;
+        const fullLineup = LineupManager.getFullLineup();
+        const previousLineup = fullLineup[previousPeriod];
+        
+        if (previousLineup && previousLineup.positions[position]) {
+            return previousLineup.positions[position];
+        }
+        
+        return 'No one';
+    },
+    
+    getPlayerStats(playerName) {
+        const stats = LineupManager.calculatePlayerStats(playerName);
+        
+        // Count unique positions played (excluding bench/jersey)
+        const positionsPlayed = Object.keys(stats.positions).filter(pos => 
+            stats.positions[pos] > 0 && 
+            pos !== 'bench' && 
+            pos !== 'jersey'
+        ).length;
+        
+        // Total sits = bench periods + jersey periods + periods not playing
+        const totalPeriods = LineupManager.getCurrentPeriod() - 1; // Only count completed periods
+        const periodsPlayed = stats.periodsPlayed || 0;
+        const benchPeriods = stats.benchPeriods || 0;
+        const jerseyPeriods = stats.jerseyPeriods || 0;
+        const totalSits = benchPeriods + jerseyPeriods;
+        
+        return {
+            sits: totalSits,
+            positionsPlayed: positionsPlayed,
+            periodsPlayed: periodsPlayed
+        };
+    },
+    
+    getFairnessClass(stats) {
+        const currentPeriod = LineupManager.getCurrentPeriod();
+        const maxPossiblePeriods = currentPeriod - 1;
+        
+        if (stats.periodsPlayed === 0 && maxPossiblePeriods > 0) {
+            return 'high-priority'; // Haven't played yet
+        } else if (stats.periodsPlayed < maxPossiblePeriods / 2) {
+            return 'medium-priority'; // Played less than half
+        }
+        return 'normal-priority';
+    },
+    
+    getFairnessIndicator(stats) {
+        const currentPeriod = LineupManager.getCurrentPeriod();
+        const maxPossiblePeriods = currentPeriod - 1;
+        
+        if (stats.periodsPlayed === 0 && maxPossiblePeriods > 0) {
+            return '<span class="priority-badge high">⭐ New</span>';
+        } else if (stats.periodsPlayed < maxPossiblePeriods / 2) {
+            return '<span class="priority-badge medium">🔥 Fair</span>';
+        }
+        return '';
     },
     
     showPlayerActionModal(position, playerName) {
@@ -283,10 +358,33 @@ const MobileUIManager = {
             currentLineup.jersey.forEach(player => assignedPlayers.add(player));
         }
         
-        return allPlayers.filter(player => 
+        const availablePlayers = allPlayers.filter(player => 
             !assignedPlayers.has(player) && 
             this.canPlayerPlayPosition(player, position)
         );
+        
+        // Sort players by fairness - prioritize those who have played less
+        return availablePlayers.sort((a, b) => {
+            const statsA = this.getPlayerStats(a);
+            const statsB = this.getPlayerStats(b);
+            
+            // Primary sort: by total playing time (less time = higher priority)
+            const playTimeA = statsA.periodsPlayed;
+            const playTimeB = statsB.periodsPlayed;
+            if (playTimeA !== playTimeB) {
+                return playTimeA - playTimeB; // Ascending: less playing time first
+            }
+            
+            // Secondary sort: by sits (more sits = higher priority)
+            const sitsA = statsA.sits;
+            const sitsB = statsB.sits;
+            if (sitsA !== sitsB) {
+                return sitsB - sitsA; // Descending: more sits first
+            }
+            
+            // Tertiary sort: alphabetical
+            return a.localeCompare(b);
+        });
     },
     
     canPlayerPlayPosition(playerName, position) {
