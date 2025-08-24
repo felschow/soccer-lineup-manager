@@ -146,15 +146,15 @@ const MobileUIManager = {
                 <div class="modal-body">
                     ${availablePlayers.map(player => {
                         const stats = this.getPlayerStats(player);
-                        const fairnessClass = this.getFairnessClass(stats);
-                        const fairnessIndicator = this.getFairnessIndicator(stats);
+                        const fairnessClass = this.getFairnessClass(player, stats);
+                        const fairnessIndicator = this.getFairnessIndicator(player, stats);
                         return `
                             <button class="modal-player-option ${fairnessClass}" 
                                     onclick="MobileUIManager.assignMobilePlayerToPosition('${player}', '${position}');">
                                 <div class="player-option-name">
                                     ${player} ${fairnessIndicator}
                                 </div>
-                                <div class="player-option-stats">${stats.sits} sits • ${stats.positionsPlayed} positions</div>
+                                <div class="player-option-stats">${stats.sits} sits • ${stats.positionBreakdown}</div>
                             </button>
                         `;
                     }).join('')}
@@ -193,9 +193,16 @@ const MobileUIManager = {
             pos !== 'jersey'
         ).length;
         
-        // Total sits = bench periods + jersey periods + periods not playing
-        const totalPeriods = LineupManager.getCurrentPeriod() - 1; // Only count completed periods
-        const periodsPlayed = stats.periodsPlayed || 0;
+        // Create detailed position breakdown like in player stats section
+        const positionBreakdown = Object.entries(stats.positions)
+            .filter(([pos, count]) => count > 0 && pos !== 'bench' && pos !== 'jersey')
+            .map(([pos, count]) => `${SoccerConfig.utils.getPositionAbbrev(pos)}:${count}`)
+            .join(', ');
+        
+        // Calculate actual periods played on the field (not bench/jersey)
+        const periodsPlayedOnField = Object.values(stats.positions).reduce((total, count) => total + count, 0);
+        
+        // Total sits = bench periods + jersey periods
         const benchPeriods = stats.benchPeriods || 0;
         const jerseyPeriods = stats.jerseyPeriods || 0;
         const totalSits = benchPeriods + jerseyPeriods;
@@ -203,31 +210,56 @@ const MobileUIManager = {
         return {
             sits: totalSits,
             positionsPlayed: positionsPlayed,
-            periodsPlayed: periodsPlayed
+            positionBreakdown: positionBreakdown || 'No positions yet',
+            periodsPlayed: periodsPlayedOnField
         };
     },
     
-    getFairnessClass(stats) {
+    getFairnessClass(playerName, stats) {
         const currentPeriod = LineupManager.getCurrentPeriod();
-        const maxPossiblePeriods = currentPeriod - 1;
         
-        if (stats.periodsPlayed === 0 && maxPossiblePeriods > 0) {
-            return 'high-priority'; // Haven't played yet
-        } else if (stats.periodsPlayed < maxPossiblePeriods / 2) {
+        // Check if player was sitting in the previous period
+        if (currentPeriod > 1) {
+            const fullLineup = LineupManager.getFullLineup();
+            const previousPeriod = currentPeriod - 1;
+            const previousLineup = fullLineup[previousPeriod];
+            
+            if (previousLineup.bench.includes(playerName) || 
+                (previousLineup.jersey && previousLineup.jersey.includes(playerName))) {
+                return 'high-priority'; // Was sitting/jersey in previous period
+            }
+        }
+        
+        // Secondary check: players who have played less than half the periods
+        const maxPossiblePeriods = currentPeriod - 1;
+        if (stats.periodsPlayed < maxPossiblePeriods / 2 && maxPossiblePeriods > 0) {
             return 'medium-priority'; // Played less than half
         }
+        
         return 'normal-priority';
     },
     
-    getFairnessIndicator(stats) {
+    getFairnessIndicator(playerName, stats) {
         const currentPeriod = LineupManager.getCurrentPeriod();
-        const maxPossiblePeriods = currentPeriod - 1;
         
-        if (stats.periodsPlayed === 0 && maxPossiblePeriods > 0) {
-            return '<span class="priority-badge high">⭐ New</span>';
-        } else if (stats.periodsPlayed < maxPossiblePeriods / 2) {
+        // Check if player was sitting in the previous period
+        if (currentPeriod > 1) {
+            const fullLineup = LineupManager.getFullLineup();
+            const previousPeriod = currentPeriod - 1;
+            const previousLineup = fullLineup[previousPeriod];
+            
+            if (previousLineup.bench.includes(playerName) || 
+                (previousLineup.jersey && previousLineup.jersey.includes(playerName))) {
+                return '<span class="priority-badge high">🔄 Sub In</span>';
+            }
+        }
+        
+        // Secondary check: players who have played less than half the periods
+        const maxPossiblePeriods = currentPeriod - 1;
+        if (stats.periodsPlayed < maxPossiblePeriods / 2 && maxPossiblePeriods > 0) {
             return '<span class="priority-badge medium">🔥 Fair</span>';
         }
+        
         return '';
     },
     

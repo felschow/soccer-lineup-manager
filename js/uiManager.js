@@ -9,6 +9,17 @@ const UIManager = {
     init() {
         this.updateDisplay();
         this.updateNavigationButtons();
+        this.initializeMobileNavButton();
+    },
+
+    // Initialize mobile navigation button text
+    initializeMobileNavButton() {
+        const mobileViewIcon = document.getElementById('mobileViewIcon');
+        const mobileViewText = document.getElementById('mobileViewText');
+        
+        // Start in field view, so show "Table" option
+        if (mobileViewIcon) mobileViewIcon.textContent = '📊';
+        if (mobileViewText) mobileViewText.textContent = 'Table';
     },
 
     // Main display update orchestrator
@@ -212,17 +223,30 @@ const UIManager = {
         const mainContent = document.querySelector('.main-content');
         const periodNav = document.querySelector('.period-nav');
         
+        // Mobile bottom nav elements
+        const mobileViewIcon = document.getElementById('mobileViewIcon');
+        const mobileViewText = document.getElementById('mobileViewText');
+        
         if (this.isTableView) {
             if (mainContent) mainContent.style.display = 'none';
             if (tableView) tableView.style.display = 'block';
             if (periodNav) periodNav.classList.add('hidden');
             if (viewToggle) viewToggle.textContent = '⚽ Field View';
+            
+            // Update mobile nav to show "Field" when in table view
+            if (mobileViewIcon) mobileViewIcon.textContent = '⚽';
+            if (mobileViewText) mobileViewText.textContent = 'Field';
+            
             this.renderLineupTable();
         } else {
             if (mainContent) mainContent.style.display = 'grid';
             if (tableView) tableView.style.display = 'none';
             if (periodNav) periodNav.classList.remove('hidden');
             if (viewToggle) viewToggle.textContent = '📊 Table View';
+            
+            // Update mobile nav to show "Table" when in field view
+            if (mobileViewIcon) mobileViewIcon.textContent = '📊';
+            if (mobileViewText) mobileViewText.textContent = 'Table';
         }
     },
 
