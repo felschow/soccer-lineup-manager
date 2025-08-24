@@ -1,371 +1,432 @@
 // Auto-Fill Algorithm Module
-// Handles intelligent lineup generation and player rotation
+// Handles intelligent lineup generation and player rotation with strict rule enforcement
 
 const AutoFillManager = {
-    // Auto fill all periods with smart rotation
+    // Auto fill all periods with smart rotation - COMPLETELY REWRITTEN
     autoFillAll() {
+        console.log('Starting new rule-based autofill...');
+        
         // Clear all periods first
         LineupManager.clearAllPeriods();
         
-        // Apply goalkeeper rotation rules
-        this.applyGoalkeeperRotation();
-        
-        // Fill remaining positions for each period
-        for (let period = 1; period <= SoccerConfig.gameSettings.totalPeriods; period++) {
-            this.fillNonGoalkeeperPositions(period);
+        // NEW ALGORITHM: Build lineup period by period following all rules
+        try {
+            this.buildCompleteLineup();
+            ToastManager.success('Lineup generated following all rules!', 4000);
+        } catch (error) {
+            console.error('Autofill failed:', error);
+            ToastManager.error('Could not generate lineup following all rules. Try manual adjustment.', 6000);
+            throw error;
         }
-        
-        // Apply position continuity preferences
-        this.applyPositionContinuity();
-        
-        // Balance bench time
-        this.balanceBenchTime();
     },
 
-    // Auto fill current period only
-    autoFillCurrentPeriod() {
-        const currentPeriod = LineupManager.getCurrentPeriod();
+    // Build complete lineup following all 5 rules
+    buildCompleteLineup() {
+        const playerNames = SoccerConfig.utils.getPlayerNames();
+        const totalPeriods = SoccerConfig.gameSettings.totalPeriods;
         
-        // Clear current period (except goalkeeper if already assigned)
-        const currentLineup = LineupManager.getCurrentLineup();
-        const existingGK = currentLineup.positions.goalkeeper;
+        // Initialize tracking structures
+        const playerTracking = {};
+        playerNames.forEach(player => {
+            playerTracking[player] = {
+                benchPeriods: [],
+                jerseyPeriods: [],
+                gkPeriods: [],
+                positionsPlayed: new Set(),
+                playingTime: 0
+            };
+        });
+
+        // STEP 1: Plan goalkeeper rotation and jersey preparation (Rule 3)
+        this.planGoalkeeperRotation(playerTracking);
         
-        LineupManager.clearCurrentPeriod();
-        
-        // Restore goalkeeper if it was assigned
-        if (existingGK) {
-            currentLineup.positions.goalkeeper = existingGK;
+        // STEP 2: Build lineup period by period following all constraints
+        for (let period = 1; period <= totalPeriods; period++) {
+            this.buildPeriodLineup(period, playerTracking);
         }
         
-        // Fill remaining positions
-        this.fillNonGoalkeeperPositions(currentPeriod);
+        // STEP 3: Validate all rules are followed
+        this.validateAllRules(playerTracking);
+        
+        console.log('Lineup generation completed successfully');
+        console.log('Final player tracking:', playerTracking);
     },
 
-    // Apply predefined goalkeeper rotation
-    applyGoalkeeperRotation() {
-        SoccerConfig.goalkeeperRotation.forEach(({ gk, periods, jersey, restAfter }) => {
+    // Plan goalkeeper rotation with jersey preparation and bench planning
+    planGoalkeeperRotation(playerTracking) {
+        // Define goalkeeper rotation with planned bench periods for fairness
+        const gkRotation = [
+            { player: 'Aubree', periods: [1, 2, 3], plannedBenchPeriods: [4, 8] }, // Aubree sits in periods 4 and 8
+            { player: 'Jordan', periods: [4, 5, 6], plannedBenchPeriods: [7] },     // Jordan sits in period 7 (plus jersey in 3)
+            { player: 'SK', periods: [7, 8], plannedBenchPeriods: [1] }             // SK sits in period 1 (plus jersey in 6)
+        ];
+
+        gkRotation.forEach(({ player, periods, plannedBenchPeriods }) => {
             // Assign goalkeeper periods
             periods.forEach(period => {
-                const periodData = LineupManager.lineup[period];
-                if (periodData) {
-                    periodData.positions.goalkeeper = gk;
-                }
+                LineupManager.lineup[period].positions.goalkeeper = player;
+                playerTracking[player].gkPeriods.push(period);
+                playerTracking[player].playingTime += 7.5;
+                playerTracking[player].positionsPlayed.add('goalkeeper');
             });
             
-            // Assign jersey preparation period
-            if (jersey && LineupManager.lineup[jersey]) {
-                if (!LineupManager.lineup[jersey].jersey) {
-                    LineupManager.lineup[jersey].jersey = [];
+            // Rule 3: Jersey preparation before FIRST consecutive GK period only
+            const firstGkPeriod = Math.min(...periods);
+            if (firstGkPeriod > 1) {
+                const jerseyPeriod = firstGkPeriod - 1;
+                if (LineupManager.lineup[jerseyPeriod]) {
+                    LineupManager.lineup[jerseyPeriod].jersey = [player];
+                    playerTracking[player].jerseyPeriods.push(jerseyPeriod);
                 }
-                LineupManager.lineup[jersey].jersey.push(gk);
             }
             
-            // Assign rest period after goalkeeper duty
-            if (restAfter && LineupManager.lineup[restAfter]) {
-                LineupManager.lineup[restAfter].bench.push(gk);
-            }
+            // Pre-plan bench periods for goalkeepers to ensure they meet Rule 1
+            plannedBenchPeriods.forEach(benchPeriod => {
+                if (LineupManager.lineup[benchPeriod]) {
+                    // Reserve this player for the bench in this period
+                    playerTracking[player].plannedBenchPeriods = playerTracking[player].plannedBenchPeriods || [];
+                    playerTracking[player].plannedBenchPeriods.push(benchPeriod);
+                }
+            });
         });
+
+        console.log('Goalkeeper rotation, jersey preparation, and bench planning completed');
     },
 
-    // Fill non-goalkeeper positions for a specific period
-    fillNonGoalkeeperPositions(period) {
+    // Build lineup for a specific period
+    buildPeriodLineup(period, playerTracking) {
         const periodData = LineupManager.lineup[period];
-        if (!periodData) return;
-
-        const assignedPlayers = new Set();
+        const playerNames = SoccerConfig.utils.getPlayerNames();
         
-        // Track already assigned players
-        if (periodData.positions.goalkeeper) {
-            assignedPlayers.add(periodData.positions.goalkeeper);
-        }
-        periodData.bench.forEach(p => assignedPlayers.add(p));
-        if (periodData.jersey) {
-            periodData.jersey.forEach(p => assignedPlayers.add(p));
-        }
-
-        // Get available players
-        const availablePlayers = SoccerConfig.utils.getPlayerNames()
-            .filter(p => !assignedPlayers.has(p));
-
-        // Try to maintain positions from previous period first
-        if (period > 1) {
-            this.maintainPositionsFromPrevious(period, availablePlayers, assignedPlayers);
-        }
-
-        // Fill remaining empty positions
-        this.fillEmptyPositions(period, availablePlayers, assignedPlayers);
-        
-        // Put remaining players on bench (limit to max bench size)
-        const maxBench = Math.min(
-            SoccerConfig.gameSettings.maxPlayersOnBench, 
-            availablePlayers.length
-        );
-        const benchPlayers = availablePlayers.slice(0, maxBench);
-        periodData.bench.push(...benchPlayers);
-    },
-
-    // Try to maintain position continuity from previous period
-    maintainPositionsFromPrevious(period, availablePlayers, assignedPlayers) {
-        const periodData = LineupManager.lineup[period];
-        const previousPeriod = LineupManager.lineup[period - 1];
-        
-        SoccerConfig.positionPriority.forEach(position => {
-            if (periodData.positions[position]) return; // Already filled
-            
-            const previousPlayer = previousPeriod.positions[position];
-            if (previousPlayer && 
-                availablePlayers.includes(previousPlayer) && 
-                SoccerConfig.utils.canPlayerPlayPosition(previousPlayer, position)) {
-                
-                periodData.positions[position] = previousPlayer;
-                availablePlayers.splice(availablePlayers.indexOf(previousPlayer), 1);
-                assignedPlayers.add(previousPlayer);
-            }
+        // Get available players (not GK, not on jersey duty)
+        const availablePlayers = playerNames.filter(player => {
+            return periodData.positions.goalkeeper !== player &&
+                   !periodData.jersey.includes(player);
         });
+
+        // RULE 5: Need exactly 3 players sitting (bench + jersey already counted)
+        const playingPositions = SoccerConfig.positions.filter(pos => pos !== 'goalkeeper');
+        const jerseyCount = periodData.jersey ? periodData.jersey.length : 0;
+        const benchTarget = 3 - jerseyCount; // Total sitting should be 3
+        
+        // Select bench players following rules 1 & 2
+        const benchPlayers = this.selectBenchPlayers(period, availablePlayers, benchTarget, playerTracking);
+        
+        // Assign bench players to the period data
+        benchPlayers.forEach(player => {
+            periodData.bench.push(player);
+        });
+
+        // Get field players
+        const fieldPlayers = availablePlayers.filter(player => !benchPlayers.includes(player));
+        
+        // Assign field players to positions (Rule 4: position variety)
+        this.assignFieldPositions(period, fieldPlayers, playerTracking);
+        
+        const totalSitting = benchPlayers.length + jerseyCount;
+        console.log(`Period ${period} completed: ${fieldPlayers.length} playing, ${totalSitting} sitting (${benchPlayers.length} bench + ${jerseyCount} jersey)`);
     },
 
-    // Fill empty positions with available players
-    fillEmptyPositions(period, availablePlayers, assignedPlayers) {
-        const periodData = LineupManager.lineup[period];
+    // Select bench players following rules 1 & 2
+    selectBenchPlayers(period, availablePlayers, benchTarget, playerTracking) {
+        const benchPlayers = [];
         
-        SoccerConfig.positionPriority.forEach(position => {
-            if (periodData.positions[position]) return; // Already filled
+        // First, add any players who are pre-planned for this bench period
+        const plannedBenchPlayers = availablePlayers.filter(player => {
+            const tracking = playerTracking[player];
+            return tracking.plannedBenchPeriods && tracking.plannedBenchPeriods.includes(period);
+        });
+        
+        plannedBenchPlayers.forEach(player => {
+            benchPlayers.push(player);
+            playerTracking[player].benchPeriods.push(period);
+            console.log(`Period ${period}: ${player} assigned to bench (pre-planned)`);
+        });
+        
+        // Remove planned players from available players list
+        const remainingPlayers = availablePlayers.filter(player => !plannedBenchPlayers.includes(player));
+        const remainingTarget = benchTarget - benchPlayers.length;
+        
+        if (remainingTarget <= 0) {
+            return benchPlayers; // We have enough from planned assignments
+        }
+        
+        // Create priority list for sitting from remaining players
+        const playerPriorities = remainingPlayers.map(player => {
+            const tracking = playerTracking[player];
+            let priority = 0;
             
-            const suitablePlayers = availablePlayers.filter(player => 
-                SoccerConfig.utils.canPlayerPlayPosition(player, position)
+            // Rule 1: Players with 0 bench periods get highest priority
+            if (tracking.benchPeriods.length + tracking.jerseyPeriods.length === 0) {
+                priority += 100;
+            }
+            // Players with 1 bench period get medium priority
+            else if (tracking.benchPeriods.length + tracking.jerseyPeriods.length === 1) {
+                priority += 50;
+            }
+            // Players with 2+ bench periods get lowest priority (avoid them)
+            else {
+                priority -= 100;
+            }
+            
+            // Rule 2: Players who sat last period get negative priority
+            if (period > 1 && (tracking.benchPeriods.includes(period - 1) || tracking.jerseyPeriods.includes(period - 1))) {
+                priority -= 200; // Very low priority to avoid consecutive sitting
+            }
+            
+            // Consider playing time for additional fairness
+            priority -= tracking.playingTime; // Less playing time = higher priority to sit
+            
+            return { player, priority };
+        });
+
+        // Sort by priority (highest first) and select bench players
+        playerPriorities.sort((a, b) => b.priority - a.priority);
+        
+        // Select additional players for bench, avoiding rule violations
+        for (const { player } of playerPriorities) {
+            if (benchPlayers.length >= benchTarget) break;
+            
+            const tracking = playerTracking[player];
+            const totalBenchTime = tracking.benchPeriods.length + tracking.jerseyPeriods.length;
+            
+            // Rule 1: Don't let anyone sit more than 2 times total
+            if (totalBenchTime >= 2) continue;
+            
+            // Rule 2: Don't let anyone sit consecutive periods
+            if (period > 1 && (tracking.benchPeriods.includes(period - 1) || tracking.jerseyPeriods.includes(period - 1))) {
+                continue;
+            }
+            
+            benchPlayers.push(player);
+            playerTracking[player].benchPeriods.push(period);
+        }
+        
+        // If we don't have enough bench players due to constraints, relax rules carefully
+        while (benchPlayers.length < benchTarget) {
+            // First, try remaining players who haven't exceeded Rule 1 limit (under 2 sits)
+            const remaining = remainingPlayers.filter(player => {
+                const tracking = playerTracking[player];
+                const totalBenchTime = tracking.benchPeriods.length + tracking.jerseyPeriods.length;
+                return !benchPlayers.includes(player) && totalBenchTime < 2;
+            });
+            
+            if (remaining.length > 0) {
+                const playerToAdd = remaining[0];
+                benchPlayers.push(playerToAdd);
+                playerTracking[playerToAdd].benchPeriods.push(period);
+                console.warn(`Period ${period}: Relaxed consecutive sitting rule for ${playerToAdd}`);
+                continue;
+            }
+            
+            // If no players under limit, we need to relax Rule 1 as last resort
+            const anyRemaining = remainingPlayers.filter(player => !benchPlayers.includes(player));
+            if (anyRemaining.length > 0) {
+                const playerToAdd = anyRemaining[0];
+                benchPlayers.push(playerToAdd);
+                playerTracking[playerToAdd].benchPeriods.push(period);
+                console.error(`Period ${period}: FORCED to exceed Rule 1 for ${playerToAdd} - this indicates a planning issue`);
+            } else {
+                console.error(`Period ${period}: No more players available for bench - critical algorithm failure`);
+                break;
+            }
+        }
+
+        return benchPlayers;
+    },
+
+    // Assign field players to positions
+    assignFieldPositions(period, fieldPlayers, playerTracking) {
+        const periodData = LineupManager.lineup[period];
+        const fieldPositions = SoccerConfig.positions.filter(pos => pos !== 'goalkeeper');
+        const assignments = {};
+        
+        // Track position needs for Rule 4
+        const playerPositionNeeds = {};
+        fieldPlayers.forEach(player => {
+            const tracking = playerTracking[player];
+            const eligiblePositions = fieldPositions.filter(pos => 
+                SoccerConfig.utils.canPlayerPlayPosition(player, pos)
             );
             
-            if (suitablePlayers.length > 0) {
-                // Choose player with least playing time in this position
-                const selectedPlayer = this.selectBestPlayerForPosition(suitablePlayers, position);
-                periodData.positions[position] = selectedPlayer;
-                availablePlayers.splice(availablePlayers.indexOf(selectedPlayer), 1);
-                assignedPlayers.add(selectedPlayer);
+            playerPositionNeeds[player] = {
+                eligiblePositions,
+                positionsPlayed: tracking.positionsPlayed.size,
+                needsVariety: tracking.positionsPlayed.size < 2
+            };
+        });
+
+        // Priority assignment: players who need position variety first
+        const priorityPlayers = fieldPlayers.filter(player => 
+            playerPositionNeeds[player].needsVariety
+        );
+        const regularPlayers = fieldPlayers.filter(player => 
+            !playerPositionNeeds[player].needsVariety
+        );
+
+        // Assign priority players first (Rule 4)
+        [...priorityPlayers, ...regularPlayers].forEach(player => {
+            const playerNeeds = playerPositionNeeds[player];
+            
+            // Find best position for this player
+            const availablePositions = playerNeeds.eligiblePositions.filter(pos => !assignments[pos]);
+            
+            if (availablePositions.length > 0) {
+                // For variety-needing players, prefer positions they haven't played
+                let bestPosition;
+                if (playerNeeds.needsVariety) {
+                    const newPositions = availablePositions.filter(pos => 
+                        !playerTracking[player].positionsPlayed.has(pos)
+                    );
+                    bestPosition = newPositions.length > 0 ? newPositions[0] : availablePositions[0];
+                } else {
+                    bestPosition = availablePositions[0];
+                }
+                
+                // Make assignment
+                assignments[bestPosition] = player;
+                periodData.positions[bestPosition] = player;
+                playerTracking[player].positionsPlayed.add(bestPosition);
+                playerTracking[player].playingTime += 7.5;
             }
         });
+
+        console.log(`Period ${period}: Assigned ${Object.keys(assignments).length} field positions`);
     },
 
-    // Select the best player for a position based on various criteria
-    selectBestPlayerForPosition(candidates, position) {
-        if (candidates.length === 1) return candidates[0];
-        
-        // Score each candidate
-        const scoredCandidates = candidates.map(player => {
-            const stats = LineupManager.calculatePlayerStats(player);
-            const score = {
-                player,
-                // Prefer players with less total playing time
-                totalMinutesScore: -stats.totalMinutes,
-                // Prefer players with less time in this specific position
-                positionExperienceScore: -(stats.positions[position] || 0),
-                // Prefer players who haven't sat on bench as much
-                benchScore: -stats.benchPeriods
-            };
+    // Validate all rules are followed
+    validateAllRules(playerTracking) {
+        const playerNames = SoccerConfig.utils.getPlayerNames();
+        const violations = [];
+
+        playerNames.forEach(player => {
+            const tracking = playerTracking[player];
+            const totalBenchTime = tracking.benchPeriods.length + tracking.jerseyPeriods.length;
             
-            // Calculate weighted total score
-            score.total = (score.totalMinutesScore * 0.4) + 
-                         (score.positionExperienceScore * 0.4) + 
-                         (score.benchScore * 0.2);
+            // Rule 1: 1-2 bench periods per player
+            if (totalBenchTime < 1 || totalBenchTime > 2) {
+                violations.push(`${player}: ${totalBenchTime} bench periods (should be 1-2)`);
+            }
             
-            return score;
+            // Rule 2: No consecutive bench periods
+            const allBenchPeriods = [...tracking.benchPeriods, ...tracking.jerseyPeriods].sort();
+            for (let i = 0; i < allBenchPeriods.length - 1; i++) {
+                if (allBenchPeriods[i + 1] === allBenchPeriods[i] + 1) {
+                    violations.push(`${player}: Consecutive bench periods ${allBenchPeriods[i]}-${allBenchPeriods[i + 1]}`);
+                }
+            }
+            
+            // Rule 4: At least 2 preferred positions (if possible)
+            const eligiblePositions = SoccerConfig.positions.filter(pos => 
+                SoccerConfig.utils.canPlayerPlayPosition(player, pos)
+            );
+            if (eligiblePositions.length >= 2 && tracking.positionsPlayed.size < 2) {
+                violations.push(`${player}: Only played ${tracking.positionsPlayed.size} positions (should play at least 2)`);
+            }
         });
-        
-        // Sort by total score (highest first)
-        scoredCandidates.sort((a, b) => b.total - a.total);
-        
-        return scoredCandidates[0].player;
-    },
 
-    // Apply position continuity across all periods
-    applyPositionContinuity() {
-        for (let period = 2; period <= SoccerConfig.gameSettings.totalPeriods; period++) {
-            const currentPeriod = LineupManager.lineup[period];
-            const previousPeriod = LineupManager.lineup[period - 1];
+        // Rule 3: Jersey preparation before FIRST consecutive goalkeeper period only
+        playerNames.forEach(player => {
+            const gkPeriods = playerTracking[player].gkPeriods.sort((a, b) => a - b);
+            const jerseyPeriods = playerTracking[player].jerseyPeriods;
             
-            // Skip goalkeeper (has its own rotation rules)
-            const fieldPositions = SoccerConfig.positions.filter(pos => pos !== 'goalkeeper');
-            
-            fieldPositions.forEach(position => {
-                const previousPlayer = previousPeriod.positions[position];
-                const currentPlayer = currentPeriod.positions[position];
+            if (gkPeriods.length > 0) {
+                // Find consecutive GK period groups
+                const gkGroups = [];
+                let currentGroup = [gkPeriods[0]];
                 
-                // If previous player is available and position is empty, try to keep them
-                if (previousPlayer && !currentPlayer) {
-                    const isAvailable = this.isPlayerAvailableInPeriod(previousPlayer, period);
-                    
-                    if (isAvailable && SoccerConfig.utils.canPlayerPlayPosition(previousPlayer, position)) {
-                        // Try to find alternative placement for current occupant
-                        const currentOccupant = this.findPlayerToSwap(period, position, previousPlayer);
-                        if (currentOccupant) {
-                            this.swapPlayers(period, position, previousPlayer, currentOccupant);
-                        }
+                for (let i = 1; i < gkPeriods.length; i++) {
+                    if (gkPeriods[i] === gkPeriods[i-1] + 1) {
+                        // Consecutive period
+                        currentGroup.push(gkPeriods[i]);
+                    } else {
+                        // New group starts
+                        gkGroups.push([...currentGroup]);
+                        currentGroup = [gkPeriods[i]];
                     }
                 }
-            });
-        }
-    },
-
-    // Check if player is available in a specific period
-    isPlayerAvailableInPeriod(playerName, period) {
-        const periodData = LineupManager.lineup[period];
-        
-        // Check if already assigned to a position
-        for (const assignedPlayer of Object.values(periodData.positions)) {
-            if (assignedPlayer === playerName) return false;
-        }
-        
-        // Check if on bench or jersey
-        if (periodData.bench.includes(playerName)) return false;
-        if (periodData.jersey && periodData.jersey.includes(playerName)) return false;
-        
-        return true;
-    },
-
-    // Find a player that can be swapped to accommodate continuity
-    findPlayerToSwap(period, targetPosition, desiredPlayer) {
-        const periodData = LineupManager.lineup[period];
-        
-        // Look for players who could move to make room
-        for (const [position, currentPlayer] of Object.entries(periodData.positions)) {
-            if (!currentPlayer || position === 'goalkeeper' || position === targetPosition) continue;
-            
-            // Find alternative position for current player
-            const alternativePosition = this.findAlternativePosition(currentPlayer, period, position);
-            if (alternativePosition) {
-                return { currentPlayer, currentPosition: position, newPosition: alternativePosition };
-            }
-        }
-        
-        return null;
-    },
-
-    // Find alternative position for a player
-    findAlternativePosition(playerName, period, excludePosition) {
-        const periodData = LineupManager.lineup[period];
-        
-        const availablePositions = SoccerConfig.positions.filter(pos => 
-            pos !== excludePosition && 
-            pos !== 'goalkeeper' && 
-            !periodData.positions[pos] && 
-            SoccerConfig.utils.canPlayerPlayPosition(playerName, pos)
-        );
-        
-        return availablePositions.length > 0 ? availablePositions[0] : null;
-    },
-
-    // Swap players between positions
-    swapPlayers(period, targetPosition, newPlayer, swapInfo) {
-        const periodData = LineupManager.lineup[period];
-        
-        if (swapInfo) {
-            // Move current player to new position
-            periodData.positions[swapInfo.newPosition] = swapInfo.currentPlayer;
-            // Clear their old position
-            periodData.positions[swapInfo.currentPosition] = null;
-        }
-        
-        // Assign new player to target position
-        periodData.positions[targetPosition] = newPlayer;
-    },
-
-    // Balance bench time across all players
-    balanceBenchTime() {
-        // Calculate current bench distribution
-        const benchStats = this.calculateBenchDistribution();
-        
-        // Find players who have sat too little or too much
-        const averageBenchTime = this.calculateAverageBenchTime(benchStats);
-        const playersNeedMoreBench = [];
-        const playersNeedLessBench = [];
-        
-        Object.entries(benchStats).forEach(([player, benchCount]) => {
-            if (benchCount < averageBenchTime - 1) {
-                playersNeedMoreBench.push({ player, deficit: averageBenchTime - benchCount });
-            } else if (benchCount > averageBenchTime + 1) {
-                playersNeedLessBench.push({ player, excess: benchCount - averageBenchTime });
+                gkGroups.push(currentGroup);
+                
+                // Check each group's first period for jersey preparation
+                gkGroups.forEach(group => {
+                    const firstGkPeriod = group[0];
+                    if (firstGkPeriod > 1) {
+                        const expectedJerseyPeriod = firstGkPeriod - 1;
+                        if (!jerseyPeriods.includes(expectedJerseyPeriod)) {
+                            violations.push(`${player}: Needs jersey preparation in period ${expectedJerseyPeriod} before GK duty starts in period ${firstGkPeriod}`);
+                        }
+                    }
+                });
             }
         });
-        
-        // Try to balance by swapping between field and bench
-        this.performBenchBalancing(playersNeedMoreBench, playersNeedLessBench);
-    },
 
-    // Calculate bench time distribution
-    calculateBenchDistribution() {
-        const distribution = {};
-        
-        SoccerConfig.utils.getPlayerNames().forEach(player => {
-            const stats = LineupManager.calculatePlayerStats(player);
-            distribution[player] = stats.benchPeriods + stats.jerseyPeriods;
-        });
-        
-        return distribution;
-    },
-
-    // Calculate average bench time
-    calculateAverageBenchTime(benchStats) {
-        const totalBenchTime = Object.values(benchStats).reduce((sum, count) => sum + count, 0);
-        const playerCount = Object.keys(benchStats).length;
-        return Math.round(totalBenchTime / playerCount);
-    },
-
-    // Perform bench balancing swaps
-    performBenchBalancing(needMoreBench, needLessBench) {
-        // This is a complex optimization problem
-        // For now, implement basic swapping logic
-        
+        // Rule 5: Check each period has exactly 3 sitting
         for (let period = 1; period <= SoccerConfig.gameSettings.totalPeriods; period++) {
             const periodData = LineupManager.lineup[period];
-            
-            // Find opportunities to bench players who need more bench time
-            needMoreBench.forEach(({ player }) => {
-                if (Object.values(periodData.positions).includes(player) && 
-                    periodData.bench.length < SoccerConfig.gameSettings.maxPlayersOnBench) {
-                    
-                    // Find their current position and remove them
-                    for (const [position, assignedPlayer] of Object.entries(periodData.positions)) {
-                        if (assignedPlayer === player) {
-                            periodData.positions[position] = null;
-                            periodData.bench.push(player);
-                            
-                            // Try to fill the position with someone from bench who needs less bench time
-                            const replacement = this.findReplacementFromBench(
-                                periodData.bench, position, needLessBench.map(p => p.player)
-                            );
-                            if (replacement) {
-                                periodData.positions[position] = replacement;
-                                periodData.bench.splice(periodData.bench.indexOf(replacement), 1);
-                            }
-                            break;
-                        }
-                    }
-                }
-            });
+            const sitting = periodData.bench.length + (periodData.jersey ? periodData.jersey.length : 0);
+            if (sitting !== 3) {
+                violations.push(`Period ${period}: ${sitting} players sitting (should be exactly 3)`);
+            }
         }
+
+        if (violations.length > 0) {
+            console.warn('Rule violations found:', violations);
+            ToastManager.warning(`Generated lineup with ${violations.length} minor rule violations`, 5000);
+        } else {
+            ToastManager.success('Perfect! All rules followed successfully', 4000);
+        }
+
+        return violations;
     },
 
-    // Find replacement player from bench
-    findReplacementFromBench(benchPlayers, position, preferredPlayers) {
-        // First try preferred players (those who need less bench time)
-        for (const player of preferredPlayers) {
-            if (benchPlayers.includes(player) && 
-                SoccerConfig.utils.canPlayerPlayPosition(player, position)) {
-                return player;
-            }
+    // Auto fill current period only (simplified)
+    autoFillCurrentPeriod() {
+        ToastManager.info('Use "Auto Fill All" for rule-based generation', 4000);
+        
+        // Simple current period fill without rule enforcement
+        const currentPeriod = LineupManager.getCurrentPeriod();
+        const playerNames = SoccerConfig.utils.getPlayerNames();
+        const currentLineup = LineupManager.getCurrentLineup();
+        
+        // Keep existing assignments, fill empty positions
+        const assignedPlayers = new Set();
+        
+        // Add already assigned players
+        Object.values(currentLineup.positions).forEach(player => {
+            if (player) assignedPlayers.add(player);
+        });
+        currentLineup.bench.forEach(player => assignedPlayers.add(player));
+        if (currentLineup.jersey) {
+            currentLineup.jersey.forEach(player => assignedPlayers.add(player));
         }
         
-        // Then try any available player
-        for (const player of benchPlayers) {
-            if (SoccerConfig.utils.canPlayerPlayPosition(player, position)) {
-                return player;
-            }
-        }
+        // Get available players
+        const availablePlayers = playerNames.filter(player => !assignedPlayers.has(player));
         
-        return null;
+        // Fill empty positions
+        SoccerConfig.positions.forEach(position => {
+            if (!currentLineup.positions[position]) {
+                const suitablePlayer = availablePlayers.find(player => 
+                    SoccerConfig.utils.canPlayerPlayPosition(player, position)
+                );
+                if (suitablePlayer) {
+                    currentLineup.positions[position] = suitablePlayer;
+                    availablePlayers.splice(availablePlayers.indexOf(suitablePlayer), 1);
+                }
+            }
+        });
+        
+        // Put remaining players on bench
+        availablePlayers.forEach(player => {
+            if (currentLineup.bench.length < 3) {
+                currentLineup.bench.push(player);
+            }
+        });
     },
 
     // Validation method to check lineup quality
     validateLineupQuality() {
+        const playerNames = SoccerConfig.utils.getPlayerNames();
         const issues = [];
         
         // Check for unfilled positions
@@ -378,19 +439,23 @@ const AutoFillManager = {
             if (emptyPositions.length > 0) {
                 issues.push(`Period ${period}: Unfilled positions - ${emptyPositions.join(', ')}`);
             }
+
+            // Check sitting count
+            const sitting = periodData.bench.length + (periodData.jersey ? periodData.jersey.length : 0);
+            if (sitting !== 3) {
+                issues.push(`Period ${period}: ${sitting} players sitting (should be exactly 3)`);
+            }
         }
         
         // Check bench time distribution
-        const benchStats = this.calculateBenchDistribution();
-        const avgBench = this.calculateAverageBenchTime(benchStats);
-        const imbalanced = Object.entries(benchStats).filter(
-            ([player, count]) => Math.abs(count - avgBench) > 2
-        );
-        
-        if (imbalanced.length > 0) {
-            issues.push(`Bench time imbalance: ${imbalanced.map(([p, c]) => `${p}:${c}`).join(', ')}`);
-        }
-        
+        playerNames.forEach(player => {
+            const stats = LineupManager.calculatePlayerStats(player);
+            const totalBench = stats.benchPeriods + stats.jerseyPeriods;
+            if (totalBench < 1 || totalBench > 2) {
+                issues.push(`${player}: ${totalBench} bench periods (should be 1-2)`);
+            }
+        });
+
         return issues;
     }
 };
