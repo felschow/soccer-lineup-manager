@@ -4,6 +4,7 @@
 const AutoFillManager = {
     // Auto fill all periods with smart rotation - COMPLETELY REWRITTEN
     autoFillAll() {
+        console.log('🚀 STARTING NEW 5-RULE ALGORITHM - VERSION 2.0');
         console.log('Starting new rule-based autofill...');
         
         // Clear all periods first

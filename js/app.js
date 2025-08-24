@@ -79,7 +79,8 @@ function autoFill() {
 }
 
 function autoFillAll() {
-    const loadingToast = ToastManager.loading('Auto-filling all periods...');
+    console.log('🔥 autoFillAll() function called - about to run 5-rule algorithm');
+    const loadingToast = ToastManager.loading('Auto-filling all periods with 5-rule algorithm...');
     
     try {
         // Small delay to show loading state
