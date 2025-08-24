@@ -23,6 +23,11 @@ const UIManager = {
         if (this.isTableView) {
             this.renderLineupTable();
         }
+        
+        // Update mobile display if available
+        if (window.MobileUIManager) {
+            MobileUIManager.updateMobileDisplay();
+        }
     },
 
     // Period information updates

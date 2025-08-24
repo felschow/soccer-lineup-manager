@@ -9,7 +9,7 @@ const MobileUIManager = {
         this.setupMobileUI();
         this.setupMobileInteractions();
         this.setupPullToRefresh();
-        console.log('Mobile UI Manager initialized');
+        console.log('Mobile UI Manager initialized, isMobile:', this.isMobile);
     },
     
     detectMobile() {
@@ -55,6 +55,29 @@ const MobileUIManager = {
         
         // Add haptic feedback to all interactions
         this.addHapticFeedback();
+    },
+    
+    setupMobileInteractions() {
+        // Setup click handlers for mobile position cards
+        document.addEventListener('click', (e) => {
+            const mobileCard = e.target.closest('.mobile-position-card');
+            if (mobileCard) {
+                const position = mobileCard.dataset.position;
+                this.handleMobilePositionClick(position, mobileCard);
+            }
+        });
+    },
+    
+    handleMobilePositionClick(position, card) {
+        console.log('Mobile position clicked:', position);
+        const playerNameElement = card.querySelector('.player-name');
+        const currentPlayer = playerNameElement.textContent;
+        
+        if (currentPlayer === 'Tap to assign' || currentPlayer.trim() === '') {
+            this.showPlayerSelectionModal(position);
+        } else {
+            this.showPlayerActionModal(position, currentPlayer);
+        }
     },
     
     createMobilePlayerCards() {
@@ -121,7 +144,7 @@ const MobileUIManager = {
                 <div class="modal-body">
                     ${availablePlayers.map(player => `
                         <button class="modal-player-option" 
-                                onclick="assignPlayerToPosition('${player}', '${position}'); this.closest('.mobile-selection-modal').remove();">
+                                onclick="MobileUIManager.assignMobilePlayerToPosition('${player}', '${position}'); this.closest('.mobile-selection-modal').remove();">
                             ${player}
                         </button>
                     `).join('')}
@@ -133,8 +156,70 @@ const MobileUIManager = {
         return modal;
     },
     
+    showPlayerActionModal(position, playerName) {
+        const modal = document.createElement('div');
+        modal.className = 'mobile-selection-modal';
+        modal.innerHTML = `
+            <div class="modal-backdrop" onclick="this.parentNode.remove()"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>${playerName}</h3>
+                    <button class="modal-close" onclick="this.closest('.mobile-selection-modal').remove()">×</button>
+                </div>
+                <div class="modal-body">
+                    <button class="modal-player-option danger" 
+                            onclick="MobileUIManager.removeMobilePlayerFromPosition('${playerName}', '${position}'); this.closest('.mobile-selection-modal').remove();">
+                        Remove Player
+                    </button>
+                    <button class="modal-player-option" 
+                            onclick="this.closest('.mobile-selection-modal').remove(); MobileUIManager.showPlayerSelectionModal('${position}');">
+                        Change Player
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        this.triggerHaptic('medium');
+    },
+    
+    assignMobilePlayerToPosition(playerName, position) {
+        console.log('Assigning mobile player:', playerName, 'to position:', position);
+        
+        if (position.startsWith('bench-')) {
+            const benchIndex = parseInt(position.split('-')[1]) - 1;
+            LineupManager.addPlayerToBench(playerName, benchIndex);
+        } else if (position === 'jersey-1') {
+            LineupManager.addPlayerToJersey(playerName);
+        } else {
+            LineupManager.assignPlayerToPosition(playerName, position);
+        }
+        
+        this.updateMobileDisplay();
+        UIManager.updateDisplay();
+        this.triggerHaptic('success');
+    },
+    
+    removeMobilePlayerFromPosition(playerName, position) {
+        console.log('Removing mobile player:', playerName, 'from position:', position);
+        
+        if (position.startsWith('bench-')) {
+            const benchIndex = parseInt(position.split('-')[1]) - 1;
+            LineupManager.removePlayerFromBench(playerName);
+        } else if (position === 'jersey-1') {
+            LineupManager.removePlayerFromJersey(playerName);
+        } else {
+            LineupManager.removePlayerFromPosition(playerName, position);
+        }
+        
+        this.updateMobileDisplay();
+        UIManager.updateDisplay();
+        this.triggerHaptic('medium');
+    },
+    
     getAvailablePlayersForPosition(position) {
-        const allPlayers = SoccerConfig.utils.getPlayerNames();
+        // Get all players from config
+        const allPlayers = Object.keys(SoccerConfig.players);
         const currentLineup = LineupManager.getCurrentLineup();
         const assignedPlayers = new Set();
         
@@ -143,14 +228,38 @@ const MobileUIManager = {
             if (player) assignedPlayers.add(player);
         });
         currentLineup.bench.forEach(player => assignedPlayers.add(player));
-        if (currentLineup.jersey) {
+        if (currentLineup.jersey && currentLineup.jersey.length > 0) {
             currentLineup.jersey.forEach(player => assignedPlayers.add(player));
         }
         
         return allPlayers.filter(player => 
             !assignedPlayers.has(player) && 
-            SoccerConfig.utils.canPlayerPlayPosition(player, position)
+            this.canPlayerPlayPosition(player, position)
         );
+    },
+    
+    canPlayerPlayPosition(playerName, position) {
+        // Handle special positions
+        if (position.startsWith('bench-') || position === 'jersey-1') {
+            return true; // Anyone can sit on bench or do jersey prep
+        }
+        
+        const playerSkills = SoccerConfig.players[playerName] || [];
+        
+        // Handle "All" and "All except GK" special cases
+        if (playerSkills.includes('All')) return true;
+        if (playerSkills.includes('All except GK') && position !== 'goalkeeper') return true;
+        
+        // Map position to required skill
+        const positionSkill = SoccerConfig.positionSkillMap[position];
+        if (!positionSkill) return false;
+        
+        // Check if player has required skill
+        if (Array.isArray(positionSkill)) {
+            return positionSkill.some(skill => playerSkills.includes(skill));
+        } else {
+            return playerSkills.includes(positionSkill);
+        }
     },
     
     getPositionDisplayName(position) {
@@ -173,7 +282,13 @@ const MobileUIManager = {
     },
     
     updateMobileDisplay() {
-        if (!this.isMobile) return;
+        console.log('Updating mobile display, isMobile:', this.isMobile);
+        
+        // Always update if mobile elements exist (regardless of isMobile flag)
+        if (!document.getElementById('mobile-goalkeeper')) {
+            console.log('Mobile elements not found, skipping update');
+            return;
+        }
         
         const currentLineup = LineupManager.getCurrentLineup();
         const currentPeriod = LineupManager.getCurrentPeriod();
@@ -187,18 +302,31 @@ const MobileUIManager = {
         }
         
         if (periodTime) {
-            const timeInfo = SoccerConfig.utils.getPeriodTime(currentPeriod);
-            periodTime.textContent = timeInfo.display;
+            // Calculate period time manually
+            const startTime = (currentPeriod - 1) * 7.5;
+            const endTime = currentPeriod * 7.5;
+            const startMins = Math.floor(startTime);
+            const startSecs = Math.round((startTime - startMins) * 60);
+            const endMins = Math.floor(endTime);
+            const endSecs = Math.round((endTime - endMins) * 60);
+            
+            periodTime.textContent = `${startMins}:${startSecs.toString().padStart(2, '0')} - ${endMins}:${endSecs.toString().padStart(2, '0')}`;
         }
         
         // Update mobile position cards
-        SoccerConfig.positions.forEach(position => {
+        const positions = ['goalkeeper', 'left-back', 'center-back', 'right-back', 
+                          'center-mid-left', 'center-mid-right', 'left-wing', 'striker', 'right-wing'];
+        
+        positions.forEach(position => {
             const element = document.getElementById(`mobile-${position}`);
             const player = currentLineup.positions[position];
             
             if (element) {
                 element.textContent = player || 'Tap to assign';
-                element.closest('.mobile-position-card').classList.toggle('filled', !!player);
+                const card = element.closest('.mobile-position-card');
+                if (card) {
+                    card.classList.toggle('filled', !!player);
+                }
             }
         });
         
@@ -209,7 +337,10 @@ const MobileUIManager = {
             
             if (element) {
                 element.textContent = player || 'Tap to assign';
-                element.closest('.mobile-position-card').classList.toggle('filled', !!player);
+                const card = element.closest('.mobile-position-card');
+                if (card) {
+                    card.classList.toggle('filled', !!player);
+                }
             }
         }
         
@@ -219,8 +350,13 @@ const MobileUIManager = {
         
         if (jerseyElement) {
             jerseyElement.textContent = jerseyPlayer || 'Tap to assign';
-            jerseyElement.closest('.mobile-position-card').classList.toggle('filled', !!jerseyPlayer);
+            const card = jerseyElement.closest('.mobile-position-card');
+            if (card) {
+                card.classList.toggle('filled', !!jerseyPlayer);
+            }
         }
+        
+        console.log('Mobile display updated for period', currentPeriod);
     },
     
     setupMobileDragDrop() {
@@ -417,14 +553,19 @@ window.assignPlayerToPosition = function(player, position) {
     MobileUIManager.assignPlayerToMobilePosition(player, position);
 };
 
-// Auto-initialize if mobile
-if (window.innerWidth <= 768) {
-    document.addEventListener('DOMContentLoaded', () => {
+// Export MobileUIManager globally
+window.MobileUIManager = MobileUIManager;
+
+// Auto-initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        MobileUIManager.init();
+        // Initial display update
         setTimeout(() => {
-            MobileUIManager.init();
-        }, 100);
-    });
-}
+            MobileUIManager.updateMobileDisplay();
+        }, 500);
+    }, 100);
+});
 
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
