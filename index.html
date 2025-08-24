@@ -2,8 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Youth Soccer Lineup Manager</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#0f172a">
+    <title>Soccer Lineup Manager</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Styles -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -23,6 +32,30 @@
                 <button class="btn btn-secondary" onclick="clearPeriod()">Clear</button>
                 <button class="btn btn-secondary" onclick="exportLineup()">Export</button>
             </div>
+        </div>
+
+        <!-- Mobile Period Navigation -->
+        <div class="mobile-period-nav">
+            <div class="mobile-period-slider">
+                <button class="mobile-period-button" onclick="previousPeriod()">‹</button>
+                <div class="mobile-period-display">
+                    <div class="mobile-period-title" id="mobilePeriodTitle">Period 1</div>
+                    <div class="mobile-period-time" id="mobilePeriodTime">0:00 - 7:30</div>
+                </div>
+                <button class="mobile-period-button" onclick="nextPeriod()">›</button>
+            </div>
+        </div>
+
+        <!-- Mobile Quick Actions -->
+        <div class="mobile-quick-actions">
+            <button class="mobile-action-button primary" onclick="autoFillAll()">
+                <span class="icon">⚽</span>
+                Auto Fill All
+            </button>
+            <button class="mobile-action-button" onclick="clearPeriod()">
+                <span class="icon">🗑️</span>
+                Clear Period
+            </button>
         </div>
 
         <div class="main-content">
@@ -118,6 +151,80 @@
                     <div class="empty-message" id="jerseyEmpty" style="color: #8B5CF6;">Drop players here for goalkeeper preparation</div>
                 </div>
             </div>
+
+            <!-- NEW: Mobile-Optimized Field View -->
+            <div class="mobile-field-container" id="mobileFieldView">
+                <div class="mobile-position-card" data-position="goalkeeper">
+                    <div class="position-label">Goalkeeper (GK)</div>
+                    <div class="player-name" id="mobile-goalkeeper">Tap to assign</div>
+                </div>
+
+                <div class="mobile-position-card" data-position="left-back">
+                    <div class="position-label">Left Back (LB)</div>
+                    <div class="player-name" id="mobile-left-back">Tap to assign</div>
+                </div>
+
+                <div class="mobile-position-card" data-position="center-back">
+                    <div class="position-label">Center Back (CB)</div>
+                    <div class="player-name" id="mobile-center-back">Tap to assign</div>
+                </div>
+
+                <div class="mobile-position-card" data-position="right-back">
+                    <div class="position-label">Right Back (RB)</div>
+                    <div class="player-name" id="mobile-right-back">Tap to assign</div>
+                </div>
+
+                <div class="mobile-position-card" data-position="center-mid-left">
+                    <div class="position-label">Center Mid Left (CM)</div>
+                    <div class="player-name" id="mobile-center-mid-left">Tap to assign</div>
+                </div>
+
+                <div class="mobile-position-card" data-position="center-mid-right">
+                    <div class="position-label">Center Mid Right (CM)</div>
+                    <div class="player-name" id="mobile-center-mid-right">Tap to assign</div>
+                </div>
+
+                <div class="mobile-position-card" data-position="left-wing">
+                    <div class="position-label">Left Wing (LW)</div>
+                    <div class="player-name" id="mobile-left-wing">Tap to assign</div>
+                </div>
+
+                <div class="mobile-position-card" data-position="striker">
+                    <div class="position-label">Striker (ST)</div>
+                    <div class="player-name" id="mobile-striker">Tap to assign</div>
+                </div>
+
+                <div class="mobile-position-card" data-position="right-wing">
+                    <div class="position-label">Right Wing (RW)</div>
+                    <div class="player-name" id="mobile-right-wing">Tap to assign</div>
+                </div>
+
+                <!-- Bench Section -->
+                <div style="margin-top: 24px;">
+                    <h3 style="margin-bottom: 16px; color: #374151;">Bench Players</h3>
+                    <div class="mobile-position-card" data-position="bench-1">
+                        <div class="position-label">Bench #1</div>
+                        <div class="player-name" id="mobile-bench-1">Tap to assign</div>
+                    </div>
+                    <div class="mobile-position-card" data-position="bench-2">
+                        <div class="position-label">Bench #2</div>
+                        <div class="player-name" id="mobile-bench-2">Tap to assign</div>
+                    </div>
+                    <div class="mobile-position-card" data-position="bench-3">
+                        <div class="position-label">Bench #3</div>
+                        <div class="player-name" id="mobile-bench-3">Tap to assign</div>
+                    </div>
+                </div>
+
+                <!-- Jersey Prep Section -->
+                <div style="margin-top: 24px;">
+                    <h3 style="margin-bottom: 16px; color: #374151;">Jersey Preparation</h3>
+                    <div class="mobile-position-card" data-position="jersey-1">
+                        <div class="position-label">Jersey Prep</div>
+                        <div class="player-name" id="mobile-jersey-1">Tap to assign</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="table-view" id="tableView">
@@ -153,6 +260,28 @@
 
     <div class="tooltip" id="tooltip"></div>
 
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav">
+        <div class="mobile-nav-grid">
+            <button class="mobile-nav-button" onclick="autoFillAll()">
+                <span class="icon">⚽</span>
+                <span>Auto Fill</span>
+            </button>
+            <button class="mobile-nav-button" onclick="toggleView()">
+                <span class="icon">📊</span>
+                <span>Stats</span>
+            </button>
+            <button class="mobile-nav-button" onclick="clearPeriod()">
+                <span class="icon">🗑️</span>
+                <span>Clear</span>
+            </button>
+            <button class="mobile-nav-button" onclick="exportLineup()">
+                <span class="icon">📤</span>
+                <span>Export</span>
+            </button>
+        </div>
+    </nav>
+
     <!-- External Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
@@ -165,6 +294,7 @@
     <script src="js/uiManager.js"></script>
     <script src="js/dragDrop.js"></script>
     <script src="js/mobileEnhancements.js"></script>
+    <script src="js/mobileUIManager.js"></script>
     <script src="js/autoFill.js"></script>
     <script src="js/exportUtils.js"></script>
     <script src="js/app.js"></script>

@@ -1,0 +1,97 @@
+{
+  "name": "Soccer Lineup Manager",
+  "short_name": "SoccerLineup",
+  "description": "Manage youth soccer team lineups with smart rotation and rule enforcement",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#0f172a",
+  "background_color": "#f8fafc",
+  "lang": "en-US",
+  "scope": "/",
+  "categories": ["sports", "productivity", "utilities"],
+  "display_override": ["window-controls-overlay", "minimal-ui"],
+  "icons": [
+    {
+      "src": "icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-96x96.png", 
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-128x128.png",
+      "sizes": "128x128", 
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Quick Auto-Fill",
+      "short_name": "Auto-Fill",
+      "description": "Quickly generate lineup with 5-rule algorithm",
+      "url": "/?action=autofill",
+      "icons": [
+        {
+          "src": "icons/shortcut-autofill.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "View Stats",
+      "short_name": "Stats", 
+      "description": "Check player statistics and game balance",
+      "url": "/?action=stats",
+      "icons": [
+        {
+          "src": "icons/shortcut-stats.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+soccerlineup",
+      "url": "/?lineup=%s"
+    }
+  ]
+}
