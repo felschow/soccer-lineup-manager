@@ -18,6 +18,41 @@
 </head>
 <body>
     <div class="app-container">
+        <!-- Desktop Left Sidebar -->
+        <div class="desktop-sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">⚽</div>
+                <div class="sidebar-title">Soccer<br>Lineup</div>
+            </div>
+            
+            <div class="sidebar-actions">
+                <button class="sidebar-btn primary" onclick="toggleView()" id="viewToggle" title="Toggle between field and table view">
+                    <span class="sidebar-icon">📊</span>
+                    <span class="sidebar-label">Table View</span>
+                </button>
+                
+                <button class="sidebar-btn" onclick="autoFillAll()" title="Automatically fill all positions">
+                    <span class="sidebar-icon">⚽</span>
+                    <span class="sidebar-label">Auto Fill</span>
+                </button>
+                
+                <button class="sidebar-btn secondary" onclick="clearPeriod()" title="Clear current period">
+                    <span class="sidebar-icon">🗑️</span>
+                    <span class="sidebar-label">Clear</span>
+                </button>
+                
+                <button class="sidebar-btn secondary" onclick="exportLineup()" title="Export lineup data">
+                    <span class="sidebar-icon">📤</span>
+                    <span class="sidebar-label">Export</span>
+                </button>
+                
+                <button class="sidebar-btn accent" onclick="openTeamManager()" title="Manage team and players">
+                    <span class="sidebar-icon">👥</span>
+                    <span class="sidebar-label">Team</span>
+                </button>
+            </div>
+        </div>
+
         <div class="header">
             <h1>⚽ Soccer Lineup Manager</h1>
             
@@ -25,14 +60,6 @@
                 <button onclick="previousPeriod()" id="prevBtn">‹</button>
                 <span class="current-period" id="currentPeriodText">Period 1</span>
                 <button onclick="nextPeriod()" id="nextBtn">›</button>
-            </div>
-            
-            <div class="quick-actions">
-                <button class="btn" onclick="toggleView()" id="viewToggle">📊 Table View</button>
-                <button class="btn" onclick="autoFillAll()">Auto Fill All</button>
-                <button class="btn btn-secondary" onclick="clearPeriod()">Clear</button>
-                <button class="btn btn-secondary" onclick="exportLineup()">Export</button>
-                <button class="btn btn-primary" onclick="openTeamManager()">Team Manager</button>
             </div>
         </div>
 
@@ -48,25 +75,6 @@
             </div>
         </div>
 
-        <!-- Mobile Quick Actions (mirrors desktop header) -->
-        <div class="mobile-quick-actions">
-            <button class="mobile-action-button primary" onclick="autoFillAll()">
-                <span class="icon">⚽</span>
-                Auto Fill All
-            </button>
-            <button class="mobile-action-button" onclick="toggleView()" id="mobileViewToggleHeader">
-                <span class="icon">📊</span>
-                Table View
-            </button>
-            <button class="mobile-action-button" onclick="clearPeriod()">
-                <span class="icon">🗑️</span>
-                Clear Period
-            </button>
-            <button class="mobile-action-button" onclick="exportLineup()">
-                <span class="icon">📤</span>
-                Export
-            </button>
-        </div>
 
         <div class="main-content">
             <div class="sidebar">
@@ -224,78 +232,76 @@
                 </div>
             </div>
 
-            <!-- Mobile Card-Based Field View -->
-            <div class="mobile-field-container" id="mobileFieldView">
-                <!-- Field Positions as Cards -->
-                <div class="mobile-position-card" data-position="goalkeeper">
-                    <div class="position-label">Goalkeeper (GK)</div>
-                    <div class="player-name" id="mobile-goalkeeper">Tap to assign</div>
+            <!-- Mobile Scaled Soccer Field View -->
+            <div class="mobile-soccer-field-scaled" id="mobileFieldViewScaled">
+                <div class="mobile-field-lines">
+                    <div class="mobile-penalty-area-top"></div>
+                    <div class="mobile-penalty-area-bottom"></div>
+                    <div class="mobile-goal-area-top"></div>
+                    <div class="mobile-goal-area-bottom"></div>
                 </div>
-
-                <div class="mobile-position-card" data-position="left-back">
-                    <div class="position-label">Left Back (LB)</div>
-                    <div class="player-name" id="mobile-left-back">Tap to assign</div>
+                
+                <!-- Field Positions (Scaled) -->
+                <div class="mobile-position-slot-scaled mobile-striker" data-position="striker">
+                    <div class="mobile-position-label-scaled">ST</div>
+                    <div class="mobile-player-name-scaled" id="mobile-striker-scaled"></div>
                 </div>
-
-                <div class="mobile-position-card" data-position="center-back">
-                    <div class="position-label">Center Back (CB)</div>
-                    <div class="player-name" id="mobile-center-back">Tap to assign</div>
+                
+                <div class="mobile-position-slot-scaled mobile-left-wing" data-position="left-wing">
+                    <div class="mobile-position-label-scaled">LW</div>
+                    <div class="mobile-player-name-scaled" id="mobile-left-wing-scaled"></div>
                 </div>
-
-                <div class="mobile-position-card" data-position="right-back">
-                    <div class="position-label">Right Back (RB)</div>
-                    <div class="player-name" id="mobile-right-back">Tap to assign</div>
+                
+                <div class="mobile-position-slot-scaled mobile-right-wing" data-position="right-wing">
+                    <div class="mobile-position-label-scaled">RW</div>
+                    <div class="mobile-player-name-scaled" id="mobile-right-wing-scaled"></div>
                 </div>
-
-                <div class="mobile-position-card" data-position="center-mid-left">
-                    <div class="position-label">Center Mid Left (CM)</div>
-                    <div class="player-name" id="mobile-center-mid-left">Tap to assign</div>
+                
+                <div class="mobile-position-slot-scaled mobile-center-mid-left" data-position="center-mid-left">
+                    <div class="mobile-position-label-scaled">CM</div>
+                    <div class="mobile-player-name-scaled" id="mobile-center-mid-left-scaled"></div>
                 </div>
-
-                <div class="mobile-position-card" data-position="center-mid-right">
-                    <div class="position-label">Center Mid Right (CM)</div>
-                    <div class="player-name" id="mobile-center-mid-right">Tap to assign</div>
+                
+                <div class="mobile-position-slot-scaled mobile-center-mid-right" data-position="center-mid-right">
+                    <div class="mobile-position-label-scaled">CM</div>
+                    <div class="mobile-player-name-scaled" id="mobile-center-mid-right-scaled"></div>
                 </div>
-
-                <div class="mobile-position-card" data-position="left-wing">
-                    <div class="position-label">Left Wing (LW)</div>
-                    <div class="player-name" id="mobile-left-wing">Tap to assign</div>
+                
+                <div class="mobile-position-slot-scaled mobile-left-back" data-position="left-back">
+                    <div class="mobile-position-label-scaled">LB</div>
+                    <div class="mobile-player-name-scaled" id="mobile-left-back-scaled"></div>
                 </div>
-
-                <div class="mobile-position-card" data-position="striker">
-                    <div class="position-label">Striker (ST)</div>
-                    <div class="player-name" id="mobile-striker">Tap to assign</div>
+                
+                <div class="mobile-position-slot-scaled mobile-center-back" data-position="center-back">
+                    <div class="mobile-position-label-scaled">CB</div>
+                    <div class="mobile-player-name-scaled" id="mobile-center-back-scaled"></div>
                 </div>
-
-                <div class="mobile-position-card" data-position="right-wing">
-                    <div class="position-label">Right Wing (RW)</div>
-                    <div class="player-name" id="mobile-right-wing">Tap to assign</div>
+                
+                <div class="mobile-position-slot-scaled mobile-right-back" data-position="right-back">
+                    <div class="mobile-position-label-scaled">RB</div>
+                    <div class="mobile-player-name-scaled" id="mobile-right-back-scaled"></div>
                 </div>
-
-                <!-- Bench Section -->
-                <div style="margin-top: 24px;">
-                    <h3 style="margin-bottom: 16px; color: #374151;">🪑 Bench Players</h3>
-                    <div class="mobile-position-card" data-position="bench-1">
-                        <div class="position-label">Bench #1</div>
-                        <div class="player-name" id="mobile-bench-1">Tap to assign</div>
-                    </div>
-                    <div class="mobile-position-card" data-position="bench-2">
-                        <div class="position-label">Bench #2</div>
-                        <div class="player-name" id="mobile-bench-2">Tap to assign</div>
-                    </div>
-                    <div class="mobile-position-card" data-position="bench-3">
-                        <div class="position-label">Bench #3</div>
-                        <div class="player-name" id="mobile-bench-3">Tap to assign</div>
-                    </div>
+                
+                <div class="mobile-position-slot-scaled mobile-goalkeeper" data-position="goalkeeper">
+                    <div class="mobile-position-label-scaled">GK</div>
+                    <div class="mobile-player-name-scaled" id="mobile-goalkeeper-scaled"></div>
                 </div>
+            </div>
 
-                <!-- Jersey Prep Section -->
-                <div style="margin-top: 24px;">
-                    <h3 style="margin-bottom: 16px; color: #374151;">👕 Jersey Preparation</h3>
-                    <div class="mobile-position-card" data-position="jersey-1">
-                        <div class="position-label">Jersey Prep</div>
-                        <div class="player-name" id="mobile-jersey-1">Tap to assign</div>
-                    </div>
+            <!-- Mobile Bench Areas (Scaled) -->
+            <div class="mobile-bench-area-scaled" id="mobileBenchAreaScaled">
+                <div class="mobile-bench-title-scaled">🪑 Bench Players</div>
+                <div class="mobile-bench-slots-scaled">
+                    <div class="mobile-bench-slot-scaled" data-position="bench-1" id="mobile-bench-1-scaled">Bench #1</div>
+                    <div class="mobile-bench-slot-scaled" data-position="bench-2" id="mobile-bench-2-scaled">Bench #2</div>
+                    <div class="mobile-bench-slot-scaled" data-position="bench-3" id="mobile-bench-3-scaled">Bench #3</div>
+                </div>
+            </div>
+
+            <div class="mobile-bench-area-scaled" id="mobileJerseyAreaScaled">
+                <div class="mobile-bench-title-scaled">👕 Jersey Preparation</div>
+                <div class="mobile-bench-slots-scaled">
+                    <div class="mobile-jersey-slot-scaled" data-position="jersey-1" id="mobile-jersey-1-scaled">Jersey Prep</div>
                 </div>
             </div>
         </div>
@@ -479,18 +485,10 @@
                 <button class="mobile-menu-close" onclick="hideMobileMenu()">&times;</button>
             </div>
             <div class="mobile-menu-actions">
-                <button class="mobile-menu-button" onclick="autoFillAll(); hideMobileMenu();">
-                    <span class="icon">⚽</span>
-                    <span>Auto Fill All</span>
-                </button>
-                <button class="mobile-menu-button" onclick="clearPeriod(); hideMobileMenu();">
-                    <span class="icon">🗑️</span>
-                    <span>Clear Period</span>
-                </button>
-                <button class="mobile-menu-button" onclick="clearAllPeriods(); hideMobileMenu();">
-                    <span class="icon">🗑️</span>
-                    <span>Clear All Periods</span>
-                </button>
+                <p class="mobile-menu-info">
+                    Use the tap-to-assign field interface for managing player positions. 
+                    Most actions are available through the bottom navigation or by tapping field positions directly.
+                </p>
             </div>
         </div>
     </div>
@@ -509,10 +507,6 @@
             <button class="mobile-nav-button" onclick="openTeamManager()" id="mobileTeamToggle">
                 <span class="icon">👥</span>
                 <span>Teams</span>
-            </button>
-            <button class="mobile-nav-button" onclick="exportLineup()">
-                <span class="icon">📤</span>
-                <span>Export</span>
             </button>
             <button class="mobile-nav-button" onclick="showMobileMenu()" id="mobileMenuToggle">
                 <span class="icon">⋯</span>
@@ -536,6 +530,7 @@
     <script src="js/mobileNavigation.js"></script>
     <script src="js/progressiveDisclosure.js"></script>
     <script src="js/mobileUIManager.js"></script>
+    <script src="js/mobileTapAssignment.js"></script>
     <script src="js/autoFill.js"></script>
     <script src="js/exportUtils.js"></script>
     <script src="js/teamManager.js"></script>

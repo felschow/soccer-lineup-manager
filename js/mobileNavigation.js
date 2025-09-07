@@ -48,17 +48,25 @@ const MobileNavigation = {
             const isTableView = UIManager.isTableView;
             
             if (isTableView) {
+                // Update sidebar button
+                const sidebarIcon = desktopToggle.querySelector('.sidebar-icon');
+                const sidebarLabel = desktopToggle.querySelector('.sidebar-label');
+                if (sidebarIcon) sidebarIcon.textContent = '⚽';
+                if (sidebarLabel) sidebarLabel.textContent = 'Field View';
+                
+                // Update mobile buttons
                 mobileIcon.textContent = '⚽';
                 mobileText.textContent = 'Field';
-                if (headerToggle) {
-                    headerToggle.innerHTML = '<span class="icon">⚽</span>Field View';
-                }
             } else {
+                // Update sidebar button
+                const sidebarIcon = desktopToggle.querySelector('.sidebar-icon');
+                const sidebarLabel = desktopToggle.querySelector('.sidebar-label');
+                if (sidebarIcon) sidebarIcon.textContent = '📊';
+                if (sidebarLabel) sidebarLabel.textContent = 'Table View';
+                
+                // Update mobile buttons
                 mobileIcon.textContent = '📊';
                 mobileText.textContent = 'Table';
-                if (headerToggle) {
-                    headerToggle.innerHTML = '<span class="icon">📊</span>Table View';
-                }
             }
         }
     },
