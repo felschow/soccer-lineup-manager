@@ -76,6 +76,11 @@ const TeamManager = {
         this.currentTeam = this.teams[teamId];
         this.updateSoccerConfig();
         
+        // IMPORTANT: Synchronize with PersistentStorage
+        if (window.PersistentStorage) {
+            PersistentStorage.setCurrentTeam(teamId);
+        }
+        
         // Trigger UI updates
         if (window.UIManager && UIManager.renderPlayerList) {
             UIManager.renderPlayerList();

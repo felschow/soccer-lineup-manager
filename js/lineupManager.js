@@ -300,6 +300,17 @@ const LineupManager = {
         if (state.lineup) {
             this.lineup = state.lineup;
         }
+    },
+
+    // Load period data (used by PersistentStorage)
+    loadPeriodData(period, periodData) {
+        if (period >= 1 && period <= SoccerConfig.gameSettings.totalPeriods) {
+            this.lineup[period] = {
+                positions: periodData.positions || {},
+                bench: periodData.bench || [],
+                jersey: periodData.jersey || []
+            };
+        }
     }
 };
 

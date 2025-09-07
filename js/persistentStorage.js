@@ -7,6 +7,8 @@ const PersistentStorage = {
         TEAMS: 'soccer_lineup_teams',
         CURRENT_TEAM: 'soccer_lineup_current_team',
         LINEUPS: 'soccer_lineup_lineups',
+        GAMES: 'soccer_lineup_games',
+        CURRENT_GAME: 'soccer_lineup_current_game',
         SETTINGS: 'soccer_lineup_settings'
     },
     
@@ -21,10 +23,44 @@ const PersistentStorage = {
     // Migrate any old data format to new structure
     migrateOldData() {
         try {
-            // Check if there's old data that needs migration
+            // Check if there's old team data that needs migration
+            const oldTeams = localStorage.getItem('soccerTeams');
+            const oldCurrentTeamId = localStorage.getItem('currentTeamId');
+            
+            if (oldTeams) {
+                console.log('Migrating old team data...');
+                const teams = JSON.parse(oldTeams);
+                
+                // Migrate all teams to new format
+                Object.values(teams).forEach(oldTeam => {
+                    const teamData = {
+                        id: oldTeam.id,
+                        name: oldTeam.name,
+                        players: oldTeam.players || {},
+                        gameSettings: {},
+                        logo: oldTeam.logo,
+                        createdAt: oldTeam.created || new Date().toISOString(),
+                        lastModified: oldTeam.lastModified || new Date().toISOString()
+                    };
+                    
+                    this.saveTeam(teamData);
+                });
+                
+                // Set current team if it exists
+                if (oldCurrentTeamId && teams[oldCurrentTeamId]) {
+                    this.setCurrentTeam(oldCurrentTeamId);
+                }
+                
+                console.log('Team migration completed');
+                // Don't remove old data yet, in case something goes wrong
+                // localStorage.removeItem('soccerTeams');
+                // localStorage.removeItem('currentTeamId');
+            }
+            
+            // Also check for old soccerConfig
             const oldConfig = localStorage.getItem('soccerConfig');
             if (oldConfig) {
-                console.log('Migrating old data...');
+                console.log('Migrating old config data...');
                 const config = JSON.parse(oldConfig);
                 
                 // Save as a team if it has players
@@ -42,9 +78,9 @@ const PersistentStorage = {
                     this.setCurrentTeam(teamData.id);
                 }
                 
-                // Remove old data
+                // Remove old config data
                 localStorage.removeItem('soccerConfig');
-                console.log('Migration completed');
+                console.log('Config migration completed');
             }
         } catch (error) {
             console.warn('Error during data migration:', error);
@@ -116,8 +152,9 @@ const PersistentStorage = {
                     localStorage.removeItem(this.STORAGE_KEYS.CURRENT_TEAM);
                 }
                 
-                // Delete associated lineups
+                // Delete associated lineups and games
                 this.deleteTeamLineups(teamId);
+                this.deleteTeamGames(teamId);
                 
                 console.log('Team deleted:', teamName);
                 return true;
@@ -188,6 +225,22 @@ const PersistentStorage = {
             }
             if (teamData.logo) {
                 SoccerConfig.teamInfo.logo = teamData.logo;
+            }
+            
+            // IMPORTANT: Synchronize with TeamManager
+            if (window.TeamManager) {
+                TeamManager.currentTeam = {
+                    id: teamData.id,
+                    name: teamData.name,
+                    players: teamData.players || {},
+                    logo: teamData.logo,
+                    created: teamData.createdAt,
+                    lastModified: teamData.lastModified
+                };
+                // Also update the teams collection if it exists
+                if (TeamManager.teams) {
+                    TeamManager.teams[teamData.id] = TeamManager.currentTeam;
+                }
             }
             
             // Load saved lineups if they exist
@@ -381,6 +434,7 @@ const PersistentStorage = {
         clearTimeout(this.lineupSaveTimeout);
         this.lineupSaveTimeout = setTimeout(() => {
             this.saveAllLineups();
+            this.saveGameLineup(); // Also save to current game if one exists
         }, 1000); // Save 1 second after last change
     },
     
@@ -507,13 +561,468 @@ const PersistentStorage = {
         } catch (error) {
             return false;
         }
+    },
+
+    // ===============================
+    // GAME MANAGEMENT METHODS
+    // ===============================
+
+    // Create and save a new game
+    createGame(gameData) {
+        try {
+            let teamId = gameData.teamId || this.getCurrentTeamId();
+            let teamName = 'Unknown Team';
+            
+            // Handle different team sources
+            if (teamId && teamId.startsWith('temp_team_')) {
+                // Temporary team from loaded players
+                teamName = 'Current Team';
+            } else {
+                if (!teamId) {
+                    // Try to get from TeamManager
+                    if (window.TeamManager?.currentTeam) {
+                        teamId = TeamManager.currentTeam.id;
+                        teamName = TeamManager.currentTeam.name;
+                    } else {
+                        throw new Error('No team selected for game');
+                    }
+                }
+
+                const team = this.getTeam(teamId);
+                if (team) {
+                    teamName = team.name;
+                } else if (window.TeamManager?.currentTeam) {
+                    teamName = TeamManager.currentTeam.name;
+                } else {
+                    throw new Error('Team not found');
+                }
+            }
+
+            // Generate game data
+            const game = {
+                id: 'game_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                teamId: teamId,
+                teamName: teamName,
+                opponent: gameData.opponent || 'TBD',
+                date: gameData.date || new Date().toISOString().split('T')[0],
+                location: gameData.location || '',
+                gameType: gameData.gameType || 'regular', // regular, tournament, friendly
+                status: 'active', // active, completed, cancelled
+                lineup: gameData.lineup || LineupManager.exportState().lineup,
+                gameSettings: { ...SoccerConfig.gameSettings },
+                stats: {
+                    score: { home: null, away: null },
+                    notes: '',
+                    playerStats: {}
+                },
+                createdAt: new Date().toISOString(),
+                lastModified: new Date().toISOString()
+            };
+
+            // Save game
+            const games = this.getAllGames();
+            games[game.id] = game;
+            localStorage.setItem(this.STORAGE_KEYS.GAMES, JSON.stringify(games));
+
+            // Set as current game
+            this.setCurrentGame(game.id);
+
+            console.log('Game created:', game.opponent, 'on', game.date);
+            return game.id;
+        } catch (error) {
+            console.error('Error creating game:', error);
+            this.showStorageError('Failed to create game');
+            return null;
+        }
+    },
+
+    // Get all games
+    getAllGames() {
+        try {
+            const games = localStorage.getItem(this.STORAGE_KEYS.GAMES);
+            return games ? JSON.parse(games) : {};
+        } catch (error) {
+            console.error('Error loading games:', error);
+            return {};
+        }
+    },
+
+    // Get games for a specific team
+    getTeamGames(teamId) {
+        try {
+            const allGames = this.getAllGames();
+            return Object.values(allGames).filter(game => game.teamId === teamId);
+        } catch (error) {
+            console.error('Error loading team games:', error);
+            return [];
+        }
+    },
+
+    // Get a specific game
+    getGame(gameId) {
+        try {
+            const games = this.getAllGames();
+            return games[gameId] || null;
+        } catch (error) {
+            console.error('Error loading game:', error);
+            return null;
+        }
+    },
+
+    // Update game data
+    updateGame(gameId, gameData) {
+        try {
+            const games = this.getAllGames();
+            const game = games[gameId];
+            if (!game) {
+                throw new Error('Game not found');
+            }
+
+            // Update fields
+            Object.assign(game, gameData);
+            game.lastModified = new Date().toISOString();
+
+            games[gameId] = game;
+            localStorage.setItem(this.STORAGE_KEYS.GAMES, JSON.stringify(games));
+
+            console.log('Game updated:', gameId);
+            return true;
+        } catch (error) {
+            console.error('Error updating game:', error);
+            return false;
+        }
+    },
+
+    // Save current lineup to current game
+    saveGameLineup(gameId = null) {
+        try {
+            const currentGameId = gameId || this.getCurrentGameId();
+            if (!currentGameId) return false;
+
+            const currentLineup = LineupManager.getFullLineup();
+            const gameData = {
+                lineup: currentLineup,
+                lastModified: new Date().toISOString()
+            };
+
+            return this.updateGame(currentGameId, gameData);
+        } catch (error) {
+            console.error('Error saving game lineup:', error);
+            return false;
+        }
+    },
+
+    // Load game lineup into LineupManager
+    loadGameLineup(gameId) {
+        try {
+            const game = this.getGame(gameId);
+            if (!game || !game.lineup) return false;
+
+            // Load the team first
+            if (game.teamId && this.getTeam(game.teamId)) {
+                this.setCurrentTeam(game.teamId);
+                this.loadTeamIntoApp(this.getTeam(game.teamId));
+            }
+
+            // Load the lineup
+            LineupManager.importState({
+                currentPeriod: 1,
+                lineup: game.lineup
+            });
+
+            // Set as current game
+            this.setCurrentGame(gameId);
+
+            console.log('Game lineup loaded:', gameId);
+            return true;
+        } catch (error) {
+            console.error('Error loading game lineup:', error);
+            return false;
+        }
+    },
+
+    // Complete a game (mark as finished and save final stats)
+    completeGame(gameId, finalStats = {}) {
+        try {
+            const gameData = {
+                status: 'completed',
+                completedAt: new Date().toISOString(),
+                stats: {
+                    ...finalStats,
+                    playerStats: this.calculateGamePlayerStats(gameId)
+                }
+            };
+
+            return this.updateGame(gameId, gameData);
+        } catch (error) {
+            console.error('Error completing game:', error);
+            return false;
+        }
+    },
+
+    // Calculate player stats for a game
+    calculateGamePlayerStats(gameId) {
+        try {
+            const game = this.getGame(gameId);
+            if (!game || !game.lineup) return {};
+
+            const playerStats = {};
+            const lineup = game.lineup;
+
+            // Calculate stats for each player across all periods
+            Object.keys(SoccerConfig.players).forEach(playerName => {
+                const stats = {
+                    minutesPlayed: 0,
+                    positions: {},
+                    benchTime: 0,
+                    jerseyTime: 0
+                };
+
+                for (let period = 1; period <= SoccerConfig.gameSettings.totalPeriods; period++) {
+                    const periodData = lineup[period];
+                    if (!periodData) continue;
+
+                    // Check positions
+                    for (const [position, assignedPlayer] of Object.entries(periodData.positions || {})) {
+                        if (assignedPlayer === playerName) {
+                            stats.minutesPlayed += SoccerConfig.gameSettings.periodLength;
+                            stats.positions[position] = (stats.positions[position] || 0) + 1;
+                        }
+                    }
+
+                    // Count bench time
+                    if (periodData.bench && periodData.bench.includes(playerName)) {
+                        stats.benchTime += SoccerConfig.gameSettings.periodLength;
+                    }
+
+                    // Count jersey time
+                    if (periodData.jersey && periodData.jersey.includes(playerName)) {
+                        stats.jerseyTime += SoccerConfig.gameSettings.periodLength;
+                    }
+                }
+
+                if (stats.minutesPlayed > 0 || stats.benchTime > 0 || stats.jerseyTime > 0) {
+                    playerStats[playerName] = stats;
+                }
+            });
+
+            return playerStats;
+        } catch (error) {
+            console.error('Error calculating game player stats:', error);
+            return {};
+        }
+    },
+
+    // Delete a game
+    deleteGame(gameId) {
+        try {
+            const games = this.getAllGames();
+            if (games[gameId]) {
+                const gameName = `${games[gameId].opponent} (${games[gameId].date})`;
+                delete games[gameId];
+                localStorage.setItem(this.STORAGE_KEYS.GAMES, JSON.stringify(games));
+
+                // If this was the current game, clear it
+                if (this.getCurrentGameId() === gameId) {
+                    localStorage.removeItem(this.STORAGE_KEYS.CURRENT_GAME);
+                }
+
+                console.log('Game deleted:', gameName);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error deleting game:', error);
+            return false;
+        }
+    },
+
+    // Set current game
+    setCurrentGame(gameId) {
+        try {
+            localStorage.setItem(this.STORAGE_KEYS.CURRENT_GAME, gameId);
+            console.log('Current game set to:', gameId);
+        } catch (error) {
+            console.error('Error setting current game:', error);
+        }
+    },
+
+    // Get current game ID
+    getCurrentGameId() {
+        try {
+            return localStorage.getItem(this.STORAGE_KEYS.CURRENT_GAME);
+        } catch (error) {
+            console.error('Error getting current game ID:', error);
+            return null;
+        }
+    },
+
+    // Get current game
+    getCurrentGame() {
+        try {
+            const gameId = this.getCurrentGameId();
+            return gameId ? this.getGame(gameId) : null;
+        } catch (error) {
+            console.error('Error getting current game:', error);
+            return null;
+        }
+    },
+
+    // Delete all games for a team (called when team is deleted)
+    deleteTeamGames(teamId) {
+        try {
+            const allGames = this.getAllGames();
+            const gameIds = Object.keys(allGames).filter(gameId => allGames[gameId].teamId === teamId);
+            
+            gameIds.forEach(gameId => {
+                delete allGames[gameId];
+            });
+            
+            localStorage.setItem(this.STORAGE_KEYS.GAMES, JSON.stringify(allGames));
+            
+            // Clear current game if it belonged to deleted team
+            const currentGameId = this.getCurrentGameId();
+            if (currentGameId && gameIds.includes(currentGameId)) {
+                localStorage.removeItem(this.STORAGE_KEYS.CURRENT_GAME);
+            }
+            
+            console.log(`Deleted ${gameIds.length} games for team:`, teamId);
+        } catch (error) {
+            console.error('Error deleting team games:', error);
+        }
+    },
+
+    // Export game data
+    exportGame(gameId) {
+        try {
+            const game = this.getGame(gameId);
+            if (!game) return null;
+
+            return {
+                ...game,
+                exportedAt: new Date().toISOString(),
+                version: '1.0'
+            };
+        } catch (error) {
+            console.error('Error exporting game:', error);
+            return null;
+        }
+    },
+
+    // Import game data
+    importGame(gameData) {
+        try {
+            if (!gameData.teamId || !gameData.opponent) {
+                throw new Error('Invalid game data');
+            }
+
+            // Generate new ID to avoid conflicts
+            const newGameId = 'game_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+            const game = {
+                id: newGameId,
+                teamId: gameData.teamId,
+                teamName: gameData.teamName,
+                opponent: gameData.opponent + (gameData.opponent === 'TBD' ? ' (Imported)' : ''),
+                date: gameData.date,
+                location: gameData.location || '',
+                gameType: gameData.gameType || 'regular',
+                status: gameData.status || 'completed',
+                lineup: gameData.lineup || {},
+                gameSettings: gameData.gameSettings || {},
+                stats: gameData.stats || {},
+                createdAt: new Date().toISOString(),
+                lastModified: new Date().toISOString()
+            };
+
+            const games = this.getAllGames();
+            games[newGameId] = game;
+            localStorage.setItem(this.STORAGE_KEYS.GAMES, JSON.stringify(games));
+
+            console.log('Game imported:', game.opponent, 'on', game.date);
+            return newGameId;
+        } catch (error) {
+            console.error('Error importing game:', error);
+            return null;
+        }
+    },
+
+    // Get game history for current team
+    getGameHistory(teamId = null) {
+        try {
+            const currentTeamId = teamId || this.getCurrentTeamId();
+            if (!currentTeamId) return [];
+
+            const games = this.getTeamGames(currentTeamId);
+            
+            // Sort by date (most recent first)
+            return games.sort((a, b) => new Date(b.date) - new Date(a.date));
+        } catch (error) {
+            console.error('Error getting game history:', error);
+            return [];
+        }
+    },
+
+    // Get team statistics across all games
+    getTeamStats(teamId = null) {
+        try {
+            const currentTeamId = teamId || this.getCurrentTeamId();
+            if (!currentTeamId) return null;
+
+            const games = this.getTeamGames(currentTeamId);
+            const completedGames = games.filter(game => game.status === 'completed');
+
+            const stats = {
+                totalGames: games.length,
+                completedGames: completedGames.length,
+                wins: 0,
+                losses: 0,
+                draws: 0,
+                playerStats: {}
+            };
+
+            // Aggregate player stats across all games
+            completedGames.forEach(game => {
+                if (game.stats && game.stats.playerStats) {
+                    Object.entries(game.stats.playerStats).forEach(([playerName, gamePlayerStats]) => {
+                        if (!stats.playerStats[playerName]) {
+                            stats.playerStats[playerName] = {
+                                totalMinutes: 0,
+                                gamesPlayed: 0,
+                                positions: {},
+                                benchTime: 0,
+                                jerseyTime: 0
+                            };
+                        }
+
+                        const playerStats = stats.playerStats[playerName];
+                        playerStats.totalMinutes += gamePlayerStats.minutesPlayed || 0;
+                        playerStats.benchTime += gamePlayerStats.benchTime || 0;
+                        playerStats.jerseyTime += gamePlayerStats.jerseyTime || 0;
+                        playerStats.gamesPlayed++;
+
+                        // Aggregate position stats
+                        if (gamePlayerStats.positions) {
+                            Object.entries(gamePlayerStats.positions).forEach(([position, count]) => {
+                                playerStats.positions[position] = (playerStats.positions[position] || 0) + count;
+                            });
+                        }
+                    });
+                }
+            });
+
+            return stats;
+        } catch (error) {
+            console.error('Error calculating team stats:', error);
+            return null;
+        }
     }
 };
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    PersistentStorage.init();
-});
+// Initialize when DOM is loaded (will be called by app.js instead)
+// document.addEventListener('DOMContentLoaded', () => {
+//     PersistentStorage.init();
+// });
 
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {

@@ -414,6 +414,12 @@ function handleTeamSelection() {
         try {
             TeamManager.loadTeam(teamId);
             TeamManagerUI.updateCurrentTeamInfo();
+            
+            // Update game UI when team changes
+            if (window.GameManagerUI) {
+                GameManagerUI.onTeamChange();
+            }
+            
             ToastManager.success(`Loaded team: ${TeamManager.currentTeam.name}`);
         } catch (error) {
             console.error('Failed to load team:', error);
@@ -423,6 +429,12 @@ function handleTeamSelection() {
         TeamManager.currentTeam = null;
         TeamManager.updateSoccerConfig();
         TeamManagerUI.updateCurrentTeamInfo();
+        
+        // Update game UI when team is cleared
+        if (window.GameManagerUI) {
+            GameManagerUI.onTeamChange();
+        }
+        
         if (window.UIManager) {
             UIManager.renderPlayerList();
             UIManager.updateDisplay();

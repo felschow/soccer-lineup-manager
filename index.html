@@ -50,6 +50,11 @@
                     <span class="sidebar-icon">👥</span>
                     <span class="sidebar-label">Team</span>
                 </button>
+                
+                <button class="sidebar-btn info" onclick="openGameManager()" title="Manage games and view history">
+                    <span class="sidebar-icon">🎮</span>
+                    <span class="sidebar-label">Games</span>
+                </button>
             </div>
         </div>
 
@@ -508,9 +513,9 @@
                 <span class="icon">👥</span>
                 <span>Teams</span>
             </button>
-            <button class="mobile-nav-button" onclick="showMobileMenu()" id="mobileMenuToggle">
-                <span class="icon">⋯</span>
-                <span>More</span>
+            <button class="mobile-nav-button" onclick="openGameManager()" id="mobileGameToggle">
+                <span class="icon">🎮</span>
+                <span>Games</span>
             </button>
         </div>
     </nav>
@@ -535,6 +540,8 @@
     <script src="js/exportUtils.js"></script>
     <script src="js/teamManager.js"></script>
     <script src="js/teamManagerUI.js"></script>
+    <script src="js/persistentStorage.js"></script>
+    <script src="js/gameManagerUI.js"></script>
     <script src="js/periodTimer.js"></script>
     <script src="js/periodTransitionUI.js"></script>
     <script src="js/mobileTimerUI.js"></script>

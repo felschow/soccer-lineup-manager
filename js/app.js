@@ -14,6 +14,7 @@ let soccerLineupApp = {
             
             // Initialize core modules in order
             ToastManager.init();
+            PersistentStorage.init();  // Initialize storage before team manager
             TeamManager.init();
             LineupManager.init();
             HistoryManager.init();
