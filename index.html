@@ -14,6 +14,7 @@
     
     <!-- Styles -->
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/mobile-improvements.css">
 </head>
 <body>
     <div class="app-container">
@@ -47,21 +48,30 @@
             </div>
         </div>
 
-        <!-- Mobile Quick Actions -->
+        <!-- Mobile Quick Actions (mirrors desktop header) -->
         <div class="mobile-quick-actions">
             <button class="mobile-action-button primary" onclick="autoFillAll()">
                 <span class="icon">⚽</span>
                 Auto Fill All
             </button>
+            <button class="mobile-action-button" onclick="toggleView()" id="mobileViewToggleHeader">
+                <span class="icon">📊</span>
+                Table View
+            </button>
             <button class="mobile-action-button" onclick="clearPeriod()">
                 <span class="icon">🗑️</span>
                 Clear Period
+            </button>
+            <button class="mobile-action-button" onclick="exportLineup()">
+                <span class="icon">📤</span>
+                Export
             </button>
         </div>
 
         <div class="main-content">
             <div class="sidebar">
-                <div class="player-pool">
+                <!-- Priority 1: Always Visible - Available Players -->
+                <div class="sidebar-section priority-1">
                     <div class="pool-title">
                         👥 Available Players
                     </div>
@@ -70,33 +80,69 @@
                     </div>
                 </div>
 
-                <div class="stats-summary">
+                <!-- Priority 2: Always Visible - Quick Stats -->
+                <div class="sidebar-section priority-2">
                     <div class="pool-title">📊 Quick Stats</div>
                     <div id="quickStats">
                         <!-- Stats will be shown here -->
                     </div>
                 </div>
 
-                <!-- Period Timer & Transitions Panel -->
-                <div class="substitution-panel">
-                    <div class="pool-title">⏱️ Period Timer</div>
-                    
-                    <!-- Game Timer -->
-                    <div class="game-timer">
-                        <div class="timer-display" id="gameTimerDisplay">00:00</div>
-                        <div class="period-progress">
-                            <div class="progress-bar" id="periodProgressBar"></div>
-                        </div>
-                        <div class="timer-controls">
-                            <button class="btn-small" onclick="PeriodTimer.toggleGameTimer()" id="timerToggleBtn">▶️ Start</button>
-                            <button class="btn-small" onclick="PeriodTimer.resetGameTimer()">🔄 Reset</button>
-                        </div>
+                <!-- Priority 3: Collapsible - Timer & Advanced Features -->
+                <div class="sidebar-section priority-3 collapsible-section">
+                    <div class="pool-title collapsible-header" onclick="toggleSidebarSection('timer')">
+                        ⏱️ Period Timer
+                        <span class="collapse-icon" id="timer-icon">−</span>
                     </div>
                     
-                    <!-- Next Period Changes -->
-                    <div class="next-period-panel" id="nextPeriodPanel">
-                        <div class="next-period-title">Next Period Changes:</div>
+                    <div class="collapsible-content" id="timer-content">
+                        <!-- Game Timer -->
+                        <div class="game-timer">
+                            <div class="timer-display" id="gameTimerDisplay">00:00</div>
+                            <div class="period-progress">
+                                <div class="progress-bar" id="periodProgressBar"></div>
+                            </div>
+                            <div class="timer-controls">
+                                <button class="btn-small" onclick="PeriodTimer.toggleGameTimer()" id="timerToggleBtn">▶️ Start</button>
+                                <button class="btn-small" onclick="PeriodTimer.resetGameTimer()">🔄 Reset</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Priority 4: Collapsible - Period Changes -->
+                <div class="sidebar-section priority-4 collapsible-section">
+                    <div class="pool-title collapsible-header" onclick="toggleSidebarSection('changes')">
+                        🔄 Next Period Changes
+                        <span class="collapse-icon" id="changes-icon">−</span>
+                    </div>
+                    
+                    <div class="collapsible-content" id="changes-content">
                         <div class="period-changes-list" id="periodChangesList">
+                            <!-- Period changes will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mobile-Only: Condensed Timer Widget -->
+                <div class="mobile-timer-widget" id="mobileTimerWidget">
+                    <div class="mobile-timer-compact">
+                        <div class="timer-display-small" id="mobileGameTimerDisplay">00:00</div>
+                        <button class="mobile-timer-toggle" onclick="PeriodTimer.toggleGameTimer()" id="mobileTimerToggleBtn">▶️</button>
+                    </div>
+                    <div class="mobile-period-progress">
+                        <div class="mobile-progress-bar" id="mobilePeriodProgressBar"></div>
+                    </div>
+                </div>
+
+                <!-- Mobile-Only: Collapsible Period Changes -->
+                <div class="mobile-period-changes" id="mobilePeriodChanges">
+                    <div class="mobile-collapsible-header" onclick="toggleMobileSection('period-changes')">
+                        🔄 Upcoming Changes
+                        <span class="mobile-collapse-icon" id="period-changes-mobile-icon">+</span>
+                    </div>
+                    <div class="mobile-collapsible-content collapsed" id="period-changes-mobile-content">
+                        <div class="mobile-period-changes-list" id="mobilePeriodChangesList">
                             <!-- Period changes will be populated here -->
                         </div>
                     </div>
@@ -178,89 +224,77 @@
                 </div>
             </div>
 
-            <!-- Mobile Soccer Field View -->
-            <div class="mobile-soccer-field" id="mobileFieldView">
-                <div class="mobile-field-lines">
-                    <div class="mobile-penalty-area-top"></div>
-                    <div class="mobile-penalty-area-bottom"></div>
-                    <div class="mobile-goal-area-top"></div>
-                    <div class="mobile-goal-area-bottom"></div>
+            <!-- Mobile Card-Based Field View -->
+            <div class="mobile-field-container" id="mobileFieldView">
+                <!-- Field Positions as Cards -->
+                <div class="mobile-position-card" data-position="goalkeeper">
+                    <div class="position-label">Goalkeeper (GK)</div>
+                    <div class="player-name" id="mobile-goalkeeper">Tap to assign</div>
                 </div>
-                
-                <!-- Field Positions -->
-                <div class="mobile-position-slot mobile-striker" data-position="striker">
-                    <div class="mobile-position-label">ST</div>
-                    <div class="mobile-player-name" id="mobile-striker">Tap</div>
-                </div>
-                
-                <div class="mobile-position-slot mobile-left-wing" data-position="left-wing">
-                    <div class="mobile-position-label">LW</div>
-                    <div class="mobile-player-name" id="mobile-left-wing">Tap</div>
-                </div>
-                
-                <div class="mobile-position-slot mobile-right-wing" data-position="right-wing">
-                    <div class="mobile-position-label">RW</div>
-                    <div class="mobile-player-name" id="mobile-right-wing">Tap</div>
-                </div>
-                
-                <div class="mobile-position-slot mobile-center-mid-left" data-position="center-mid-left">
-                    <div class="mobile-position-label">CM</div>
-                    <div class="mobile-player-name" id="mobile-center-mid-left">Tap</div>
-                </div>
-                
-                <div class="mobile-position-slot mobile-center-mid-right" data-position="center-mid-right">
-                    <div class="mobile-position-label">CM</div>
-                    <div class="mobile-player-name" id="mobile-center-mid-right">Tap</div>
-                </div>
-                
-                <div class="mobile-position-slot mobile-left-back" data-position="left-back">
-                    <div class="mobile-position-label">LB</div>
-                    <div class="mobile-player-name" id="mobile-left-back">Tap</div>
-                </div>
-                
-                <div class="mobile-position-slot mobile-center-back" data-position="center-back">
-                    <div class="mobile-position-label">CB</div>
-                    <div class="mobile-player-name" id="mobile-center-back">Tap</div>
-                </div>
-                
-                <div class="mobile-position-slot mobile-right-back" data-position="right-back">
-                    <div class="mobile-position-label">RB</div>
-                    <div class="mobile-player-name" id="mobile-right-back">Tap</div>
-                </div>
-                
-                <div class="mobile-position-slot mobile-goalkeeper" data-position="goalkeeper">
-                    <div class="mobile-position-label">GK</div>
-                    <div class="mobile-player-name" id="mobile-goalkeeper">Tap</div>
-                </div>
-            </div>
 
-            <!-- Mobile Bench Area -->
-            <div class="mobile-bench-container">
-                <div class="mobile-bench-section">
-                    <h3 class="mobile-bench-title">🪑 Bench</h3>
-                    <div class="mobile-bench-slots">
-                        <div class="mobile-position-slot mobile-bench" data-position="bench-1">
-                            <div class="mobile-position-label">Bench</div>
-                            <div class="mobile-player-name" id="mobile-bench-1">Tap</div>
-                        </div>
-                        <div class="mobile-position-slot mobile-bench" data-position="bench-2">
-                            <div class="mobile-position-label">Bench</div>
-                            <div class="mobile-player-name" id="mobile-bench-2">Tap</div>
-                        </div>
-                        <div class="mobile-position-slot mobile-bench" data-position="bench-3">
-                            <div class="mobile-position-label">Bench</div>
-                            <div class="mobile-player-name" id="mobile-bench-3">Tap</div>
-                        </div>
+                <div class="mobile-position-card" data-position="left-back">
+                    <div class="position-label">Left Back (LB)</div>
+                    <div class="player-name" id="mobile-left-back">Tap to assign</div>
+                </div>
+
+                <div class="mobile-position-card" data-position="center-back">
+                    <div class="position-label">Center Back (CB)</div>
+                    <div class="player-name" id="mobile-center-back">Tap to assign</div>
+                </div>
+
+                <div class="mobile-position-card" data-position="right-back">
+                    <div class="position-label">Right Back (RB)</div>
+                    <div class="player-name" id="mobile-right-back">Tap to assign</div>
+                </div>
+
+                <div class="mobile-position-card" data-position="center-mid-left">
+                    <div class="position-label">Center Mid Left (CM)</div>
+                    <div class="player-name" id="mobile-center-mid-left">Tap to assign</div>
+                </div>
+
+                <div class="mobile-position-card" data-position="center-mid-right">
+                    <div class="position-label">Center Mid Right (CM)</div>
+                    <div class="player-name" id="mobile-center-mid-right">Tap to assign</div>
+                </div>
+
+                <div class="mobile-position-card" data-position="left-wing">
+                    <div class="position-label">Left Wing (LW)</div>
+                    <div class="player-name" id="mobile-left-wing">Tap to assign</div>
+                </div>
+
+                <div class="mobile-position-card" data-position="striker">
+                    <div class="position-label">Striker (ST)</div>
+                    <div class="player-name" id="mobile-striker">Tap to assign</div>
+                </div>
+
+                <div class="mobile-position-card" data-position="right-wing">
+                    <div class="position-label">Right Wing (RW)</div>
+                    <div class="player-name" id="mobile-right-wing">Tap to assign</div>
+                </div>
+
+                <!-- Bench Section -->
+                <div style="margin-top: 24px;">
+                    <h3 style="margin-bottom: 16px; color: #374151;">🪑 Bench Players</h3>
+                    <div class="mobile-position-card" data-position="bench-1">
+                        <div class="position-label">Bench #1</div>
+                        <div class="player-name" id="mobile-bench-1">Tap to assign</div>
+                    </div>
+                    <div class="mobile-position-card" data-position="bench-2">
+                        <div class="position-label">Bench #2</div>
+                        <div class="player-name" id="mobile-bench-2">Tap to assign</div>
+                    </div>
+                    <div class="mobile-position-card" data-position="bench-3">
+                        <div class="position-label">Bench #3</div>
+                        <div class="player-name" id="mobile-bench-3">Tap to assign</div>
                     </div>
                 </div>
 
-                <div class="mobile-bench-section">
-                    <h3 class="mobile-bench-title">👕 Jersey Prep</h3>
-                    <div class="mobile-bench-slots">
-                        <div class="mobile-position-slot mobile-jersey" data-position="jersey-1">
-                            <div class="mobile-position-label">Jersey</div>
-                            <div class="mobile-player-name" id="mobile-jersey-1">Tap</div>
-                        </div>
+                <!-- Jersey Prep Section -->
+                <div style="margin-top: 24px;">
+                    <h3 style="margin-bottom: 16px; color: #374151;">👕 Jersey Preparation</h3>
+                    <div class="mobile-position-card" data-position="jersey-1">
+                        <div class="position-label">Jersey Prep</div>
+                        <div class="player-name" id="mobile-jersey-1">Tap to assign</div>
                     </div>
                 </div>
             </div>
@@ -437,24 +471,52 @@
         </div>
     </div>
 
-    <!-- Mobile Bottom Navigation -->
+    <!-- Mobile Menu Modal -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay" style="display: none;">
+        <div class="mobile-menu-container">
+            <div class="mobile-menu-header">
+                <h3>Quick Actions</h3>
+                <button class="mobile-menu-close" onclick="hideMobileMenu()">&times;</button>
+            </div>
+            <div class="mobile-menu-actions">
+                <button class="mobile-menu-button" onclick="autoFillAll(); hideMobileMenu();">
+                    <span class="icon">⚽</span>
+                    <span>Auto Fill All</span>
+                </button>
+                <button class="mobile-menu-button" onclick="clearPeriod(); hideMobileMenu();">
+                    <span class="icon">🗑️</span>
+                    <span>Clear Period</span>
+                </button>
+                <button class="mobile-menu-button" onclick="clearAllPeriods(); hideMobileMenu();">
+                    <span class="icon">🗑️</span>
+                    <span>Clear All Periods</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Navigation (consistent with desktop functions) -->
     <nav class="mobile-bottom-nav">
         <div class="mobile-nav-grid">
-            <button class="mobile-nav-button" onclick="autoFillAll()">
-                <span class="icon">⚽</span>
-                <span>Auto Fill</span>
-            </button>
-            <button class="mobile-nav-button" onclick="toggleMobileView()" id="mobileViewToggle">
+            <button class="mobile-nav-button" onclick="toggleView()" id="mobileViewToggle">
                 <span class="icon" id="mobileViewIcon">📊</span>
                 <span id="mobileViewText">Table</span>
-            </button>
-            <button class="mobile-nav-button" onclick="clearPeriod()">
-                <span class="icon">🗑️</span>
-                <span>Clear</span>
             </button>
             <button class="mobile-nav-button" onclick="showTimerPage()" id="mobileTimerToggle">
                 <span class="icon">⏱️</span>
                 <span>Timer</span>
+            </button>
+            <button class="mobile-nav-button" onclick="openTeamManager()" id="mobileTeamToggle">
+                <span class="icon">👥</span>
+                <span>Teams</span>
+            </button>
+            <button class="mobile-nav-button" onclick="exportLineup()">
+                <span class="icon">📤</span>
+                <span>Export</span>
+            </button>
+            <button class="mobile-nav-button" onclick="showMobileMenu()" id="mobileMenuToggle">
+                <span class="icon">⋯</span>
+                <span>More</span>
             </button>
         </div>
     </nav>
@@ -471,6 +533,8 @@
     <script src="js/uiManager.js"></script>
     <script src="js/dragDrop.js"></script>
     <script src="js/mobileEnhancements.js"></script>
+    <script src="js/mobileNavigation.js"></script>
+    <script src="js/progressiveDisclosure.js"></script>
     <script src="js/mobileUIManager.js"></script>
     <script src="js/autoFill.js"></script>
     <script src="js/exportUtils.js"></script>

@@ -49,6 +49,17 @@ const UIManager = {
         if (window.MobileTimerUI) {
             MobileTimerUI.onPeriodChange();
         }
+        
+        // Update mobile navigation consistency
+        if (window.MobileNavigation) {
+            MobileNavigation.updateNavigationButtons();
+        }
+        
+        // Update progressive disclosure features
+        if (window.ProgressiveDisclosure) {
+            ProgressiveDisclosure.syncTimerDisplays();
+            ProgressiveDisclosure.syncPeriodChangesDisplays();
+        }
     },
 
     // Period information updates
