@@ -133,6 +133,28 @@ const LineupManager = {
         this.initializeLineup();
     },
 
+    // Remove player from all periods (used when player is deleted from team)
+    removePlayerFromAllPeriods(playerName) {
+        for (let period = 1; period <= SoccerConfig.gameSettings.totalPeriods; period++) {
+            const periodData = this.lineup[period];
+            
+            // Remove from positions
+            SoccerConfig.positions.forEach(pos => {
+                if (periodData.positions[pos] === playerName) {
+                    periodData.positions[pos] = null;
+                }
+            });
+            
+            // Remove from bench
+            periodData.bench = periodData.bench.filter(p => p !== playerName);
+            
+            // Remove from jersey
+            if (periodData.jersey) {
+                periodData.jersey = periodData.jersey.filter(p => p !== playerName);
+            }
+        }
+    },
+
     // Statistics and analysis
     calculatePlayerStats(playerName) {
         const stats = {

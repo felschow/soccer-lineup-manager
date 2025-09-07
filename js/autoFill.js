@@ -23,7 +23,18 @@ const AutoFillManager = {
 
     // Build complete lineup following all 5 rules
     buildCompleteLineup() {
+        // Ensure we have an active team
+        if (window.TeamManager && !TeamManager.getActiveTeam()) {
+            throw new Error('No active team selected. Please select a team first in Team Manager.');
+        }
+        
         const playerNames = SoccerConfig.utils.getPlayerNames();
+        
+        if (playerNames.length === 0) {
+            throw new Error('No players found. Please make sure you have selected an active team with players.');
+        }
+        
+        console.log('AutoFill using players:', playerNames);
         const totalPeriods = SoccerConfig.gameSettings.totalPeriods;
         
         // Initialize tracking structures
@@ -55,11 +66,24 @@ const AutoFillManager = {
 
     // Plan goalkeeper rotation with jersey preparation and bench planning
     planGoalkeeperRotation(playerTracking) {
+        // Get current players who can play goalkeeper
+        const playerNames = SoccerConfig.utils.getPlayerNames();
+        const gkCapablePlayers = playerNames.filter(player => 
+            SoccerConfig.utils.canPlayerPlayPosition(player, 'goalkeeper')
+        );
+        
+        if (gkCapablePlayers.length < 3) {
+            console.warn('Not enough goalkeeper-capable players found. Using first 3 available players.');
+        }
+        
+        // Use the first 3 goalkeeper-capable players (or first 3 players if not enough GK players)
+        const playersToUse = gkCapablePlayers.length >= 3 ? gkCapablePlayers.slice(0, 3) : playerNames.slice(0, 3);
+        
         // Define goalkeeper rotation with planned bench periods for fairness
         const gkRotation = [
-            { player: 'Aubree', periods: [1, 2, 3], plannedBenchPeriods: [4, 8] }, // Aubree sits in periods 4 and 8
-            { player: 'Jordan', periods: [4, 5, 6], plannedBenchPeriods: [7] },     // Jordan sits in period 7 (plus jersey in 3)
-            { player: 'SK', periods: [7, 8], plannedBenchPeriods: [1] }             // SK sits in period 1 (plus jersey in 6)
+            { player: playersToUse[0], periods: [1, 2, 3], plannedBenchPeriods: [4, 8] },
+            { player: playersToUse[1], periods: [4, 5, 6], plannedBenchPeriods: [7] },
+            { player: playersToUse[2], periods: [7, 8], plannedBenchPeriods: [1] }
         ];
 
         gkRotation.forEach(({ player, periods, plannedBenchPeriods }) => {

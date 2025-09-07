@@ -31,6 +31,7 @@
                 <button class="btn" onclick="autoFillAll()">Auto Fill All</button>
                 <button class="btn btn-secondary" onclick="clearPeriod()">Clear</button>
                 <button class="btn btn-secondary" onclick="exportLineup()">Export</button>
+                <button class="btn btn-primary" onclick="openTeamManager()">Team Manager</button>
             </div>
         </div>
 
@@ -73,6 +74,31 @@
                     <div class="pool-title">📊 Quick Stats</div>
                     <div id="quickStats">
                         <!-- Stats will be shown here -->
+                    </div>
+                </div>
+
+                <!-- Period Timer & Transitions Panel -->
+                <div class="substitution-panel">
+                    <div class="pool-title">⏱️ Period Timer</div>
+                    
+                    <!-- Game Timer -->
+                    <div class="game-timer">
+                        <div class="timer-display" id="gameTimerDisplay">00:00</div>
+                        <div class="period-progress">
+                            <div class="progress-bar" id="periodProgressBar"></div>
+                        </div>
+                        <div class="timer-controls">
+                            <button class="btn-small" onclick="PeriodTimer.toggleGameTimer()" id="timerToggleBtn">▶️ Start</button>
+                            <button class="btn-small" onclick="PeriodTimer.resetGameTimer()">🔄 Reset</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Next Period Changes -->
+                    <div class="next-period-panel" id="nextPeriodPanel">
+                        <div class="next-period-title">Next Period Changes:</div>
+                        <div class="period-changes-list" id="periodChangesList">
+                            <!-- Period changes will be populated here -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -251,6 +277,21 @@
             
             <table class="lineup-table" id="lineupTable">
                 <thead>
+                    <!-- Team Header Row -->
+                    <tr class="team-header-row" id="tableTeamHeader" style="display: none;">
+                        <th colspan="10" class="team-header-cell">
+                            <div class="team-info-display">
+                                <div class="team-logo-small" id="tableTeamLogo">
+                                    <img id="tableTeamLogoImg" alt="Team logo" style="width: 24px; height: 24px; border-radius: 4px; margin-right: 8px; vertical-align: middle;">
+                                </div>
+                                <span class="team-name-header" id="tableTeamName">
+                                    <!-- Team name will be inserted here -->
+                                </span>
+                            </div>
+                        </th>
+                    </tr>
+                    
+                    <!-- Column Headers Row -->
                     <tr>
                         <th>Player</th>
                         <th class="period-header">Period 1<br><small>0:00-7:30</small></th>
@@ -273,6 +314,129 @@
 
     <div class="tooltip" id="tooltip"></div>
 
+    <!-- Team Management Modal -->
+    <div class="modal-overlay" id="teamManagerModal" style="display: none;">
+        <div class="modal-container team-modal">
+            <div class="modal-header">
+                <h2 id="teamModalTitle">Team Manager</h2>
+                <button class="modal-close" onclick="closeTeamManager()">&times;</button>
+            </div>
+            
+            <div class="modal-content">
+                <!-- Team Selection/Creation -->
+                <div class="team-section" id="teamSelectionSection">
+                    <h3>Select Team</h3>
+                    <div class="team-selector">
+                        <select id="teamSelect" onchange="handleTeamSelection()">
+                            <option value="">-- Select a team --</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="showCreateTeam()">Create New Team</button>
+                    </div>
+                    
+                    <div class="current-team-info" id="currentTeamInfo" style="display: none;">
+                        <div class="team-header">
+                            <div class="team-logo-display" id="currentTeamLogo" style="display: none;">
+                                <img id="currentTeamLogoImg" alt="Team logo" style="width: 48px; height: 48px; border-radius: 8px; margin-right: 12px;">
+                            </div>
+                            <div>
+                                <h4 id="currentTeamName"></h4>
+                                <p id="currentTeamStats"></p>
+                            </div>
+                        </div>
+                        <div class="team-actions">
+                            <button class="btn btn-primary" onclick="useCurrentTeam()" id="useTeamBtn">Use This Team</button>
+                            <button class="btn btn-secondary" onclick="showEditTeam()">Edit Team</button>
+                            <button class="btn btn-danger" onclick="deleteCurrentTeam()">Delete Team</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team Creation/Editing Form -->
+                <div class="team-section" id="teamFormSection" style="display: none;">
+                    <h3 id="teamFormTitle">Create New Team</h3>
+                    <form id="teamForm" onsubmit="saveTeam(event)">
+                        <div class="form-group">
+                            <label for="teamNameInput">Team Name:</label>
+                            <input type="text" id="teamNameInput" required maxlength="50">
+                            <div class="form-error" id="teamNameError"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="teamLogoInput">Team Logo:</label>
+                            <div class="logo-upload-container">
+                                <input type="file" id="teamLogoInput" accept="image/*" onchange="handleLogoUpload(this)">
+                                <div class="logo-preview" id="logoPreview" style="display: none;">
+                                    <img id="logoPreviewImg" alt="Logo preview" style="width: 64px; height: 64px; border-radius: 8px; margin-top: 8px;">
+                                    <button type="button" class="btn-link" onclick="removeLogo()">Remove Logo</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <h4>Players</h4>
+                            <div class="players-container">
+                                <div class="players-list" id="playersList">
+                                    <!-- Players will be added here -->
+                                </div>
+                                <button type="button" class="btn btn-secondary" onclick="addNewPlayer()">Add Player</button>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" onclick="cancelTeamForm()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Team</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Import/Export Section -->
+                <div class="team-section">
+                    <h3>Import/Export</h3>
+                    <div class="import-export-actions">
+                        <button class="btn btn-secondary" onclick="exportCurrentTeam()">Export Current Team</button>
+                        <input type="file" id="teamImportFile" accept=".json" style="display: none;" onchange="importTeam()">
+                        <button class="btn btn-secondary" onclick="document.getElementById('teamImportFile').click()">Import Team</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Timer Page -->
+    <div class="mobile-timer-page" id="mobileTimerPage" style="display: none;">
+        <div class="mobile-timer-container">
+            <!-- Large Timer Display -->
+            <div class="mobile-timer-section">
+                <div class="mobile-timer-display" id="mobileGameTimerDisplay">00:00</div>
+                <div class="mobile-period-info">
+                    <div class="mobile-current-period" id="mobileCurrentPeriod">Period 1</div>
+                    <div class="mobile-period-time" id="mobilePeriodTime">0:00 - 7:30</div>
+                </div>
+                <div class="mobile-period-progress">
+                    <div class="mobile-progress-bar" id="mobilePeriodProgressBar"></div>
+                </div>
+            </div>
+
+            <!-- Timer Controls -->
+            <div class="mobile-timer-controls">
+                <button class="mobile-timer-btn start-pause" onclick="PeriodTimer.toggleGameTimer()" id="mobileTimerToggleBtn">
+                    ▶️ Start
+                </button>
+                <button class="mobile-timer-btn reset" onclick="PeriodTimer.resetGameTimer()">
+                    🔄 Reset
+                </button>
+            </div>
+
+            <!-- Next Period Changes -->
+            <div class="mobile-next-period-section">
+                <div class="mobile-section-title">Next Period Changes:</div>
+                <div class="mobile-period-changes-list" id="mobilePeriodChangesList">
+                    <!-- Period changes will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Mobile Bottom Navigation -->
     <nav class="mobile-bottom-nav">
         <div class="mobile-nav-grid">
@@ -280,7 +444,7 @@
                 <span class="icon">⚽</span>
                 <span>Auto Fill</span>
             </button>
-            <button class="mobile-nav-button" onclick="toggleView()" id="mobileViewToggle">
+            <button class="mobile-nav-button" onclick="toggleMobileView()" id="mobileViewToggle">
                 <span class="icon" id="mobileViewIcon">📊</span>
                 <span id="mobileViewText">Table</span>
             </button>
@@ -288,9 +452,9 @@
                 <span class="icon">🗑️</span>
                 <span>Clear</span>
             </button>
-            <button class="mobile-nav-button" onclick="exportLineup()">
-                <span class="icon">📤</span>
-                <span>Export</span>
+            <button class="mobile-nav-button" onclick="showTimerPage()" id="mobileTimerToggle">
+                <span class="icon">⏱️</span>
+                <span>Timer</span>
             </button>
         </div>
     </nav>
@@ -310,6 +474,11 @@
     <script src="js/mobileUIManager.js"></script>
     <script src="js/autoFill.js"></script>
     <script src="js/exportUtils.js"></script>
+    <script src="js/teamManager.js"></script>
+    <script src="js/teamManagerUI.js"></script>
+    <script src="js/periodTimer.js"></script>
+    <script src="js/periodTransitionUI.js"></script>
+    <script src="js/mobileTimerUI.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

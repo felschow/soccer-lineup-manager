@@ -39,6 +39,16 @@ const UIManager = {
         if (window.MobileUIManager) {
             MobileUIManager.updateMobileDisplay();
         }
+        
+        // Update period transition display
+        if (window.PeriodTransitionUI) {
+            PeriodTransitionUI.updatePeriodChangesDisplay();
+        }
+        
+        // Update mobile timer display
+        if (window.MobileTimerUI) {
+            MobileTimerUI.onPeriodChange();
+        }
     },
 
     // Period information updates
@@ -238,6 +248,7 @@ const UIManager = {
             if (mobileViewText) mobileViewText.textContent = 'Field';
             
             this.renderLineupTable();
+            this.updateTableTeamHeader();
         } else {
             if (mainContent) mainContent.style.display = 'grid';
             if (tableView) tableView.style.display = 'none';
@@ -299,9 +310,9 @@ const UIManager = {
                 }
                 
                 if (cellContent) {
-                    periodCells.push(`<td><span class="position-cell ${cellClass}">${cellContent}</span></td>`);
+                    periodCells.push(`<td style="text-align: center;"><span class="position-cell ${cellClass}">${cellContent}</span></td>`);
                 } else {
-                    periodCells.push(`<td>-</td>`);
+                    periodCells.push(`<td style="text-align: center;">-</td>`);
                 }
             }
             
@@ -353,6 +364,37 @@ const UIManager = {
         const tooltip = document.getElementById('tooltip');
         if (tooltip) {
             tooltip.classList.remove('show');
+        }
+    },
+
+    // Update table view team header
+    updateTableTeamHeader() {
+        const headerRow = document.getElementById('tableTeamHeader');
+        const teamNameElement = document.getElementById('tableTeamName');
+        const teamLogoElement = document.getElementById('tableTeamLogo');
+        const teamLogoImg = document.getElementById('tableTeamLogoImg');
+        
+        if (!headerRow || !teamNameElement) return;
+        
+        const activeTeam = TeamManager.getActiveTeam();
+        
+        if (activeTeam) {
+            // Show team name
+            teamNameElement.textContent = activeTeam.name;
+            
+            // Show team logo if available
+            if (activeTeam.logo && teamLogoImg) {
+                teamLogoImg.src = activeTeam.logo;
+                teamLogoElement.style.display = 'inline-flex';
+            } else {
+                teamLogoElement.style.display = 'none';
+            }
+            
+            // Show the header row
+            headerRow.style.display = 'table-row';
+        } else {
+            // Hide the header row if no active team
+            headerRow.style.display = 'none';
         }
     }
 };

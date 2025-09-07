@@ -14,12 +14,17 @@ let soccerLineupApp = {
             
             // Initialize core modules in order
             ToastManager.init();
+            TeamManager.init();
             LineupManager.init();
             HistoryManager.init();
             EnhancedStats.init();
             UIManager.init();
             DragDropManager.init();
             MobileEnhancements.init();
+            PeriodTimer.init();
+            PeriodTransitionUI.init();
+            MobileTimerUI.init();
+            
             
             // Initialize mobile-specific features if on mobile
             if (window.MobileUIManager) {
@@ -36,6 +41,10 @@ let soccerLineupApp = {
             // Render initial UI
             UIManager.renderPlayerList();
             UIManager.updateDisplay();
+            
+            // Update header with active team
+            TeamManager.updateHeaderDisplay();
+            
             
             this.initialized = true;
             console.log('Soccer Lineup Manager initialized successfully');
