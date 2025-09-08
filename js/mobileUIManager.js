@@ -87,15 +87,31 @@ const MobileUIManager = {
         // Replace existing player cards with mobile-optimized ones
         const players = SoccerConfig.utils.getPlayerNames();
         
-        playerList.innerHTML = players.map(player => `
-            <div class="mobile-player-card" 
-                 data-player="${player}"
-                 draggable="true"
-                 onclick="selectMobilePlayer('${player}')">
-                ${player}
-                <span class="mobile-player-positions">${this.getPlayerPositionsText(player)}</span>
-            </div>
-        `).join('');
+        playerList.innerHTML = players.map(player => {
+            // Get player availability status
+            const availability = window.PlayerAvailability ? 
+                PlayerAvailability.getPlayerAvailability(player) : null;
+            const statusInfo = availability ? 
+                PlayerAvailability.getStatusDisplayInfo(availability.status) : null;
+            
+            // Determine if player should be dimmed or highlighted based on availability
+            const availabilityClass = availability ? `availability-${availability.status}` : '';
+            const isDraggable = !availability || PlayerAvailability.canPlayerBeAutoAssigned(player);
+            
+            return `
+                <div class="mobile-player-card ${availabilityClass}" 
+                     data-player="${player}"
+                     draggable="${isDraggable}"
+                     onclick="selectMobilePlayer('${player}')">
+                    <div class="mobile-player-name">
+                        ${player}
+                        ${statusInfo ? `<span class="mobile-availability-badge" style="background-color: ${statusInfo.color}" title="${statusInfo.description}">${statusInfo.emoji}</span>` : ''}
+                    </div>
+                    <span class="mobile-player-positions">${this.getPlayerPositionsText(player)}</span>
+                    ${availability && availability.notes ? `<div class="mobile-availability-notes">📝 ${availability.notes}</div>` : ''}
+                </div>
+            `;
+        }).join('');
     },
     
     getPlayerPositionsText(player) {

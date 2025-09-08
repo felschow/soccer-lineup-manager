@@ -159,6 +159,16 @@ const EnhancedStats = {
         const balanceStatus = this.getPlayerBalanceStatus(stats, teamBalance);
         const isAssigned = LineupManager.isPlayerAssigned(playerName);
         
+        // Get player availability status
+        const availability = window.PlayerAvailability ? 
+            PlayerAvailability.getPlayerAvailability(playerName) : null;
+        const statusInfo = availability ? 
+            PlayerAvailability.getStatusDisplayInfo(availability.status) : null;
+        
+        // Determine if player should be dimmed or highlighted based on availability
+        const availabilityClass = availability ? `availability-${availability.status}` : '';
+        const isDraggable = !availability || PlayerAvailability.canPlayerBeAutoAssigned(playerName);
+        
         // Position badges with usage indicators
         const positionBadges = Object.entries(stats.positions)
             .filter(([pos, count]) => count > 0)
@@ -175,9 +185,15 @@ const EnhancedStats = {
         const timePercentage = (stats.totalMinutes / maxPossibleMinutes) * 100;
         
         return `
-            <div class="player-card ${isAssigned ? 'assigned' : ''}" draggable="true" data-player="${playerName}">
+            <div class="player-card ${isAssigned ? 'assigned' : ''} ${availabilityClass}" 
+                 draggable="${isDraggable}" data-player="${playerName}">
                 <div class="player-header">
-                    <span class="player-name">${playerName}</span>
+                    <div class="player-name-section">
+                        <span class="player-name">${playerName}</span>
+                        ${statusInfo ? `<span class="availability-badge" style="background-color: ${statusInfo.color}" title="${statusInfo.description}">
+                            ${statusInfo.emoji} ${statusInfo.label}
+                        </span>` : ''}
+                    </div>
                     <span class="player-time">
                         ${stats.totalMinutes}min
                         <span class="stats-indicator ${balanceStatus.indicator}"></span>
@@ -200,6 +216,20 @@ const EnhancedStats = {
                     <div class="position-badges">
                         ${positionBadges || '<span class="position-badge">Not assigned</span>'}
                     </div>
+                    ${availability && availability.notes ? `
+                    <div class="availability-notes">
+                        <small>📝 ${availability.notes}</small>
+                    </div>` : ''}
+                </div>
+                <div class="availability-controls" style="display: none;">
+                    <div class="availability-buttons">
+                        <button class="availability-btn" data-status="available" title="Mark as Available">✅</button>
+                        <button class="availability-btn" data-status="injured" title="Mark as Injured">🤕</button>
+                        <button class="availability-btn" data-status="absent" title="Mark as Absent">❌</button>
+                        <button class="availability-btn" data-status="late" title="Mark as Late">⏰</button>
+                    </div>
+                    <input type="text" class="availability-notes-input" placeholder="Add notes..." maxlength="100">
+                    <button class="availability-save-btn">Save</button>
                 </div>
             </div>
         `;

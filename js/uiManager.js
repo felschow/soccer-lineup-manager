@@ -100,10 +100,29 @@ const UIManager = {
                     position
                 );
                 
+                // Get player availability status
+                const availability = window.PlayerAvailability ? 
+                    PlayerAvailability.getPlayerAvailability(playerName) : null;
+                const statusInfo = availability ? 
+                    PlayerAvailability.getStatusDisplayInfo(availability.status) : null;
+                
+                let playerDisplayContent = playerName;
+                if (statusInfo && availability.status !== 'available') {
+                    playerDisplayContent = `${playerName} <span class="field-availability-badge" style="background-color: ${statusInfo.color}" title="${statusInfo.description}">${statusInfo.emoji}</span>`;
+                }
+                
                 if (substitutedPlayer) {
-                    playerNameDiv.innerHTML = `${playerName}<div class="field-substitution-info">(${substitutedPlayer})</div>`;
+                    playerNameDiv.innerHTML = `${playerDisplayContent}<div class="field-substitution-info">(${substitutedPlayer})</div>`;
                 } else {
-                    playerNameDiv.textContent = playerName;
+                    playerNameDiv.innerHTML = playerDisplayContent;
+                }
+                
+                // Add availability class to position slot
+                if (availability) {
+                    slot.classList.add(`field-availability-${availability.status}`);
+                } else {
+                    // Remove any existing availability classes
+                    slot.classList.remove('field-availability-injured', 'field-availability-absent', 'field-availability-late');
                 }
                 
                 if (label) label.style.fontSize = '0.6rem';
@@ -112,6 +131,8 @@ const UIManager = {
                 playerNameDiv.textContent = '';
                 if (label) label.style.fontSize = '0.75rem';
                 slot.classList.remove('filled');
+                // Remove any existing availability classes
+                slot.classList.remove('field-availability-injured', 'field-availability-absent', 'field-availability-late');
             }
         });
     },
@@ -147,7 +168,20 @@ const UIManager = {
             players.forEach(playerName => {
                 const playerDiv = document.createElement('div');
                 playerDiv.className = playerClass;
-                playerDiv.textContent = playerName + (customStyle.suffix || '');
+                
+                // Get player availability status
+                const availability = window.PlayerAvailability ? 
+                    PlayerAvailability.getPlayerAvailability(playerName) : null;
+                const statusInfo = availability ? 
+                    PlayerAvailability.getStatusDisplayInfo(availability.status) : null;
+                
+                let playerDisplayContent = playerName + (customStyle.suffix || '');
+                if (statusInfo && availability.status !== 'available') {
+                    playerDisplayContent += ` ${statusInfo.emoji}`;
+                    playerDiv.classList.add(`bench-availability-${availability.status}`);
+                }
+                
+                playerDiv.textContent = playerDisplayContent;
                 
                 if (customStyle.backgroundColor) {
                     playerDiv.style.backgroundColor = customStyle.backgroundColor;

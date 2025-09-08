@@ -627,6 +627,11 @@ const PersistentStorage = {
             // Set as current game
             this.setCurrentGame(game.id);
 
+            // Update game completion UI
+            if (window.updateGameCompletionUI) {
+                setTimeout(() => updateGameCompletionUI(), 100);
+            }
+
             console.log('Game created:', game.opponent, 'on', game.date);
             return game.id;
         } catch (error) {
@@ -732,6 +737,11 @@ const PersistentStorage = {
 
             // Set as current game
             this.setCurrentGame(gameId);
+
+            // Update game completion UI
+            if (window.updateGameCompletionUI) {
+                setTimeout(() => updateGameCompletionUI(), 100);
+            }
 
             console.log('Game lineup loaded:', gameId);
             return true;

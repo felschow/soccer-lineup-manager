@@ -1834,3 +1834,17 @@ body {
 .mobile-success .position-label {
     color: #059669;
 }
+
+/* === HIDE MOBILE COMPONENTS ON DESKTOP === */
+@media (min-width: 769px) {
+    /* Hide mobile bench and jersey areas on desktop */
+    .mobile-bench-area-scaled,
+    .mobile-jersey-area-scaled {
+        display: none !important;
+    }
+    
+    /* Hide mobile soccer field on desktop */
+    .mobile-soccer-field-scaled {
+        display: none !important;
+    }
+}

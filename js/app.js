@@ -16,11 +16,13 @@ let soccerLineupApp = {
             ToastManager.init();
             PersistentStorage.init();  // Initialize storage before team manager
             TeamManager.init();
+            PlayerAvailability.init();  // Initialize availability before lineup
             LineupManager.init();
             HistoryManager.init();
             EnhancedStats.init();
             UIManager.init();
             DragDropManager.init();
+            AvailabilityUI.init();  // Initialize availability UI after UIManager
             MobileEnhancements.init();
             PeriodTimer.init();
             PeriodTransitionUI.init();
@@ -46,6 +48,10 @@ let soccerLineupApp = {
             // Update header with active team
             TeamManager.updateHeaderDisplay();
             
+            // Update game completion UI
+            if (window.updateGameCompletionUI) {
+                updateGameCompletionUI();
+            }
             
             this.initialized = true;
             console.log('Soccer Lineup Manager initialized successfully');

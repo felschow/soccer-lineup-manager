@@ -165,12 +165,20 @@ const GameManagerUI = {
 
     // Open the game management modal
     open() {
+        console.log('GameManagerUI.open() called');
         const modal = document.getElementById('gameManagementModal');
+        console.log('Modal element found:', modal);
+        
         if (modal) {
+            console.log('Setting modal display to flex');
             modal.style.display = 'flex';
             this.isOpen = true;
             this.refreshGameInfo();
             this.setupModalEventListeners();
+            console.log('Modal should now be visible');
+        } else {
+            console.error('gameManagementModal element not found');
+            alert('Game Management modal not found. The modal may not have been created properly.');
         }
     },
 
@@ -687,11 +695,71 @@ const GameManagerUI = {
 
 // Global function to open game manager (called from navigation)
 function openGameManager() {
+    console.log('openGameManager called');
+    
     if (typeof GameManagerUI === 'undefined') {
-        alert('GameManagerUI not loaded!');
+        console.error('GameManagerUI is undefined');
+        alert('GameManagerUI not loaded! Please refresh the page.');
         return;
     }
-    GameManagerUI.open();
+    
+    console.log('GameManagerUI found, calling open()');
+    try {
+        GameManagerUI.open();
+        console.log('GameManagerUI.open() completed');
+    } catch (error) {
+        console.error('Error opening GameManagerUI:', error);
+        alert('Error opening Game Manager: ' + error.message);
+    }
+}
+
+// Global function for completing current game from UI
+function completeCurrentGame() {
+    const currentGame = PersistentStorage.getCurrentGame();
+    if (!currentGame) {
+        if (window.ToastManager) {
+            ToastManager.show('No active game to complete', 'error');
+        }
+        return;
+    }
+    
+    // Simple completion without modal - just mark as completed
+    const confirmed = confirm(`Complete the current game: "${currentGame.opponent}"?\n\nThis will mark the game as finished and save the current lineup.`);
+    
+    if (confirmed) {
+        const success = PersistentStorage.completeGame(currentGame.id, {
+            completedAt: new Date().toISOString(),
+            notes: 'Game completed via Quick Complete'
+        });
+        
+        if (success) {
+            if (window.ToastManager) {
+                ToastManager.show(`Game "${currentGame.opponent}" completed successfully!`, 'success');
+            }
+            
+            // Update UI to reflect game completion
+            if (window.GameManagerUI) {
+                GameManagerUI.refreshGameInfo();
+            }
+            
+            // Hide the complete game button
+            updateGameCompletionUI();
+        }
+    }
+}
+
+// Update UI elements based on game status
+function updateGameCompletionUI() {
+    const completeBtn = document.getElementById('completeGameBtn');
+    const currentGame = PersistentStorage.getCurrentGame();
+    
+    if (completeBtn) {
+        if (currentGame && currentGame.status === 'active') {
+            completeBtn.style.display = 'block';
+        } else {
+            completeBtn.style.display = 'none';
+        }
+    }
 }
 
 // Initialize when DOM is loaded

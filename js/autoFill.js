@@ -28,10 +28,40 @@ const AutoFillManager = {
             throw new Error('No active team selected. Please select a team first in Team Manager.');
         }
         
-        const playerNames = SoccerConfig.utils.getPlayerNames();
+        let playerNames = SoccerConfig.utils.getPlayerNames();
+        let availableForField = playerNames;
+        let unavailablePlayers = [];
+        
+        // Separate available and unavailable players
+        if (window.PlayerAvailability) {
+            availableForField = playerNames.filter(player => 
+                PlayerAvailability.canPlayerBeAutoAssigned(player)
+            );
+            
+            unavailablePlayers = playerNames.filter(player => {
+                const availability = PlayerAvailability.getPlayerAvailability(player);
+                return availability.status === PlayerAvailability.STATUS_TYPES.INJURED || 
+                       availability.status === PlayerAvailability.STATUS_TYPES.ABSENT;
+            });
+            
+            const unavailableCount = playerNames.length - availableForField.length;
+            if (unavailableCount > 0) {
+                console.log(`Filtering out ${unavailableCount} unavailable players for field positions`);
+                console.log('Unavailable players (will be placed on bench):', unavailablePlayers);
+                if (window.ToastManager) {
+                    ToastManager.show(`${unavailableCount} injured/absent players will be placed on bench`, 'info', 3000);
+                }
+            }
+            
+            playerNames = availableForField;
+        }
         
         if (playerNames.length === 0) {
-            throw new Error('No players found. Please make sure you have selected an active team with players.');
+            throw new Error('No available players found. Please check player availability status or select a team with players.');
+        }
+        
+        if (playerNames.length < SoccerConfig.gameSettings.maxPlayersOnField) {
+            throw new Error(`Not enough available players (${playerNames.length}) for a full lineup (${SoccerConfig.gameSettings.maxPlayersOnField}). Check player availability.`);
         }
         
         console.log('AutoFill using players:', playerNames);
@@ -52,12 +82,17 @@ const AutoFillManager = {
         // STEP 1: Plan goalkeeper rotation and jersey preparation (Rule 3)
         this.planGoalkeeperRotation(playerTracking);
         
-        // STEP 2: Build lineup period by period following all constraints
+        // STEP 2: Place injured/absent players on bench for all periods
+        if (unavailablePlayers.length > 0) {
+            this.placeUnavailablePlayersOnBench(unavailablePlayers, totalPeriods);
+        }
+        
+        // STEP 3: Build lineup period by period following all constraints
         for (let period = 1; period <= totalPeriods; period++) {
             this.buildPeriodLineup(period, playerTracking);
         }
         
-        // STEP 3: Validate all rules are followed
+        // STEP 4: Validate all rules are followed
         this.validateAllRules(playerTracking);
         
         console.log('Lineup generation completed successfully');
@@ -66,8 +101,8 @@ const AutoFillManager = {
 
     // Plan goalkeeper rotation with jersey preparation and bench planning
     planGoalkeeperRotation(playerTracking) {
-        // Get current players who can play goalkeeper
-        const playerNames = SoccerConfig.utils.getPlayerNames();
+        // Get current available players who can play goalkeeper
+        const playerNames = Object.keys(playerTracking); // Use filtered available players
         const gkCapablePlayers = playerNames.filter(player => 
             SoccerConfig.utils.canPlayerPlayPosition(player, 'goalkeeper')
         );
@@ -118,10 +153,30 @@ const AutoFillManager = {
         console.log('Goalkeeper rotation, jersey preparation, and bench planning completed');
     },
 
+    // Place injured/absent players on bench for all periods
+    placeUnavailablePlayersOnBench(unavailablePlayers, totalPeriods) {
+        console.log('Placing injured/absent players on bench for all periods:', unavailablePlayers);
+        
+        for (let period = 1; period <= totalPeriods; period++) {
+            const periodData = LineupManager.lineup[period];
+            if (!periodData.bench) periodData.bench = [];
+            
+            unavailablePlayers.forEach(playerName => {
+                // Only add if not already on bench for this period
+                if (!periodData.bench.includes(playerName)) {
+                    periodData.bench.push(playerName);
+                    console.log(`Period ${period}: Added ${playerName} to bench (unavailable)`);
+                }
+            });
+        }
+        
+        console.log('Unavailable players placed on bench for all periods');
+    },
+
     // Build lineup for a specific period
     buildPeriodLineup(period, playerTracking) {
         const periodData = LineupManager.lineup[period];
-        const playerNames = SoccerConfig.utils.getPlayerNames();
+        const playerNames = Object.keys(playerTracking); // Use filtered available players
         
         // Get available players (not GK, not on jersey duty)
         const availablePlayers = playerNames.filter(player => {
@@ -266,6 +321,20 @@ const AutoFillManager = {
         const fieldPositions = SoccerConfig.positions.filter(pos => pos !== 'goalkeeper');
         const assignments = {};
         
+        // Safety check: ensure no injured/absent players are in fieldPlayers
+        if (window.PlayerAvailability) {
+            const invalidPlayers = fieldPlayers.filter(player => {
+                const availability = PlayerAvailability.getPlayerAvailability(player);
+                return availability.status === PlayerAvailability.STATUS_TYPES.INJURED || 
+                       availability.status === PlayerAvailability.STATUS_TYPES.ABSENT;
+            });
+            
+            if (invalidPlayers.length > 0) {
+                console.error(`ERROR: Injured/absent players found in field assignments:`, invalidPlayers);
+                throw new Error(`Injured/absent players cannot be assigned to field positions: ${invalidPlayers.join(', ')}`);
+            }
+        }
+        
         // Track position needs for Rule 4
         const playerPositionNeeds = {};
         fieldPlayers.forEach(player => {
@@ -289,39 +358,103 @@ const AutoFillManager = {
             !playerPositionNeeds[player].needsVariety
         );
 
-        // Assign priority players first (Rule 4)
-        [...priorityPlayers, ...regularPlayers].forEach(player => {
-            const playerNeeds = playerPositionNeeds[player];
-            
-            // Find best position for this player
-            const availablePositions = playerNeeds.eligiblePositions.filter(pos => !assignments[pos]);
-            
-            if (availablePositions.length > 0) {
-                // For variety-needing players, prefer positions they haven't played
-                let bestPosition;
-                if (playerNeeds.needsVariety) {
-                    const newPositions = availablePositions.filter(pos => 
-                        !playerTracking[player].positionsPlayed.has(pos)
-                    );
-                    bestPosition = newPositions.length > 0 ? newPositions[0] : availablePositions[0];
-                } else {
-                    bestPosition = availablePositions[0];
-                }
-                
-                // Make assignment
-                assignments[bestPosition] = player;
-                periodData.positions[bestPosition] = player;
-                playerTracking[player].positionsPlayed.add(bestPosition);
-                playerTracking[player].playingTime += 7.5;
-            }
-        });
+        // Enhanced position assignment with preferred position priority
+        this.assignFieldPositionsWithPreferences(fieldPlayers, playerPositionNeeds, assignments, periodData, playerTracking, period);
 
         console.log(`Period ${period}: Assigned ${Object.keys(assignments).length} field positions`);
     },
 
+    // Enhanced field position assignment with strict preferred position priority
+    assignFieldPositionsWithPreferences(fieldPlayers, playerPositionNeeds, assignments, periodData, playerTracking, period) {
+        const fieldPositions = SoccerConfig.positions.filter(pos => pos !== 'goalkeeper');
+        
+        // PHASE 1: Assign players to their most preferred positions first
+        console.log(`Period ${period}: Phase 1 - Assigning players to preferred positions`);
+        
+        // Create preference mapping: position -> [players who prefer this position]
+        const positionPreferences = {};
+        fieldPositions.forEach(position => {
+            positionPreferences[position] = fieldPlayers.filter(player => {
+                const preferredPositions = SoccerConfig.utils.getPlayerPreferredPositions(player);
+                return preferredPositions.includes(position) && 
+                       playerPositionNeeds[player].eligiblePositions.includes(position);
+            });
+        });
+        
+        // Sort positions by scarcity (positions with fewer eligible players get priority)
+        const positionsByScarcity = fieldPositions
+            .filter(pos => !assignments[pos]) // Only unassigned positions
+            .sort((a, b) => positionPreferences[a].length - positionPreferences[b].length);
+        
+        // Assign players to scarce positions first
+        positionsByScarcity.forEach(position => {
+            if (assignments[position]) return; // Already assigned
+            
+            const eligiblePlayers = positionPreferences[position].filter(player => 
+                !Object.values(assignments).includes(player)
+            );
+            
+            if (eligiblePlayers.length > 0) {
+                // Prioritize players who need variety, then those with fewer total positions played
+                const bestPlayer = eligiblePlayers.sort((a, b) => {
+                    const aNeeds = playerPositionNeeds[a];
+                    const bNeeds = playerPositionNeeds[b];
+                    
+                    // First priority: players who need variety
+                    if (aNeeds.needsVariety !== bNeeds.needsVariety) {
+                        return bNeeds.needsVariety - aNeeds.needsVariety;
+                    }
+                    
+                    // Second priority: players with fewer positions played
+                    return aNeeds.positionsPlayed - bNeeds.positionsPlayed;
+                })[0];
+                
+                assignments[position] = bestPlayer;
+                periodData.positions[position] = bestPlayer;
+                playerTracking[bestPlayer].positionsPlayed.add(position);
+                playerTracking[bestPlayer].playingTime += 7.5;
+                
+                console.log(`Period ${period}: Assigned ${bestPlayer} to preferred position ${position}`);
+            }
+        });
+        
+        // PHASE 2: Handle remaining unassigned players with fallback logic
+        const unassignedPlayers = fieldPlayers.filter(player => 
+            !Object.values(assignments).includes(player)
+        );
+        const unassignedPositions = fieldPositions.filter(pos => !assignments[pos]);
+        
+        if (unassignedPlayers.length > 0 && unassignedPositions.length > 0) {
+            console.log(`Period ${period}: Phase 2 - Assigning ${unassignedPlayers.length} remaining players to ${unassignedPositions.length} positions`);
+            
+            unassignedPlayers.forEach(player => {
+                const availablePositions = unassignedPositions.filter(pos => 
+                    !assignments[pos] && 
+                    SoccerConfig.utils.canPlayerPlayPositionFallback(player, pos)
+                );
+                
+                if (availablePositions.length > 0) {
+                    const bestPosition = availablePositions[0]; // Take first available fallback position
+                    assignments[bestPosition] = player;
+                    periodData.positions[bestPosition] = player;
+                    playerTracking[player].positionsPlayed.add(bestPosition);
+                    playerTracking[player].playingTime += 7.5;
+                    
+                    console.log(`Period ${period}: Assigned ${player} to fallback position ${bestPosition} (not preferred)`);
+                }
+            });
+        }
+        
+        // Report any remaining unassigned positions
+        const stillUnassigned = fieldPositions.filter(pos => !assignments[pos]);
+        if (stillUnassigned.length > 0) {
+            console.warn(`Period ${period}: Could not assign players to positions: ${stillUnassigned.join(', ')}`);
+        }
+    },
+
     // Validate all rules are followed
     validateAllRules(playerTracking) {
-        const playerNames = SoccerConfig.utils.getPlayerNames();
+        const playerNames = Object.keys(playerTracking); // Use tracked available players
         const violations = [];
 
         playerNames.forEach(player => {
@@ -348,7 +481,14 @@ const AutoFillManager = {
             if (eligiblePositions.length >= 2 && tracking.positionsPlayed.size < 2) {
                 violations.push(`${player}: Only played ${tracking.positionsPlayed.size} positions (should play at least 2)`);
             }
+            
+            // Position Preference Rule: Check for non-preferred position assignments
+            this.validatePlayerPositionPreferences(player, violations);
         });
+
+        // Overall lineup preference compliance
+        const preferenceViolations = this.validateOverallPositionCompliance();
+        violations.push(...preferenceViolations);
 
         // Rule 3: Jersey preparation before FIRST consecutive goalkeeper period only
         playerNames.forEach(player => {
@@ -404,13 +544,85 @@ const AutoFillManager = {
         return violations;
     },
 
+    // Validate individual player's position preferences
+    validatePlayerPositionPreferences(playerName, violations) {
+        const fullLineup = LineupManager.getFullLineup();
+        const preferredPositions = SoccerConfig.utils.getPlayerPreferredPositions(playerName);
+        const nonPreferredAssignments = [];
+        
+        for (let period = 1; period <= SoccerConfig.gameSettings.totalPeriods; period++) {
+            const periodData = fullLineup[period];
+            if (!periodData) continue;
+            
+            // Check field positions
+            Object.entries(periodData.positions).forEach(([position, assignedPlayer]) => {
+                if (assignedPlayer === playerName && !preferredPositions.includes(position)) {
+                    nonPreferredAssignments.push(`Period ${period}: ${position}`);
+                }
+            });
+        }
+        
+        // Report non-preferred assignments (as warnings, not hard violations)
+        if (nonPreferredAssignments.length > 0) {
+            violations.push(`⚠️ ${playerName} assigned to non-preferred positions: ${nonPreferredAssignments.join(', ')}`);
+        }
+    },
+
+    // Validate overall position compliance across all players
+    validateOverallPositionCompliance() {
+        const fullLineup = LineupManager.getFullLineup();
+        const violations = [];
+        const playerNames = SoccerConfig.utils.getPlayerNames();
+        
+        // Track position preference compliance statistics
+        let totalAssignments = 0;
+        let preferredAssignments = 0;
+        
+        for (let period = 1; period <= SoccerConfig.gameSettings.totalPeriods; period++) {
+            const periodData = fullLineup[period];
+            if (!periodData) continue;
+            
+            Object.entries(periodData.positions).forEach(([position, assignedPlayer]) => {
+                if (assignedPlayer && playerNames.includes(assignedPlayer)) {
+                    totalAssignments++;
+                    const preferredPositions = SoccerConfig.utils.getPlayerPreferredPositions(assignedPlayer);
+                    if (preferredPositions.includes(position)) {
+                        preferredAssignments++;
+                    }
+                }
+            });
+        }
+        
+        // Calculate compliance percentage
+        const compliancePercentage = totalAssignments > 0 ? 
+            Math.round((preferredAssignments / totalAssignments) * 100) : 100;
+        
+        if (compliancePercentage < 80) {
+            violations.push(`🎯 Position preference compliance: ${compliancePercentage}% (${preferredAssignments}/${totalAssignments} assignments in preferred positions)`);
+        } else if (compliancePercentage < 95) {
+            violations.push(`✅ Good position preference compliance: ${compliancePercentage}% (${preferredAssignments}/${totalAssignments})`);
+        } else {
+            console.log(`🎯 Excellent position preference compliance: ${compliancePercentage}% (${preferredAssignments}/${totalAssignments})`);
+        }
+        
+        return violations;
+    },
+
     // Auto fill current period only (simplified)
     autoFillCurrentPeriod() {
         ToastManager.info('Use "Auto Fill All" for rule-based generation', 4000);
         
         // Simple current period fill without rule enforcement
         const currentPeriod = LineupManager.getCurrentPeriod();
-        const playerNames = SoccerConfig.utils.getPlayerNames();
+        let playerNames = SoccerConfig.utils.getPlayerNames();
+        
+        // Filter out unavailable players (injured/absent)
+        if (window.PlayerAvailability) {
+            playerNames = playerNames.filter(player => 
+                PlayerAvailability.canPlayerBeAutoAssigned(player)
+            );
+        }
+        
         const currentLineup = LineupManager.getCurrentLineup();
         
         // Keep existing assignments, fill empty positions
@@ -451,7 +663,15 @@ const AutoFillManager = {
 
     // Validation method to check lineup quality
     validateLineupQuality() {
-        const playerNames = SoccerConfig.utils.getPlayerNames();
+        let playerNames = SoccerConfig.utils.getPlayerNames();
+        
+        // Filter out unavailable players for validation
+        if (window.PlayerAvailability) {
+            playerNames = playerNames.filter(player => 
+                PlayerAvailability.canPlayerBeAutoAssigned(player)
+            );
+        }
+        
         const issues = [];
         
         // Check for unfilled positions

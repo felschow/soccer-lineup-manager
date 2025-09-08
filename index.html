@@ -55,6 +55,11 @@
                     <span class="sidebar-icon">🎮</span>
                     <span class="sidebar-label">Games</span>
                 </button>
+                
+                <button class="sidebar-btn warning" onclick="completeCurrentGame()" title="Mark current game as complete" id="completeGameBtn" style="display: none;">
+                    <span class="sidebar-icon">🏆</span>
+                    <span class="sidebar-label">Complete Game</span>
+                </button>
             </div>
         </div>
 
@@ -93,13 +98,6 @@
                     </div>
                 </div>
 
-                <!-- Priority 2: Always Visible - Quick Stats -->
-                <div class="sidebar-section priority-2">
-                    <div class="pool-title">📊 Quick Stats</div>
-                    <div id="quickStats">
-                        <!-- Stats will be shown here -->
-                    </div>
-                </div>
 
                 <!-- Priority 3: Collapsible - Timer & Advanced Features -->
                 <div class="sidebar-section priority-3 collapsible-section">
@@ -170,10 +168,10 @@
 
                 <div class="soccer-field">
                     <div class="field-lines">
-                        <div class="penalty-area-top"></div>
-                        <div class="penalty-area-bottom"></div>
-                        <div class="goal-area-top"></div>
-                        <div class="goal-area-bottom"></div>
+                        <div class="penalty-area-left"></div>
+                        <div class="penalty-area-right"></div>
+                        <div class="goal-area-left"></div>
+                        <div class="goal-area-right"></div>
                         <div class="corner-arc top-left"></div>
                         <div class="corner-arc top-right"></div>
                         <div class="corner-arc bottom-left"></div>
@@ -234,6 +232,16 @@
                 <div class="bench-area" id="jerseyArea" style="border-color: #8B5CF6; background: #F3E8FF;">
                     <div class="bench-title" style="color: #8B5CF6;">👕 Preparing Jersey (Next GK)</div>
                     <div class="empty-message" id="jerseyEmpty" style="color: #8B5CF6;">Drop players here for goalkeeper preparation</div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar - Quick Stats -->
+            <div class="right-sidebar">
+                <div class="sidebar-section priority-2">
+                    <div class="pool-title">📊 Quick Stats</div>
+                    <div id="quickStats">
+                        <!-- Stats will be shown here -->
+                    </div>
                 </div>
             </div>
 
@@ -545,6 +553,8 @@
     <script src="js/periodTimer.js"></script>
     <script src="js/periodTransitionUI.js"></script>
     <script src="js/mobileTimerUI.js"></script>
+    <script src="js/playerAvailability.js"></script>
+    <script src="js/availabilityUI.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

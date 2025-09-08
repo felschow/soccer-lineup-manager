@@ -115,8 +115,13 @@ const SoccerConfig = {
             };
         },
 
-        // Check if player can play position
+        // Check if player can play position (strict preferred position check)
         canPlayerPlayPosition(playerName, position) {
+            return this.isPlayerPreferredForPosition(playerName, position);
+        },
+
+        // Check if position is in player's preferred positions (strict enforcement)
+        isPlayerPreferredForPosition(playerName, position) {
             const preferences = SoccerConfig.players[playerName];
             if (!preferences) return false;
 
@@ -129,6 +134,43 @@ const SoccerConfig = {
             }
             
             return preferences.includes(requiredSkills);
+        },
+
+        // Check if player can play position as fallback (more permissive)
+        canPlayerPlayPositionFallback(playerName, position) {
+            const preferences = SoccerConfig.players[playerName];
+            if (!preferences) return false;
+
+            if (preferences.includes('All')) return true;
+            if (preferences.includes('All except GK') && position !== 'goalkeeper') return true;
+            
+            const requiredSkills = SoccerConfig.positionSkillMap[position];
+            if (Array.isArray(requiredSkills)) {
+                return requiredSkills.some(skill => preferences.includes(skill));
+            }
+            
+            return preferences.includes(requiredSkills);
+        },
+
+        // Get player's preferred positions (for UI display)
+        getPlayerPreferredPositions(playerName) {
+            const preferences = SoccerConfig.players[playerName] || [];
+            const preferredPositions = [];
+            
+            if (preferences.includes('All')) {
+                return [...SoccerConfig.positions];
+            }
+            if (preferences.includes('All except GK')) {
+                return SoccerConfig.positions.filter(pos => pos !== 'goalkeeper');
+            }
+
+            SoccerConfig.positions.forEach(position => {
+                if (this.isPlayerPreferredForPosition(playerName, position)) {
+                    preferredPositions.push(position);
+                }
+            });
+
+            return preferredPositions;
         },
 
         // Get all player names

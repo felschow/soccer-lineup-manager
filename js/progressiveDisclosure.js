@@ -26,16 +26,26 @@ const ProgressiveDisclosure = {
         window.addEventListener('resize', () => {
             this.updateSectionVisibility();
         });
+        
+        // Also listen for orientation changes
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => this.updateSectionVisibility(), 100);
+        });
     },
     
     // Update section visibility based on screen size
     updateSectionVisibility() {
         const isMobile = window.innerWidth <= 768;
+        const isShortScreen = window.innerHeight < 700;
         
-        // On mobile, collapse advanced features by default
-        if (isMobile) {
+        // On mobile or short screens, collapse advanced features by default
+        if (isMobile || isShortScreen) {
             this.sectionStates.timer = true;
             this.sectionStates.changes = true;
+        } else {
+            // On larger screens, expand by default for better UX
+            this.sectionStates.timer = false;
+            this.sectionStates.changes = false;
         }
         
         // Apply states
