@@ -6,7 +6,13 @@ import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js@2'
 const supabaseUrl = 'YOUR_SUPABASE_URL' // Replace with your project URL
 const supabaseKey = 'YOUR_SUPABASE_ANON_KEY' // Replace with your anon key
 
-const supabase = createClient(supabaseUrl, supabaseKey)
+// Check if Supabase is configured
+const isSupabaseConfigured = supabaseUrl !== 'YOUR_SUPABASE_URL' && supabaseKey !== 'YOUR_SUPABASE_ANON_KEY';
+
+let supabase = null;
+if (isSupabaseConfigured) {
+    supabase = createClient(supabaseUrl, supabaseKey);
+}
 
 class AuthManager {
     constructor() {
@@ -16,6 +22,17 @@ class AuthManager {
     }
 
     async init() {
+        if (!isSupabaseConfigured) {
+            console.warn('Supabase not configured. Running in demo mode.');
+            // In demo mode, check for localStorage session
+            const demoUser = localStorage.getItem('demo_auth_user');
+            if (demoUser) {
+                this.currentUser = JSON.parse(demoUser);
+                this.notifyAuthCallbacks('signin', this.currentUser);
+            }
+            return;
+        }
+
         // Check for existing session
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
@@ -38,6 +55,29 @@ class AuthManager {
     // Register new user
     async register(email, password, metadata = {}) {
         try {
+            if (!isSupabaseConfigured) {
+                // Demo mode: simulate registration
+                const demoUser = {
+                    id: 'demo_' + Date.now(),
+                    email,
+                    user_metadata: metadata,
+                    created_at: new Date().toISOString()
+                };
+                
+                // Store demo users list
+                const demoUsers = JSON.parse(localStorage.getItem('demo_users') || '[]');
+                
+                // Check if email already exists
+                if (demoUsers.find(user => user.email === email)) {
+                    throw new Error('User already exists');
+                }
+                
+                demoUsers.push(demoUser);
+                localStorage.setItem('demo_users', JSON.stringify(demoUsers));
+                
+                return { success: true, user: demoUser };
+            }
+
             const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
@@ -56,6 +96,23 @@ class AuthManager {
     // Login with email/password
     async login(email, password) {
         try {
+            if (!isSupabaseConfigured) {
+                // Demo mode: simulate login
+                const demoUsers = JSON.parse(localStorage.getItem('demo_users') || '[]');
+                const user = demoUsers.find(user => user.email === email);
+                
+                if (!user) {
+                    throw new Error('Invalid email or password');
+                }
+                
+                // In demo mode, we don't actually verify password
+                this.currentUser = user;
+                localStorage.setItem('demo_auth_user', JSON.stringify(user));
+                this.notifyAuthCallbacks('signin', user);
+                
+                return { success: true, user };
+            }
+
             const { data, error } = await supabase.auth.signInWithPassword({
                 email,
                 password
@@ -71,6 +128,29 @@ class AuthManager {
     // Login with Google OAuth
     async loginWithGoogle() {
         try {
+            if (!isSupabaseConfigured) {
+                // Demo mode: simulate Google login
+                const demoUser = {
+                    id: 'demo_google_' + Date.now(),
+                    email: 'demo@google.com',
+                    user_metadata: { name: 'Demo Google User' },
+                    created_at: new Date().toISOString()
+                };
+                
+                this.currentUser = demoUser;
+                localStorage.setItem('demo_auth_user', JSON.stringify(demoUser));
+                
+                // Add to demo users if not exists
+                const demoUsers = JSON.parse(localStorage.getItem('demo_users') || '[]');
+                if (!demoUsers.find(user => user.email === demoUser.email)) {
+                    demoUsers.push(demoUser);
+                    localStorage.setItem('demo_users', JSON.stringify(demoUsers));
+                }
+                
+                this.notifyAuthCallbacks('signin', demoUser);
+                return { success: true, user: demoUser };
+            }
+
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
@@ -88,6 +168,14 @@ class AuthManager {
     // Logout
     async logout() {
         try {
+            if (!isSupabaseConfigured) {
+                // Demo mode: simulate logout
+                this.currentUser = null;
+                localStorage.removeItem('demo_auth_user');
+                this.notifyAuthCallbacks('signout', null);
+                return { success: true };
+            }
+
             const { error } = await supabase.auth.signOut();
             if (error) throw error;
             return { success: true };

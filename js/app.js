@@ -322,16 +322,8 @@ LineupManager.addPlayerToJersey = function(playerName) {
 
 // ===== APPLICATION STARTUP =====
 
-// Initialize when DOM is fully loaded
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, initializing Soccer Lineup Manager...');
-    
-    // Small delay to ensure all resources are loaded
-    setTimeout(() => {
-        soccerLineupApp.init();
-        loadAutoSavedState();
-    }, 100);
-});
+// Note: App initialization is now controlled by authentication flow in index.html
+// The app will only initialize after successful authentication
 
 // Handle page unload
 window.addEventListener('beforeunload', (event) => {
