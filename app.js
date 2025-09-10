@@ -13,8 +13,8 @@ class SoccerApp {
         // Position mappings
         this.positionGroups = {
             'Forward': ['LF', 'CF', 'RF'],
-            'Midfield': ['LM', 'CM1', 'CM2', 'RM'],
-            'Defense': ['LB', 'CB1', 'CB2', 'RB'],
+            'Midfield': ['LM', 'CM', 'CM1', 'CM2', 'CM3', 'RM'],
+            'Defense': ['LB', 'CB', 'CB1', 'CB2', 'CB3', 'RB'],
             'Goalkeeper': ['GK']
         };
         
@@ -90,6 +90,7 @@ class SoccerApp {
             this.renderField();
         } else if (targetTab === 'tableTab') {
             this.renderTable();
+            this.updateExportButtonVisibility();
         }
         
         // Update FAB
@@ -263,10 +264,26 @@ class SoccerApp {
         // Floating action button
         document.getElementById('fab').addEventListener('click', () => this.handleFabClick());
         
+        // Export table functionality
+        document.getElementById('exportTableBtn').addEventListener('click', () => this.exportTableView());
+        
         // Modal handling
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal') || e.target.classList.contains('modal-close')) {
                 this.closeModals();
+            }
+        });
+        
+        // Player option selection in modal
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('player-option') || e.target.closest('.player-option')) {
+                const option = e.target.classList.contains('player-option') ? e.target : e.target.closest('.player-option');
+                const position = option.dataset.position;
+                const playerName = option.dataset.player;
+                if (position && playerName) {
+                    this.assignPlayer(position, playerName);
+                    this.closeModals();
+                }
             }
         });
         
@@ -343,6 +360,8 @@ class SoccerApp {
             if (this.draggedPlayer) {
                 if (e.target.classList.contains('position')) {
                     this.assignPlayer(e.target.dataset.position, this.draggedPlayer);
+                } else if (e.target.id === 'jerseyPlayers') {
+                    this.moveToJersey(this.draggedPlayer);
                 } else if (e.target.id === 'benchPlayers') {
                     this.moveToBench(this.draggedPlayer);
                 } else if (e.target.id === 'availablePlayers') {
@@ -729,7 +748,7 @@ class SoccerApp {
         // Create lineup structure with dynamic periods
         const lineup = {};
         for (let i = 1; i <= periodCount; i++) {
-            lineup[i] = { positions: {}, bench: [] };
+            lineup[i] = { positions: {}, bench: [], jersey: [] };
         }
         
         // Create new game
@@ -854,7 +873,10 @@ class SoccerApp {
     renderField() {
         if (!this.currentGame || !this.currentTeam) return;
         
-        // First, render the field layout based on team formation
+        // First, render the period selector
+        this.renderPeriodSelector();
+        
+        // Then, render the field layout based on team formation
         this.renderFieldLayout();
         
         const currentLineup = this.currentGame.lineup[this.currentPeriod];
@@ -876,7 +898,8 @@ class SoccerApp {
         // Render available players
         this.renderAvailablePlayers();
         
-        // Render bench players
+        // Render bench and jersey players
+        this.renderJerseyPlayers();
         this.renderBenchPlayers();
         
         // Update table view if visible
@@ -907,24 +930,24 @@ class SoccerApp {
         return `
             ${this.getFieldMarkings()}
             <div class="field-section goalkeeper">
-                <div class="position" data-position="GK">GK</div>
+                <div class="position ${this.getPositionColorClass('GK')}" data-position="GK">GK</div>
             </div>
             <div class="field-section defense">
-                <div class="position" data-position="LB">LB</div>
-                <div class="position" data-position="CB1">CB</div>
-                <div class="position" data-position="CB2">CB</div>
-                <div class="position" data-position="RB">RB</div>
+                <div class="position ${this.getPositionColorClass('LB')}" data-position="LB">LB</div>
+                <div class="position ${this.getPositionColorClass('CB1')}" data-position="CB1">CB</div>
+                <div class="position ${this.getPositionColorClass('CB2')}" data-position="CB2">CB</div>
+                <div class="position ${this.getPositionColorClass('RB')}" data-position="RB">RB</div>
             </div>
             <div class="field-section midfield">
-                <div class="position" data-position="LM">LM</div>
-                <div class="position" data-position="CM1">CM</div>
-                <div class="position" data-position="CM2">CM</div>
-                <div class="position" data-position="RM">RM</div>
+                <div class="position ${this.getPositionColorClass('LM')}" data-position="LM">LM</div>
+                <div class="position ${this.getPositionColorClass('CM1')}" data-position="CM1">CM</div>
+                <div class="position ${this.getPositionColorClass('CM2')}" data-position="CM2">CM</div>
+                <div class="position ${this.getPositionColorClass('RM')}" data-position="RM">RM</div>
             </div>
             <div class="field-section forward">
-                <div class="position" data-position="LF">LF</div>
-                <div class="position" data-position="CF">CF</div>
-                <div class="position" data-position="RF">RF</div>
+                <div class="position ${this.getPositionColorClass('LF')}" data-position="LF">LF</div>
+                <div class="position ${this.getPositionColorClass('CF')}" data-position="CF">CF</div>
+                <div class="position ${this.getPositionColorClass('RF')}" data-position="RF">RF</div>
             </div>
         `;
     }
@@ -939,7 +962,7 @@ class SoccerApp {
         if (sections.goalkeeper.length > 0) {
             html += '<div class="field-section goalkeeper">';
             sections.goalkeeper.forEach(pos => {
-                html += `<div class="position" data-position="${pos}">${pos}</div>`;
+                html += `<div class="position ${this.getPositionColorClass(pos)}" data-position="${pos}">${pos}</div>`;
             });
             html += '</div>';
         }
@@ -948,7 +971,7 @@ class SoccerApp {
         if (sections.defense.length > 0) {
             html += '<div class="field-section defense">';
             sections.defense.forEach(pos => {
-                html += `<div class="position" data-position="${pos}">${pos}</div>`;
+                html += `<div class="position ${this.getPositionColorClass(pos)}" data-position="${pos}">${pos}</div>`;
             });
             html += '</div>';
         }
@@ -957,7 +980,7 @@ class SoccerApp {
         if (sections.midfield.length > 0) {
             html += '<div class="field-section midfield">';
             sections.midfield.forEach(pos => {
-                html += `<div class="position" data-position="${pos}">${pos}</div>`;
+                html += `<div class="position ${this.getPositionColorClass(pos)}" data-position="${pos}">${pos}</div>`;
             });
             html += '</div>';
         }
@@ -966,7 +989,7 @@ class SoccerApp {
         if (sections.forward.length > 0) {
             html += '<div class="field-section forward">';
             sections.forward.forEach(pos => {
-                html += `<div class="position" data-position="${pos}">${pos}</div>`;
+                html += `<div class="position ${this.getPositionColorClass(pos)}" data-position="${pos}">${pos}</div>`;
             });
             html += '</div>';
         }
@@ -1016,9 +1039,10 @@ class SoccerApp {
         const currentLineup = this.currentGame.lineup[this.currentPeriod];
         const assignedPlayers = new Set(Object.values(currentLineup.positions));
         const benchPlayers = new Set(currentLineup.bench);
+        const jerseyPlayers = new Set(currentLineup.jersey || []);
         
         const availablePlayers = this.currentTeam.players.filter(player => 
-            !assignedPlayers.has(player.name) && !benchPlayers.has(player.name)
+            !assignedPlayers.has(player.name) && !benchPlayers.has(player.name) && !jerseyPlayers.has(player.name)
         );
         
         container.innerHTML = availablePlayers.map(player => 
@@ -1026,6 +1050,24 @@ class SoccerApp {
         ).join('');
     }
     
+    renderJerseyPlayers() {
+        const container = document.getElementById('jerseyPlayers');
+        const currentLineup = this.currentGame.lineup[this.currentPeriod];
+        
+        // Ensure jersey array exists
+        if (!currentLineup.jersey) {
+            currentLineup.jersey = [];
+        }
+        
+        const jerseyPlayerObjects = currentLineup.jersey.map(playerName => 
+            this.currentTeam.players.find(p => p.name === playerName)
+        ).filter(p => p);
+        
+        container.innerHTML = jerseyPlayerObjects.map(player => 
+            `<div class="player-item jersey-player" draggable="true" data-positions="${player.positions.join(',')}">${player.name}</div>`
+        ).join('');
+    }
+
     renderBenchPlayers() {
         const container = document.getElementById('benchPlayers');
         const currentLineup = this.currentGame.lineup[this.currentPeriod];
@@ -1035,7 +1077,7 @@ class SoccerApp {
         ).filter(p => p);
         
         container.innerHTML = benchPlayerObjects.map(player => 
-            `<div class="player-item" draggable="true" data-positions="${player.positions.join(',')}">${player.name}</div>`
+            `<div class="player-item bench-player" draggable="true" data-positions="${player.positions.join(',')}">${player.name}</div>`
         ).join('');
     }
     
@@ -1058,13 +1100,16 @@ class SoccerApp {
         
         const currentLineup = this.currentGame.lineup[this.currentPeriod];
         
-        // Remove player from current position/bench
+        // Remove player from current position/bench/jersey
         Object.keys(currentLineup.positions).forEach(pos => {
             if (currentLineup.positions[pos] === playerName) {
                 delete currentLineup.positions[pos];
             }
         });
         currentLineup.bench = currentLineup.bench.filter(p => p !== playerName);
+        if (currentLineup.jersey) {
+            currentLineup.jersey = currentLineup.jersey.filter(p => p !== playerName);
+        }
         
         // Remove any existing player from target position
         delete currentLineup.positions[position];
@@ -1102,20 +1147,80 @@ class SoccerApp {
         return null;
     }
     
-    moveToBench(playerName) {
+    createPositionCard(position, isBench = false, substitutionPlayer = null) {
+        if (isBench) {
+            return '<span class="position-card bench">Bench</span>';
+        }
+        
+        const positionGroup = this.getPositionGroup(position);
+        if (!positionGroup) return position;
+        
+        const groupClass = positionGroup.toLowerCase();
+        const substitutionText = substitutionPlayer ? `<br><small>(${substitutionPlayer})</small>` : '';
+        
+        return `<span class="position-card ${groupClass}">${position}${substitutionText}</span>`;
+    }
+    
+    getPositionColorClass(position) {
+        const positionGroup = this.getPositionGroup(position);
+        if (!positionGroup) return '';
+        
+        return `position-${positionGroup.toLowerCase()}`;
+    }
+    
+    createStatPositionCard(position, count) {
+        // Handle special case for Jersey
+        if (position === 'Jersey') {
+            return `<span class="stat-position-card jersey">${position}: ${count}</span>`;
+        }
+        
+        const positionGroup = this.getPositionGroup(position);
+        if (!positionGroup) return `${position}: ${count}`;
+        
+        const groupClass = positionGroup.toLowerCase();
+        return `<span class="stat-position-card ${groupClass}">${position}: ${count}</span>`;
+    }
+    
+    moveToJersey(playerName) {
         if (!this.currentGame) return;
         
         const currentLineup = this.currentGame.lineup[this.currentPeriod];
         
-        // Remove player from current position
+        // Ensure jersey array exists
+        if (!currentLineup.jersey) {
+            currentLineup.jersey = [];
+        }
+        
+        // Remove player from current position/bench/jersey
         Object.keys(currentLineup.positions).forEach(pos => {
             if (currentLineup.positions[pos] === playerName) {
                 delete currentLineup.positions[pos];
             }
         });
-        
-        // Remove from bench if already there
         currentLineup.bench = currentLineup.bench.filter(p => p !== playerName);
+        currentLineup.jersey = currentLineup.jersey.filter(p => p !== playerName);
+        
+        // Add to jersey
+        currentLineup.jersey.push(playerName);
+        
+        this.saveData();
+        this.renderField();
+        this.showSuccessMessage(`${playerName} preparing for goalkeeper shift`);
+    }
+
+    moveToBench(playerName) {
+        if (!this.currentGame) return;
+        
+        const currentLineup = this.currentGame.lineup[this.currentPeriod];
+        
+        // Remove player from current position/bench/jersey  
+        Object.keys(currentLineup.positions).forEach(pos => {
+            if (currentLineup.positions[pos] === playerName) {
+                delete currentLineup.positions[pos];
+            }
+        });
+        currentLineup.bench = currentLineup.bench.filter(p => p !== playerName);
+        currentLineup.jersey = currentLineup.jersey.filter(p => p !== playerName);
         
         // Add to bench
         currentLineup.bench.push(playerName);
@@ -1129,13 +1234,16 @@ class SoccerApp {
         
         const currentLineup = this.currentGame.lineup[this.currentPeriod];
         
-        // Remove player from current position/bench
+        // Remove player from current position/bench/jersey
         Object.keys(currentLineup.positions).forEach(pos => {
             if (currentLineup.positions[pos] === playerName) {
                 delete currentLineup.positions[pos];
             }
         });
         currentLineup.bench = currentLineup.bench.filter(p => p !== playerName);
+        if (currentLineup.jersey) {
+            currentLineup.jersey = currentLineup.jersey.filter(p => p !== playerName);
+        }
         
         this.saveData();
         this.renderField();
@@ -1155,48 +1263,71 @@ class SoccerApp {
         const currentLineup = this.currentGame.lineup[this.currentPeriod];
         const assignedPlayers = new Set(Object.values(currentLineup.positions));
         const benchPlayers = new Set(currentLineup.bench);
+        const jerseyPlayers = new Set(currentLineup.jersey || []);
         
-        let availablePlayers = this.currentTeam.players.filter(player => 
-            !assignedPlayers.has(player.name) && !benchPlayers.has(player.name)
-        );
+        // Get players who were on bench in the previous period (for prioritization)
+        const previousPeriodBench = new Set();
+        if (this.currentPeriod > 1) {
+            const previousLineup = this.currentGame.lineup[this.currentPeriod - 1];
+            if (previousLineup && previousLineup.bench) {
+                previousLineup.bench.forEach(playerName => previousPeriodBench.add(playerName));
+            }
+        }
         
-        // Add current player in position if any
+        // Show available players and jersey players who prefer this position
+        let availablePlayers = this.currentTeam.players.filter(player => {
+            const isAvailable = !assignedPlayers.has(player.name) && !benchPlayers.has(player.name);
+            const prefersPosition = player.positions.includes(positionGroup);
+            return isAvailable && prefersPosition;
+        });
+        
+        // Add current player in position if any (even if they don't prefer it)
         const currentPlayerName = currentLineup.positions[position];
         if (currentPlayerName) {
             const currentPlayerObj = this.currentTeam.players.find(p => p.name === currentPlayerName);
-            if (currentPlayerObj) {
+            if (currentPlayerObj && !availablePlayers.find(p => p.name === currentPlayerName)) {
                 availablePlayers.unshift(currentPlayerObj);
             }
         }
         
-        // Sort by preference: preferred players first
+        // Sort by priority: previous period bench players first, then others
         availablePlayers.sort((a, b) => {
-            const aPreferred = a.positions.includes(positionGroup);
-            const bPreferred = b.positions.includes(positionGroup);
+            const aWasBenched = previousPeriodBench.has(a.name);
+            const bWasBenched = previousPeriodBench.has(b.name);
+            const aIsCurrent = currentPlayerName === a.name;
+            const bIsCurrent = currentPlayerName === b.name;
             
-            if (aPreferred && !bPreferred) return -1;
-            if (!aPreferred && bPreferred) return 1;
-            return 0;
+            // Current player always first
+            if (aIsCurrent && !bIsCurrent) return -1;
+            if (!aIsCurrent && bIsCurrent) return 1;
+            
+            // Then prioritize players who were benched in previous period
+            if (aWasBenched && !bWasBenched) return -1;
+            if (!aWasBenched && bWasBenched) return 1;
+            
+            // Then alphabetical
+            return a.name.localeCompare(b.name);
         });
         
         playersList.innerHTML = availablePlayers.map(player => {
-            const isPreferred = player.positions.includes(positionGroup);
             const isCurrent = currentPlayerName === player.name;
-            const preferenceIcon = isPreferred ? '✅' : '⚠️';
-            const preferenceText = isPreferred ? 'preferred' : 'not preferred';
+            const wasBenched = previousPeriodBench.has(player.name);
+            const priorityIcon = wasBenched ? '❗' : '';
+            const priorityText = wasBenched ? 'from bench' : '';
             
             return `
-                <div class="player-option ${isPreferred ? 'preferred' : 'not-preferred'}" 
-                     onclick="app.assignPlayer('${position}', '${player.name}'); app.closeModals();">
-                    ${preferenceIcon} ${player.name} 
-                    <small>(${preferenceText})</small>
+                <div class="player-option preferred" 
+                     data-position="${position}" 
+                     data-player="${player.name}">
+                    ${priorityIcon} ${player.name} 
+                    ${priorityText ? `<small>(${priorityText})</small>` : ''}
                     ${isCurrent ? '<strong>(current)</strong>' : ''}
                 </div>
             `;
         }).join('');
         
         if (availablePlayers.length === 0) {
-            playersList.innerHTML = '<p class="empty-state">No available players</p>';
+            playersList.innerHTML = '<p class="empty-state">No available players prefer this position</p>';
         }
         
         modal.style.display = 'flex';
@@ -1254,14 +1385,13 @@ class SoccerApp {
             
             for (let period = 1; period <= periodCount; period++) {
                 let assignment = '-';
-                let substitutionInfo = '';
                 const periodLineup = this.currentGame.lineup[period];
                 
                 if (periodLineup) {
                     // Check if player is in a field position
                     for (const [position, player] of Object.entries(periodLineup.positions)) {
                         if (player === playerName) {
-                            assignment = position;
+                            let substitutionPlayer = null;
                             
                             // Check for substitution (if not first period)
                             if (period > 1) {
@@ -1270,21 +1400,25 @@ class SoccerApp {
                                     const previousPlayer = previousLineup.positions[position];
                                     // If this player wasn't in this position last period
                                     if (previousPlayer !== playerName) {
-                                        substitutionInfo = ` <span class="substitution">(sub for ${previousPlayer})</span>`;
+                                        substitutionPlayer = previousPlayer;
                                     }
                                 }
                             }
+                            
+                            assignment = this.createPositionCard(position, false, substitutionPlayer);
                             break;
                         }
                     }
                     
-                    // If not in a field position, check if on bench
-                    if (assignment === '-' && periodLineup.bench.includes(playerName)) {
-                        assignment = '<span class="bench-indicator">Bench</span>';
+                    // If not in a field position, check if on bench or jersey
+                    if (assignment === '-' && periodLineup.jersey && periodLineup.jersey.includes(playerName)) {
+                        assignment = '<span class="position-card jersey">Jersey</span>';
+                    } else if (assignment === '-' && periodLineup.bench.includes(playerName)) {
+                        assignment = this.createPositionCard('', true);
                     }
                 }
                 
-                row += `<td>${assignment}${substitutionInfo}</td>`;
+                row += `<td>${assignment}</td>`;
             }
             
             // Add statistics column
@@ -1322,6 +1456,7 @@ class SoccerApp {
         const periodDuration = this.currentGame.periodDuration || 15;
         
         let benchCount = 0;
+        let jerseyCount = 0;
         let totalPlayingMinutes = 0;
         const positionCounts = {};
         
@@ -1330,8 +1465,12 @@ class SoccerApp {
             const periodLineup = this.currentGame.lineup[period];
             
             if (periodLineup) {
-                // Check if player is on bench
-                if (periodLineup.bench.includes(playerName)) {
+                // Check if player is on jersey (preparing for GK)
+                if (periodLineup.jersey && periodLineup.jersey.includes(playerName)) {
+                    jerseyCount++;
+                    positionCounts['Jersey'] = (positionCounts['Jersey'] || 0) + 1;
+                } else if (periodLineup.bench.includes(playerName)) {
+                    // Check if player is on bench
                     benchCount++;
                 } else {
                     // Check if player is in a field position
@@ -1355,10 +1494,11 @@ class SoccerApp {
         
         return {
             benchCount,
+            jerseyCount,
             totalPlayingMinutes,
             positionCounts,
-            periodsPlayed: periodCount - benchCount,
-            averageMinutesPerPeriod: totalPlayingMinutes / Math.max(1, periodCount - benchCount)
+            periodsPlayed: periodCount - benchCount - jerseyCount,
+            averageMinutesPerPeriod: totalPlayingMinutes / Math.max(1, periodCount - benchCount - jerseyCount)
         };
     }
     
@@ -1367,13 +1507,13 @@ class SoccerApp {
         
         const positionList = Object.entries(stats.positionCounts)
             .sort((a, b) => b[1] - a[1]) // Sort by frequency
-            .map(([pos, count]) => `${pos}(${count})`)
-            .join(', ');
+            .map(([pos, count]) => this.createStatPositionCard(pos, count))
+            .join(' ');
         
         return `
             <div class="player-stats">
                 <div class="stat-line"><strong>${stats.totalPlayingMinutes}min</strong> total</div>
-                <div class="stat-line">Bench: ${stats.benchCount}x</div>
+                <div class="stat-line">Sits: ${stats.benchCount}</div>
                 ${positionList ? `<div class="stat-line positions">${positionList}</div>` : ''}
             </div>
         `;
@@ -1385,6 +1525,81 @@ class SoccerApp {
         });
     }
     
+    // ===== EXPORT FUNCTIONALITY =====
+    async exportTableView() {
+        if (!this.currentGame || !this.currentTeam) {
+            this.showErrorMessage('No game or team data to export');
+            return;
+        }
+        
+        try {
+            // Load html2canvas if not already loaded
+            if (typeof html2canvas === 'undefined') {
+                await this.loadHtml2Canvas();
+            }
+            
+            const tableContainer = document.querySelector('#tableTab .table-container');
+            
+            // Temporarily modify the container for full capture
+            const originalHeight = tableContainer.style.height;
+            const originalOverflow = tableContainer.style.overflow;
+            
+            tableContainer.style.height = 'auto';
+            tableContainer.style.overflow = 'visible';
+            
+            // Small delay to ensure layout is updated
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            const canvas = await html2canvas(tableContainer, {
+                backgroundColor: '#ffffff',
+                scale: 2,
+                logging: false,
+                useCORS: true,
+                height: tableContainer.scrollHeight,
+                windowHeight: tableContainer.scrollHeight
+            });
+            
+            // Restore original styles
+            tableContainer.style.height = originalHeight;
+            tableContainer.style.overflow = originalOverflow;
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.download = `${this.currentTeam.name}-${this.currentGame.opponent}-lineup-table.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+            
+            this.showSuccessMessage('✅ Table exported successfully!');
+        } catch (error) {
+            console.error('Export failed:', error);
+            this.showErrorMessage('❌ Failed to export table');
+            
+            // Restore styles in case of error
+            const tableContainer = document.querySelector('#tableTab .table-container');
+            tableContainer.style.height = 'calc(100vh - 280px)';
+            tableContainer.style.overflow = 'auto';
+        }
+    }
+    
+    loadHtml2Canvas() {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+    
+    updateExportButtonVisibility() {
+        const exportBtn = document.getElementById('exportTableBtn');
+        if (this.currentGame && this.currentTeam) {
+            exportBtn.style.display = 'block';
+        } else {
+            exportBtn.style.display = 'none';
+        }
+    }
+
     // ===== UI HELPERS =====
     updateUI() {
         // Show appropriate sections
