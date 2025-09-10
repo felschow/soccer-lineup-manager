@@ -15,31 +15,37 @@ body {
 .app-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
-/* Header */
-.app-header {
+/* Main Header */
+.main-header {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 20px;
+    padding: 16px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+    z-index: 100;
 }
 
-.app-header h1 {
-    font-size: 1.8rem;
+.main-header h1 {
+    font-size: 1.5rem;
     font-weight: 600;
     color: #2d3748;
+    margin: 0;
 }
 
-.header-actions {
-    display: flex;
-    gap: 12px;
+.header-status {
+    font-size: 0.875rem;
+    color: #64748b;
+    font-weight: 500;
 }
 
 /* Buttons */
@@ -88,9 +94,59 @@ body {
     transform: translateY(-2px);
 }
 
-/* Sections */
-.section {
-    margin-bottom: 20px;
+/* Content Area */
+.content-area {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+.tab-content {
+    display: none;
+    height: 100%;
+    overflow-y: auto;
+    padding: 20px 20px calc(100px + env(safe-area-inset-bottom)) 20px;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.tab-section {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.section-header h2 {
+    color: #2d3748;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Overlay Sections */
+.overlay-section {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    overflow-y: auto;
 }
 
 /* Cards */
@@ -272,16 +328,47 @@ body {
 
 /* Soccer Field */
 .soccer-field {
-    background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+    background: 
+        /* Mowing stripes - alternating light and dark grass */
+        repeating-linear-gradient(
+            0deg,
+            rgba(45, 122, 61, 0.8) 0px,
+            rgba(45, 122, 61, 0.8) 50px,
+            rgba(30, 95, 42, 0.9) 50px,
+            rgba(30, 95, 42, 0.9) 100px
+        ),
+        /* Grass texture overlay */
+        radial-gradient(ellipse at top, rgba(45, 90, 61, 0.3) 0%, rgba(30, 63, 42, 0.4) 50%, rgba(22, 51, 42, 0.5) 100%),
+        /* Fine grass blade details */
+        repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 1px,
+            rgba(45, 90, 61, 0.05) 1px,
+            rgba(45, 90, 61, 0.05) 2px
+        ),
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 1px,
+            rgba(30, 63, 42, 0.05) 1px,
+            rgba(30, 63, 42, 0.05) 2px
+        ),
+        /* Base grass color */
+        linear-gradient(135deg, #2d7a3d 0%, #1e5f2a 50%, #16472a 100%);
+    background-size: 100% 100%, 100% 100%, 3px 3px, 4px 4px, 100% 100%;
     border-radius: 8px;
     padding: 15px;
     height: 100%;
     display: flex;
-    flex-direction: row; /* Horizontal layout - GK on left, forwards on right */
+    flex-direction: row;
     justify-content: space-between;
     position: relative;
-    border: 3px solid #ffffff;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 4px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 
+        inset 0 0 50px rgba(0, 0, 0, 0.2),
+        0 8px 32px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
 }
 
 /* Center line */
@@ -291,10 +378,13 @@ body {
     left: 50%;
     top: 15px;
     bottom: 15px;
-    width: 2px;
-    background: rgba(255, 255, 255, 0.9);
+    width: 3px;
+    background: rgba(255, 255, 255, 0.95);
     transform: translateX(-50%);
     z-index: 1;
+    box-shadow: 
+        0 0 3px rgba(255, 255, 255, 0.3),
+        inset 0 0 1px rgba(0, 0, 0, 0.2);
 }
 
 /* Center circle */
@@ -305,10 +395,13 @@ body {
     left: 50%;
     width: 80px;
     height: 80px;
-    border: 2px solid rgba(255, 255, 255, 0.9);
+    border: 3px solid rgba(255, 255, 255, 0.95);
     border-radius: 50%;
     transform: translate(-50%, -50%);
     z-index: 1;
+    box-shadow: 
+        0 0 5px rgba(255, 255, 255, 0.3),
+        inset 0 0 2px rgba(0, 0, 0, 0.2);
 }
 
 /* Right penalty area (for forwards) */
@@ -319,10 +412,13 @@ body {
     transform: translateY(-50%);
     width: 50px;
     height: 140px;
-    border: 2px solid rgba(255, 255, 255, 0.8);
+    border: 3px solid rgba(255, 255, 255, 0.95);
     border-right: none;
     z-index: 1;
     pointer-events: none;
+    box-shadow: 
+        0 0 3px rgba(255, 255, 255, 0.3),
+        inset 0 0 1px rgba(0, 0, 0, 0.2);
 }
 
 /* Right goal area */
@@ -333,10 +429,13 @@ body {
     transform: translateY(-50%);
     width: 25px;
     height: 80px;
-    border: 2px solid rgba(255, 255, 255, 0.8);
+    border: 3px solid rgba(255, 255, 255, 0.95);
     border-right: none;
     z-index: 1;
     pointer-events: none;
+    box-shadow: 
+        0 0 3px rgba(255, 255, 255, 0.3),
+        inset 0 0 1px rgba(0, 0, 0, 0.2);
 }
 
 /* Left penalty area (for GK) */
@@ -347,10 +446,13 @@ body {
     transform: translateY(-50%);
     width: 50px;
     height: 140px;
-    border: 2px solid rgba(255, 255, 255, 0.8);
+    border: 3px solid rgba(255, 255, 255, 0.95);
     border-left: none;
     z-index: 1;
     pointer-events: none;
+    box-shadow: 
+        0 0 3px rgba(255, 255, 255, 0.3),
+        inset 0 0 1px rgba(0, 0, 0, 0.2);
 }
 
 /* Left goal area */
@@ -361,10 +463,13 @@ body {
     transform: translateY(-50%);
     width: 25px;
     height: 80px;
-    border: 2px solid rgba(255, 255, 255, 0.8);
+    border: 3px solid rgba(255, 255, 255, 0.95);
     border-left: none;
     z-index: 1;
     pointer-events: none;
+    box-shadow: 
+        0 0 3px rgba(255, 255, 255, 0.3),
+        inset 0 0 1px rgba(0, 0, 0, 0.2);
 }
 
 /* Corner arcs */
@@ -372,38 +477,41 @@ body {
     position: absolute;
     width: 20px;
     height: 20px;
-    border: 2px solid rgba(255, 255, 255, 0.7);
+    border: 3px solid rgba(255, 255, 255, 0.9);
     z-index: 1;
     pointer-events: none;
+    box-shadow: 
+        0 0 3px rgba(255, 255, 255, 0.3),
+        inset 0 0 1px rgba(0, 0, 0, 0.2);
 }
 
 .soccer-field .corner-arc.top-left {
-    top: 13px;
-    left: 13px;
+    top: 12px;
+    left: 12px;
     border-right: none;
     border-bottom: none;
     border-radius: 0 0 20px 0;
 }
 
 .soccer-field .corner-arc.top-right {
-    top: 13px;
-    right: 13px;
+    top: 12px;
+    right: 12px;
     border-left: none;
     border-bottom: none;
     border-radius: 0 0 0 20px;
 }
 
 .soccer-field .corner-arc.bottom-left {
-    bottom: 13px;
-    left: 13px;
+    bottom: 12px;
+    left: 12px;
     border-right: none;
     border-top: none;
     border-radius: 0 20px 0 0;
 }
 
 .soccer-field .corner-arc.bottom-right {
-    bottom: 13px;
-    right: 13px;
+    bottom: 12px;
+    right: 12px;
     border-left: none;
     border-top: none;
     border-radius: 20px 0 0 0;
@@ -946,6 +1054,214 @@ body {
         font-size: 0.7rem;
         margin-top: 1px;
     }
+    
+    /* Bottom navigation adjustments */
+    .bottom-nav {
+        padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
+    }
+    
+    .nav-tab {
+        min-width: 56px;
+        min-height: 56px;
+        padding: 8px 12px;
+    }
+    
+    .nav-icon {
+        font-size: 20px;
+        margin-bottom: 2px;
+    }
+    
+    .nav-label {
+        font-size: 10px;
+    }
+    
+    .floating-action-btn {
+        width: 48px;
+        height: 48px;
+        bottom: calc(72px + env(safe-area-inset-bottom));
+        right: 16px;
+    }
+    
+    .fab-icon {
+        font-size: 20px;
+    }
+}
+
+/* ===== BOTTOM NAVIGATION ===== */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+    z-index: 1000;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.1);
+}
+
+.nav-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 12px;
+    min-width: 64px;
+    min-height: 64px;
+    position: relative;
+    flex: 1;
+    max-width: 80px;
+}
+
+.nav-tab:hover {
+    background: rgba(79, 70, 229, 0.08);
+    transform: translateY(-1px);
+}
+
+.nav-tab.active {
+    background: rgba(79, 70, 229, 0.12);
+    color: #4f46e5;
+}
+
+.nav-tab.active .nav-icon {
+    transform: scale(1.1);
+    filter: brightness(1.2);
+}
+
+.nav-icon {
+    font-size: 24px;
+    margin-bottom: 4px;
+    transition: all 0.2s ease;
+    display: block;
+    line-height: 1;
+}
+
+.nav-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: #6b7280;
+    transition: color 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.nav-tab.active .nav-label {
+    color: #4f46e5;
+    font-weight: 600;
+}
+
+/* Active indicator */
+.nav-tab.active::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 32px;
+    height: 3px;
+    background: #4f46e5;
+    border-radius: 0 0 4px 4px;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        width: 0;
+        opacity: 0;
+    }
+    to {
+        width: 32px;
+        opacity: 1;
+    }
+}
+
+/* ===== FLOATING ACTION BUTTON ===== */
+.floating-action-btn {
+    position: fixed;
+    bottom: calc(80px + env(safe-area-inset-bottom));
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    background: #4f46e5;
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4), 0 8px 32px rgba(79, 70, 229, 0.2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    transition: all 0.3s ease;
+    transform: scale(0.9);
+    opacity: 0;
+}
+
+.floating-action-btn.show {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.floating-action-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.5), 0 12px 40px rgba(79, 70, 229, 0.3);
+}
+
+.floating-action-btn:active {
+    transform: scale(0.95);
+}
+
+.fab-icon {
+    color: white;
+    font-size: 24px;
+    font-weight: 300;
+    transition: transform 0.2s ease;
+}
+
+.floating-action-btn:hover .fab-icon {
+    transform: rotate(90deg);
+}
+
+/* ===== SETTINGS CONTENT ===== */
+.settings-content {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.setting-group {
+    margin-bottom: 32px;
+}
+
+.setting-group:last-child {
+    margin-bottom: 0;
+}
+
+.setting-group h3 {
+    color: #2d3748;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.setting-group p {
+    color: #64748b;
+    margin: 8px 0;
+}
+
+.setting-group .btn {
+    margin-right: 12px;
+    margin-bottom: 8px;
 }
 
 /* View transitions */

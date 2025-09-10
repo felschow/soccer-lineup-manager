@@ -15,7 +15,7 @@
         </header>
 
         <!-- Main Content Area -->
-        <main class="content-area">
+        <main class="content-area" id="contentArea">
             
             <!-- Teams Tab Content -->
             <div class="tab-content active" id="teamsTab">
@@ -32,88 +32,63 @@
 
             <!-- Field Tab Content -->
             <div class="tab-content" id="fieldTab">
-                <section class="tab-section">
-                    <!-- Game Header -->
-                    <div class="game-header">
-                        <div class="game-info">
-                            <h2 id="currentTeamName">Team Name</h2>
-                            <p id="currentGameInfo">Game vs Opponent</p>
-                        </div>
-                        <div class="game-actions">
-                            <button id="completeGameBtn" class="btn success">✅ Complete Game</button>
-                        </div>
-                    </div>
-
-                    <!-- Period Selector -->
-                    <div id="periodSelector" class="period-selector">
-                        <!-- Periods will be rendered dynamically -->
-                    </div>
-
-                    <!-- Field View -->
-                    <div class="field-and-players">
-                        <!-- Soccer Field -->
-                        <div id="soccerField" class="soccer-field">
-                            <!-- Field positions will be rendered dynamically based on formation -->
-                        </div>
-
-                        <!-- Players List -->
-                        <div class="players-panel">
-                            <h3>Available Players</h3>
-                            <div id="availablePlayers" class="players-list"></div>
-                            
-                            <h3>Bench</h3>
-                            <div id="benchPlayers" class="players-list bench"></div>
-                        </div>
-                    </div>
-                </section>
+            <div class="game-header">
+                <div class="game-info">
+                    <h2 id="currentTeamName">Team Name</h2>
+                    <p id="currentGameInfo">Game vs Opponent</p>
+                </div>
+                <div class="game-actions">
+                    <button id="viewToggleBtn" class="btn secondary">📋 Table View</button>
+                    <button id="completeGameBtn" class="btn success">✅ Complete Game</button>
+                </div>
             </div>
 
-            <!-- Table Tab Content -->
-            <div class="tab-content" id="tableTab">
-                <section class="tab-section">
-                    <div class="table-container">
-                        <table id="lineupTable" class="lineup-table">
-                            <thead>
-                                <tr>
-                                    <th>Player</th>
-                                    <th>Period 1</th>
-                                    <th>Period 2</th>
-                                    <th>Period 3</th>
-                                    <th>Period 4</th>
-                                    <th>Statistics</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </section>
+            <!-- Period Selector -->
+            <div id="periodSelector" class="period-selector">
+                <!-- Periods will be rendered dynamically -->
             </div>
 
-            <!-- Settings Tab Content -->
-            <div class="tab-content" id="settingsTab">
-                <section class="tab-section">
-                    <div class="section-header">
-                        <h2>Settings</h2>
+            <!-- Field View -->
+            <div id="fieldView" class="view-container">
+                <div class="field-and-players">
+                    <!-- Soccer Field -->
+                    <div id="soccerField" class="soccer-field">
+                        <!-- Field positions will be rendered dynamically based on formation -->
                     </div>
-                    <div class="settings-content">
-                        <div class="setting-group">
-                            <h3>Game Management</h3>
-                            <button id="exportDataBtn" class="btn secondary">📥 Export Data</button>
-                            <button id="clearDataBtn" class="btn secondary">🗑️ Clear All Data</button>
-                        </div>
-                        <div class="setting-group">
-                            <h3>About</h3>
-                            <p>Soccer Lineup Manager v2.0</p>
-                            <p>Built with modern web technologies</p>
-                        </div>
+
+                    <!-- Players List -->
+                    <div class="players-panel">
+                        <h3>Available Players</h3>
+                        <div id="availablePlayers" class="players-list"></div>
+                        
+                        <h3>Bench</h3>
+                        <div id="benchPlayers" class="players-list bench"></div>
                     </div>
-                </section>
+                </div>
             </div>
 
-        </main>
+            <!-- Table View -->
+            <div id="tableView" class="view-container" style="display: none;">
+                <div class="table-container">
+                    <table id="lineupTable" class="lineup-table">
+                        <thead>
+                            <tr>
+                                <th>Position</th>
+                                <th>Period 1</th>
+                                <th>Period 2</th>
+                                <th>Period 3</th>
+                                <th>Period 4</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
 
+        <!-- Modals -->
         <!-- Team Creation Full Page -->
-        <section id="teamCreationSection" class="overlay-section" style="display: none;">
+        <section id="teamCreationSection" class="section" style="display: none;">
             <div class="team-creation-container">
                 <div class="creation-header">
                     <button id="backToTeamsBtn" class="btn secondary">← Back to Teams</button>
@@ -178,7 +153,6 @@
             </div>
         </section>
 
-        <!-- Modals -->
         <!-- Game Creation Modal -->
         <div id="gameModal" class="modal" style="display: none;">
             <div class="modal-content">
@@ -245,31 +219,6 @@
                 <div id="playersList" class="players-selection"></div>
             </div>
         </div>
-
-        <!-- Bottom Navigation -->
-        <nav class="bottom-nav">
-            <button class="nav-tab active" data-tab="teamsTab">
-                <span class="nav-icon">👥</span>
-                <span class="nav-label">Teams</span>
-            </button>
-            <button class="nav-tab" data-tab="fieldTab">
-                <span class="nav-icon">⚽</span>
-                <span class="nav-label">Field</span>
-            </button>
-            <button class="nav-tab" data-tab="tableTab">
-                <span class="nav-icon">📋</span>
-                <span class="nav-label">Table</span>
-            </button>
-            <button class="nav-tab" data-tab="settingsTab">
-                <span class="nav-icon">⚙️</span>
-                <span class="nav-label">Settings</span>
-            </button>
-        </nav>
-
-        <!-- Floating Action Button -->
-        <button id="fab" class="floating-action-btn">
-            <span class="fab-icon">+</span>
-        </button>
     </div>
 
     <script src="app.js"></script>

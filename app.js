@@ -53,6 +53,135 @@ class SoccerApp {
         this.setupEventListeners();
         this.renderTeams();
         this.updateUI();
+        this.initializeNavigation();
+    }
+    
+    // ===== TAB NAVIGATION =====
+    switchTab(targetTab) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        
+        // Remove active state from all nav tabs
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Show target tab content
+        document.getElementById(targetTab).classList.add('active');
+        
+        // Activate nav tab
+        document.querySelector(`[data-tab="${targetTab}"]`).classList.add('active');
+        
+        // Update header title
+        this.updateHeaderForTab(targetTab);
+        
+        // Handle tab-specific logic
+        if (targetTab === 'fieldTab' || targetTab === 'tableTab') {
+            // Ensure we have a current game
+            if (!this.currentGame) {
+                this.switchTab('teamsTab');
+                return;
+            }
+        }
+        
+        if (targetTab === 'fieldTab') {
+            this.renderField();
+        } else if (targetTab === 'tableTab') {
+            this.renderTable();
+        }
+        
+        // Update FAB
+        this.updateFAB(targetTab);
+    }
+    
+    handleFabClick() {
+        const activeTab = document.querySelector('.tab-content.active').id;
+        
+        switch(activeTab) {
+            case 'teamsTab':
+                if (this.currentTeam && !this.currentGame) {
+                    this.showGameModal();
+                } else {
+                    this.showTeamCreation();
+                }
+                break;
+            case 'fieldTab':
+            case 'tableTab':
+                this.completeGame();
+                break;
+            case 'settingsTab':
+                // Could add settings actions here
+                break;
+        }
+    }
+    
+    updateFAB(activeTab) {
+        const fab = document.getElementById('fab');
+        const fabIcon = document.querySelector('.fab-icon');
+        
+        switch(activeTab) {
+            case 'teamsTab':
+                if (this.currentTeam && !this.currentGame) {
+                    fab.classList.add('show');
+                    fabIcon.textContent = '🎮';
+                    fab.title = 'Start New Game';
+                } else {
+                    fab.classList.add('show');
+                    fabIcon.textContent = '+';
+                    fab.title = 'Create Team';
+                }
+                break;
+            case 'fieldTab':
+            case 'tableTab':
+                if (this.currentGame) {
+                    fab.classList.add('show');
+                    fabIcon.textContent = '✅';
+                    fab.title = 'Complete Game';
+                } else {
+                    fab.classList.remove('show');
+                }
+                break;
+            case 'settingsTab':
+                fab.classList.remove('show');
+                break;
+            default:
+                fab.classList.remove('show');
+        }
+    }
+    
+    updateHeaderForTab(tabId) {
+        const headerTitle = document.getElementById('headerTitle');
+        const headerStatus = document.getElementById('headerStatus');
+        
+        switch(tabId) {
+            case 'teamsTab':
+                headerTitle.textContent = '⚽ Soccer Lineup Manager';
+                headerStatus.textContent = this.currentTeam ? `Selected: ${this.currentTeam.name}` : '';
+                break;
+            case 'fieldTab':
+                headerTitle.textContent = '⚽ Field View';
+                headerStatus.textContent = this.currentGame ? `${this.currentGame.opponent} • Period ${this.currentPeriod}` : '';
+                break;
+            case 'tableTab':
+                headerTitle.textContent = '📋 Lineup Table';
+                headerStatus.textContent = this.currentGame ? `${this.currentGame.opponent} • ${this.currentGame.periodCount} periods` : '';
+                break;
+            case 'settingsTab':
+                headerTitle.textContent = '⚙️ Settings';
+                headerStatus.textContent = '';
+                break;
+        }
+    }
+    
+    initializeNavigation() {
+        // Start with teams tab if no current game, otherwise field tab
+        if (this.currentGame) {
+            this.switchTab('fieldTab');
+        } else {
+            this.switchTab('teamsTab');
+        }
     }
     
     // ===== DATA PERSISTENCE =====
@@ -90,15 +219,22 @@ class SoccerApp {
     
     // ===== EVENT LISTENERS =====
     setupEventListeners() {
+        // Bottom navigation
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const targetTab = e.currentTarget.dataset.tab;
+                this.switchTab(targetTab);
+            });
+        });
+
         // Team management
-        document.getElementById('teamBtn').addEventListener('click', () => this.showTeamSection());
         document.getElementById('createTeamBtn').addEventListener('click', () => this.showTeamCreation());
-        document.getElementById('newGameBtn').addEventListener('click', () => this.showGameModal());
         
         // Team creation page
         document.getElementById('backToTeamsBtn').addEventListener('click', () => this.showTeamSection());
         document.getElementById('cancelTeamBtn').addEventListener('click', () => this.showTeamSection());
         document.getElementById('addPlayerBtn').addEventListener('click', () => this.addPlayerRow());
+        document.getElementById('teamForm').addEventListener('submit', (e) => this.handleTeamSubmit(e));
         
         // Team size change handler
         document.addEventListener('change', (e) => {
@@ -112,20 +248,20 @@ class SoccerApp {
             }
         });
         
-        // Period selector
-        document.querySelectorAll('.period-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+        // Period selector - will be added dynamically
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('period-btn')) {
                 this.currentPeriod = parseInt(e.target.dataset.period);
                 this.updatePeriodSelector();
                 this.renderField();
-            });
+            }
         });
-        
-        // View toggle
-        document.getElementById('viewToggleBtn').addEventListener('click', () => this.toggleView());
         
         // Game completion
         document.getElementById('completeGameBtn').addEventListener('click', () => this.completeGame());
+        
+        // Floating action button
+        document.getElementById('fab').addEventListener('click', () => this.handleFabClick());
         
         // Modal handling
         document.addEventListener('click', (e) => {
@@ -135,7 +271,6 @@ class SoccerApp {
         });
         
         // Form submissions
-        document.getElementById('teamForm').addEventListener('submit', (e) => this.handleTeamSubmit(e));
         document.getElementById('gameForm').addEventListener('submit', (e) => this.handleGameSubmit(e));
         
         // Field position clicks - handle both selection and removal
@@ -219,14 +354,13 @@ class SoccerApp {
     
     // ===== TEAM MANAGEMENT =====
     showTeamSection() {
-        document.getElementById('teamSection').style.display = 'block';
-        document.getElementById('gameSection').style.display = 'none';
+        // Hide team creation overlay and return to teams tab
+        document.getElementById('teamCreationSection').style.display = 'none';
+        this.switchTab('teamsTab');
     }
     
     showTeamCreation(team = null) {
-        // Hide other sections
-        document.getElementById('teamSection').style.display = 'none';
-        document.getElementById('gameSection').style.display = 'none';
+        // Show the team creation overlay
         document.getElementById('teamCreationSection').style.display = 'block';
         
         const title = document.getElementById('teamCreationTitle');
@@ -404,7 +538,8 @@ class SoccerApp {
     selectTeam(teamId) {
         this.currentTeam = this.teams.find(t => t.id === teamId);
         this.renderTeams(); // Update selected state
-        document.getElementById('newGameBtn').style.display = 'inline-flex';
+        this.updateHeaderForTab('teamsTab'); // Update header status
+        console.log('Selected team:', this.currentTeam.name);
     }
     
     deleteTeam(teamId) {
@@ -414,11 +549,11 @@ class SoccerApp {
             if (this.currentTeam && this.currentTeam.id === teamId) {
                 this.currentTeam = null;
                 this.currentGame = null;
-                document.getElementById('newGameBtn').style.display = 'none';
             }
             this.saveData();
             this.renderTeams();
-            this.updateUI();
+            this.updateHeaderForTab('teamsTab');
+            console.log('Deleted team:', team.name);
         }
     }
     
@@ -434,19 +569,56 @@ class SoccerApp {
             const playerSummary = this.getPlayerSummary(team);
             return `
                 <div class="team-card ${this.currentTeam && this.currentTeam.id === team.id ? 'selected' : ''}" 
-                     onclick="app.selectTeam('${team.id}')">
+                     data-team-id="${team.id}">
                     <h3>${team.name}</h3>
                     <p>${team.players.length} players</p>
                     <div class="position-summary">
                         ${playerSummary}
                     </div>
-                    <div class="team-actions" onclick="event.stopPropagation()">
-                        <button class="btn secondary" onclick="app.editTeam('${team.id}')">✏️ Edit</button>
-                        <button class="btn secondary" onclick="app.deleteTeam('${team.id}')" style="color: #dc2626;">🗑️ Delete</button>
+                    <div class="team-actions">
+                        <button class="btn secondary edit-team-btn" data-team-id="${team.id}">✏️ Edit</button>
+                        <button class="btn secondary delete-team-btn" data-team-id="${team.id}" style="color: #dc2626;">🗑️ Delete</button>
                     </div>
                 </div>
             `;
         }).join('');
+        
+        // Add event listeners for team interactions
+        this.attachTeamEventListeners();
+    }
+    
+    attachTeamEventListeners() {
+        // Team card selection
+        document.querySelectorAll('.team-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                // Don't trigger if clicking on action buttons
+                if (e.target.closest('.team-actions')) return;
+                
+                const teamId = card.dataset.teamId;
+                console.log('Team card clicked:', teamId);
+                this.selectTeam(teamId);
+            });
+        });
+        
+        // Edit buttons
+        document.querySelectorAll('.edit-team-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const teamId = btn.dataset.teamId;
+                console.log('Edit team clicked:', teamId);
+                this.editTeam(teamId);
+            });
+        });
+        
+        // Delete buttons
+        document.querySelectorAll('.delete-team-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const teamId = btn.dataset.teamId;
+                console.log('Delete team clicked:', teamId);
+                this.deleteTeam(teamId);
+            });
+        });
     }
     
     editTeam(teamId) {
@@ -1251,6 +1423,8 @@ let app;
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🏁 DOM loaded, starting app...');
     app = new SoccerApp();
+    // Make app globally accessible for onclick handlers
+    window.app = app;
 });
 
 // ===== KEYBOARD SHORTCUTS =====
