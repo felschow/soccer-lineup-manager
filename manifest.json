@@ -1,7 +1,7 @@
 {
-  "name": "Soccer Lineup Manager",
-  "short_name": "SoccerLineup",
-  "description": "Manage youth soccer team lineups with smart rotation and rule enforcement",
+  "name": "SimpleSquad",
+  "short_name": "SimpleSquad",
+  "description": "Simple, clean, and beautiful youth soccer team lineup management",
   "start_url": "/",
   "display": "standalone",
   "orientation": "any",
@@ -90,7 +90,7 @@
   },
   "protocol_handlers": [
     {
-      "protocol": "web+soccerlineup",
+      "protocol": "web+simplesquad",
       "url": "/?lineup=%s"
     }
   ]

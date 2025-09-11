@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚽ Soccer Lineup Manager</title>
+    <title>⚽ SimpleSquad Manager</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="app-container">
-        <!-- Main Header -->
-        <header class="main-header">
-            <h1 id="headerTitle">⚽ Soccer Lineup Manager</h1>
+        <!-- Main Header - Hidden as unified header provides same info -->
+        <header class="main-header" style="display: none;">
+            <h1 id="headerTitle">⚽ SimpleSquad Manager</h1>
             <div class="header-status" id="headerStatus"></div>
         </header>
 
@@ -33,21 +33,25 @@
             <!-- Field Tab Content -->
             <div class="tab-content" id="fieldTab">
                 <section class="tab-section">
-                    <!-- Game Header -->
-                    <div class="game-header">
-                        <div class="game-info">
-                            <h2 id="currentTeamName">Team Name</h2>
-                            <p id="currentGameInfo">Game vs Opponent</p>
+                    <!-- Compact Unified Header -->
+                    <div class="unified-header">
+                        <div class="header-left">
+                            <img id="currentTeamLogo" src="" alt="Team logo" class="compact-team-logo" style="display: none;">
+                            <div class="compact-game-info">
+                                <span id="currentTeamName" class="team-name">Team Name</span>
+                                <span id="currentGameInfo" class="game-details">vs Opponent • 9/10/2025</span>
+                            </div>
                         </div>
-                        <div class="game-actions">
-                            <button id="completeGameBtn" class="btn success">✅ Complete Game</button>
+                        <div class="header-center">
+                            <div id="periodSelector" class="compact-period-selector">
+                                <!-- Periods will be rendered dynamically -->
+                            </div>
+                        </div>
+                        <div class="header-right">
+                            <button id="completeGameBtn" class="btn success compact">✅ Complete Game</button>
                         </div>
                     </div>
-
-                    <!-- Period Selector -->
-                    <div id="periodSelector" class="period-selector">
-                        <!-- Periods will be rendered dynamically -->
-                    </div>
+                    <div class="unified-header-divider"></div>
 
                     <!-- Field View -->
                     <div class="field-and-players">
@@ -58,14 +62,20 @@
 
                         <!-- Players List -->
                         <div class="players-panel">
-                            <h3>Available Players</h3>
-                            <div id="availablePlayers" class="players-list"></div>
+                            <div class="available-players-section">
+                                <h3>Available Players</h3>
+                                <div id="availablePlayers" class="players-list available"></div>
+                            </div>
                             
-                            <h3>Bench - Jersey</h3>
-                            <div id="jerseyPlayers" class="players-list jersey"></div>
+                            <div class="jersey-section">
+                                <h3>Jersey Prep</h3>
+                                <div id="jerseyPlayers" class="jersey-slot"></div>
+                            </div>
                             
-                            <h3>Bench</h3>
-                            <div id="benchPlayers" class="players-list bench"></div>
+                            <div class="bench-section">
+                                <h3>Bench</h3>
+                                <div id="benchPlayers" class="players-list bench"></div>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -74,10 +84,23 @@
             <!-- Table Tab Content -->
             <div class="tab-content" id="tableTab">
                 <section class="tab-section">
-                    <div class="section-header">
-                        <h2>Lineup Table</h2>
-                        <button id="exportTableBtn" class="btn secondary">📸 Export Table</button>
+                    <!-- Compact Unified Header for Table -->
+                    <div class="unified-header">
+                        <div class="header-left">
+                            <img id="tableTeamHeaderLogo" src="" alt="Team logo" class="compact-team-logo" style="display: none;">
+                            <div class="compact-game-info">
+                                <span id="tableTeamHeaderName" class="team-name">Team Name</span>
+                                <span id="tableTeamHeaderGameInfo" class="game-details">vs Opponent • 9/10/2025</span>
+                            </div>
+                        </div>
+                        <div class="header-center">
+                            <!-- Empty center for table view -->
+                        </div>
+                        <div class="header-right">
+                            <button id="exportTableBtn" class="btn secondary compact">📸 Export Table</button>
+                        </div>
                     </div>
+                    <div class="unified-header-divider"></div>
                     <div class="table-container">
                         <table id="lineupTable" class="lineup-table">
                             <thead>
@@ -110,7 +133,7 @@
                         </div>
                         <div class="setting-group">
                             <h3>About</h3>
-                            <p>Soccer Lineup Manager v2.0</p>
+                            <p>SimpleSquad Manager v2.0</p>
                             <p>Built with modern web technologies</p>
                         </div>
                     </div>
@@ -123,8 +146,14 @@
         <section id="teamCreationSection" class="overlay-section" style="display: none;">
             <div class="team-creation-container">
                 <div class="creation-header">
-                    <button id="backToTeamsBtn" class="btn secondary">← Back to Teams</button>
-                    <h1 id="teamCreationTitle">Create New Team</h1>
+                    <div class="header-left">
+                        <button id="backToTeamsBtn" class="btn secondary">← Back to Teams</button>
+                        <h1 id="teamCreationTitle">Create New Team</h1>
+                    </div>
+                    <div class="header-right">
+                        <button type="button" class="btn secondary" id="cancelTeamBtn">Cancel</button>
+                        <button type="submit" form="teamForm" class="btn primary">Save Team</button>
+                    </div>
                 </div>
                 
                 <form id="teamForm" class="team-creation-form">
@@ -134,6 +163,20 @@
                         <div class="form-group">
                             <label>Team Name</label>
                             <input type="text" id="teamName" required placeholder="Enter team name">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Team Logo (Optional)</label>
+                            <div class="logo-upload-section">
+                                <input type="file" id="teamLogoInput" accept="image/*" style="display: none;" onchange="handleLogoUpload(this)">
+                                <button type="button" class="btn secondary logo-upload-btn" onclick="document.getElementById('teamLogoInput').click()">
+                                    📷 Upload Logo
+                                </button>
+                                <div id="logoPreview" class="logo-preview" style="display: none;">
+                                    <img id="logoPreviewImg" src="" alt="Team logo preview">
+                                    <button type="button" class="remove-logo-btn" onclick="removeLogo()" title="Remove logo">×</button>
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="form-group">
@@ -175,11 +218,6 @@
                         <div id="playersContainer" class="players-container">
                             <!-- Players will be added dynamically -->
                         </div>
-                    </div>
-                    
-                    <div class="form-actions-fixed">
-                        <button type="button" class="btn secondary" id="cancelTeamBtn">Cancel</button>
-                        <button type="submit" class="btn primary">Save Team</button>
                     </div>
                 </form>
             </div>
@@ -253,30 +291,27 @@
             </div>
         </div>
 
-        <!-- Bottom Navigation -->
-        <nav class="bottom-nav">
-            <button class="nav-tab active" data-tab="teamsTab">
+        <!-- Streamlined Navigation -->
+        <nav class="streamlined-nav">
+            <button class="nav-item active" data-tab="teamsTab">
                 <span class="nav-icon">👥</span>
-                <span class="nav-label">Teams</span>
+                <span class="nav-text">Teams</span>
             </button>
-            <button class="nav-tab" data-tab="fieldTab">
+            <button class="nav-item" data-tab="fieldTab">
                 <span class="nav-icon">⚽</span>
-                <span class="nav-label">Field</span>
+                <span class="nav-text">Field</span>
             </button>
-            <button class="nav-tab" data-tab="tableTab">
+            <button class="nav-item" data-tab="tableTab">
                 <span class="nav-icon">📋</span>
-                <span class="nav-label">Table</span>
+                <span class="nav-text">Table</span>
             </button>
-            <button class="nav-tab" data-tab="settingsTab">
+            <button class="nav-item" data-tab="settingsTab">
                 <span class="nav-icon">⚙️</span>
-                <span class="nav-label">Settings</span>
+                <span class="nav-text">Settings</span>
             </button>
         </nav>
 
-        <!-- Floating Action Button -->
-        <button id="fab" class="floating-action-btn">
-            <span class="fab-icon">+</span>
-        </button>
+        <!-- Floating Action Button removed - redundant with Complete Game button in header -->
     </div>
 
     <script src="app.js"></script>

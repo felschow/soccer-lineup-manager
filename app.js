@@ -21,9 +21,9 @@ class SoccerApp {
         // Formation definitions by team size
         this.formations = {
             4: {
-                '1-2-1': { name: '1-2-1', description: 'Balanced', positions: ['GK', 'LB', 'RB', 'CF'] },
-                '1-1-2': { name: '1-1-2', description: 'Attacking', positions: ['GK', 'CB', 'LF', 'RF'] },
-                '2-1-1': { name: '2-1-1', description: 'Defensive', positions: ['GK', 'LB', 'RB', 'CF'] }
+                '2-2': { name: '2-2', description: 'Balanced', positions: ['LB', 'RB', 'LF', 'RF'] },
+                '1-3': { name: '1-3', description: 'Attacking', positions: ['CB', 'LF', 'CF', 'RF'] },
+                '3-1': { name: '3-1', description: 'Defensive', positions: ['LB', 'CB', 'RB', 'CF'] }
             },
             7: {
                 '1-2-2-2': { name: '1-2-2-2', description: 'Balanced', positions: ['GK', 'LB', 'RB', 'CM1', 'CM2', 'LF', 'RF'] },
@@ -63,15 +63,15 @@ class SoccerApp {
             content.classList.remove('active');
         });
         
-        // Remove active state from all nav tabs
-        document.querySelectorAll('.nav-tab').forEach(tab => {
+        // Remove active state from all nav items
+        document.querySelectorAll('.nav-item, .nav-tab').forEach(tab => {
             tab.classList.remove('active');
         });
         
         // Show target tab content
         document.getElementById(targetTab).classList.add('active');
         
-        // Activate nav tab
+        // Activate nav item
         document.querySelector(`[data-tab="${targetTab}"]`).classList.add('active');
         
         // Update header title
@@ -88,9 +88,11 @@ class SoccerApp {
         
         if (targetTab === 'fieldTab') {
             this.renderField();
+            this.updateGameInfo();
         } else if (targetTab === 'tableTab') {
             this.renderTable();
             this.updateExportButtonVisibility();
+            this.updateTeamHeader();
         }
         
         // Update FAB
@@ -158,7 +160,7 @@ class SoccerApp {
         
         switch(tabId) {
             case 'teamsTab':
-                headerTitle.textContent = '⚽ Soccer Lineup Manager';
+                headerTitle.textContent = '⚽ SimpleSquad Manager';
                 headerStatus.textContent = this.currentTeam ? `Selected: ${this.currentTeam.name}` : '';
                 break;
             case 'fieldTab':
@@ -220,8 +222,8 @@ class SoccerApp {
     
     // ===== EVENT LISTENERS =====
     setupEventListeners() {
-        // Bottom navigation
-        document.querySelectorAll('.nav-tab').forEach(tab => {
+        // Navigation (both new and legacy)
+        document.querySelectorAll('.nav-item, .nav-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
                 const targetTab = e.currentTarget.dataset.tab;
                 this.switchTab(targetTab);
@@ -229,13 +231,18 @@ class SoccerApp {
         });
 
         // Team management
-        document.getElementById('createTeamBtn').addEventListener('click', () => this.showTeamCreation());
+        const createTeamBtn = document.getElementById('createTeamBtn');
+        if (createTeamBtn) createTeamBtn.addEventListener('click', () => this.showTeamCreation());
         
         // Team creation page
-        document.getElementById('backToTeamsBtn').addEventListener('click', () => this.showTeamSection());
-        document.getElementById('cancelTeamBtn').addEventListener('click', () => this.showTeamSection());
-        document.getElementById('addPlayerBtn').addEventListener('click', () => this.addPlayerRow());
-        document.getElementById('teamForm').addEventListener('submit', (e) => this.handleTeamSubmit(e));
+        const backToTeamsBtn = document.getElementById('backToTeamsBtn');
+        if (backToTeamsBtn) backToTeamsBtn.addEventListener('click', () => this.showTeamSection());
+        const cancelTeamBtn = document.getElementById('cancelTeamBtn');
+        if (cancelTeamBtn) cancelTeamBtn.addEventListener('click', () => this.showTeamSection());
+        const addPlayerBtn = document.getElementById('addPlayerBtn');
+        if (addPlayerBtn) addPlayerBtn.addEventListener('click', () => this.addPlayerRow());
+        const teamForm = document.getElementById('teamForm');
+        if (teamForm) teamForm.addEventListener('submit', (e) => this.handleTeamSubmit(e));
         
         // Team size change handler
         document.addEventListener('change', (e) => {
@@ -251,7 +258,7 @@ class SoccerApp {
         
         // Period selector - will be added dynamically
         document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('period-btn')) {
+            if (e.target && e.target.classList && e.target.classList.contains('period-btn')) {
                 this.currentPeriod = parseInt(e.target.dataset.period);
                 this.updatePeriodSelector();
                 this.renderField();
@@ -259,24 +266,27 @@ class SoccerApp {
         });
         
         // Game completion
-        document.getElementById('completeGameBtn').addEventListener('click', () => this.completeGame());
+        const completeGameBtn = document.getElementById('completeGameBtn');
+        if (completeGameBtn) completeGameBtn.addEventListener('click', () => this.completeGame());
         
-        // Floating action button
-        document.getElementById('fab').addEventListener('click', () => this.handleFabClick());
+        // Floating action button (if exists)
+        const fab = document.getElementById('fab');
+        if (fab) fab.addEventListener('click', () => this.handleFabClick());
         
         // Export table functionality
-        document.getElementById('exportTableBtn').addEventListener('click', () => this.exportTableView());
+        const exportTableBtn = document.getElementById('exportTableBtn');
+        if (exportTableBtn) exportTableBtn.addEventListener('click', () => this.exportTableView());
         
         // Modal handling
         document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal') || e.target.classList.contains('modal-close')) {
+            if (e.target && e.target.classList && (e.target.classList.contains('modal') || e.target.classList.contains('modal-close'))) {
                 this.closeModals();
             }
         });
         
         // Player option selection in modal
         document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('player-option') || e.target.closest('.player-option')) {
+            if (e.target && e.target.classList && (e.target.classList.contains('player-option') || e.target.closest('.player-option'))) {
                 const option = e.target.classList.contains('player-option') ? e.target : e.target.closest('.player-option');
                 const position = option.dataset.position;
                 const playerName = option.dataset.player;
@@ -288,11 +298,12 @@ class SoccerApp {
         });
         
         // Form submissions
-        document.getElementById('gameForm').addEventListener('submit', (e) => this.handleGameSubmit(e));
+        const gameForm = document.getElementById('gameForm');
+        if (gameForm) gameForm.addEventListener('submit', (e) => this.handleGameSubmit(e));
         
         // Field position clicks - handle both selection and removal
         document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('position')) {
+            if (e.target && e.target.classList && e.target.classList.contains('position')) {
                 if (e.target.classList.contains('occupied')) {
                     // Remove player from position
                     this.removePlayerFromPosition(e.target.dataset.position);
@@ -305,7 +316,7 @@ class SoccerApp {
         
         // Dynamic remove player buttons
         document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-player-btn')) {
+            if (e.target && e.target.classList && e.target.classList.contains('remove-player-btn')) {
                 e.target.closest('.player-row').remove();
             }
         });
@@ -316,19 +327,21 @@ class SoccerApp {
     
     setupDragAndDrop() {
         document.addEventListener('dragstart', (e) => {
-            if (e.target.classList.contains('player-item')) {
-                this.draggedPlayer = e.target.textContent;
+            if (e.target && e.target.classList && e.target.classList.contains('player-item')) {
+                // Get player name from the player-name span
+                const playerNameElement = e.target.querySelector('.player-name');
+                this.draggedPlayer = playerNameElement ? playerNameElement.textContent : e.target.textContent;
                 e.target.classList.add('dragging');
                 
                 // Highlight drop targets
-                document.querySelectorAll('.position:not(.occupied), .players-list').forEach(el => {
+                document.querySelectorAll('.position:not(.occupied), .players-list, .jersey-slot').forEach(el => {
                     el.classList.add('drop-target');
                 });
             }
         });
         
         document.addEventListener('dragend', (e) => {
-            if (e.target.classList.contains('player-item')) {
+            if (e.target && e.target.classList && e.target.classList.contains('player-item')) {
                 e.target.classList.remove('dragging');
                 
                 // Remove drop target highlights
@@ -342,29 +355,31 @@ class SoccerApp {
         
         document.addEventListener('dragover', (e) => {
             e.preventDefault();
-            if (e.target.classList.contains('position') || e.target.classList.contains('players-list')) {
+            if (e.target && e.target.classList && (e.target.classList.contains('position') || e.target.classList.contains('players-list') || e.target.classList.contains('jersey-slot'))) {
                 e.target.classList.add('drop-over');
             }
         });
         
         document.addEventListener('dragleave', (e) => {
-            if (e.target.classList.contains('position') || e.target.classList.contains('players-list')) {
+            if (e.target && e.target.classList && (e.target.classList.contains('position') || e.target.classList.contains('players-list') || e.target.classList.contains('jersey-slot'))) {
                 e.target.classList.remove('drop-over');
             }
         });
         
         document.addEventListener('drop', (e) => {
             e.preventDefault();
-            e.target.classList.remove('drop-over');
+            if (e.target && e.target.classList) {
+                e.target.classList.remove('drop-over');
+            }
             
-            if (this.draggedPlayer) {
-                if (e.target.classList.contains('position')) {
+            if (this.draggedPlayer && e.target) {
+                if (e.target.classList && e.target.classList.contains('position')) {
                     this.assignPlayer(e.target.dataset.position, this.draggedPlayer);
-                } else if (e.target.id === 'jerseyPlayers') {
+                } else if (e.target.id === 'jerseyPlayers' || (e.target.classList && e.target.classList.contains('jersey-slot'))) {
                     this.moveToJersey(this.draggedPlayer);
-                } else if (e.target.id === 'benchPlayers') {
+                } else if (e.target.id === 'benchPlayers' || (e.target.classList && e.target.classList.contains('bench'))) {
                     this.moveToBench(this.draggedPlayer);
-                } else if (e.target.id === 'availablePlayers') {
+                } else if (e.target.id === 'availablePlayers' || (e.target.classList && e.target.classList.contains('available'))) {
                     this.moveToAvailable(this.draggedPlayer);
                 }
             }
@@ -409,6 +424,21 @@ class SoccerApp {
             team.players.forEach(player => {
                 this.addPlayerRow(player.name, player.positions);
             });
+            
+            // Handle existing logo
+            const preview = document.getElementById('logoPreview');
+            const previewImg = document.getElementById('logoPreviewImg');
+            const logoInput = document.getElementById('teamLogoInput');
+            
+            if (team.logo) {
+                previewImg.src = team.logo;
+                preview.style.display = 'block';
+                window.currentLogoData = team.logo;
+            } else {
+                preview.style.display = 'none';
+                window.currentLogoData = null;
+            }
+            logoInput.value = '';
         } else {
             title.textContent = 'Create New Team';
             nameInput.value = '';
@@ -418,6 +448,13 @@ class SoccerApp {
             document.querySelectorAll('input[name="teamSize"]').forEach(input => input.checked = false);
             document.querySelectorAll('input[name="formation"]').forEach(input => input.checked = false);
             document.getElementById('formationSelector').innerHTML = '<p class="empty-state">Select team size first</p>';
+            
+            // Reset logo
+            const preview = document.getElementById('logoPreview');
+            const logoInput = document.getElementById('teamLogoInput');
+            preview.style.display = 'none';
+            logoInput.value = '';
+            window.currentLogoData = null;
             
             // Reset to single empty player row
             playersContainer.innerHTML = '';
@@ -439,10 +476,75 @@ class SoccerApp {
         formationSelector.innerHTML = Object.entries(formations).map(([key, formation]) => `
             <label class="formation-option">
                 <input type="radio" name="formation" value="${key}" required>
+                <div class="formation-preview">${this.generateFormationPreview(formation.positions)}</div>
                 <div class="formation-name">${formation.name}</div>
                 <div class="formation-description">${formation.description}</div>
             </label>
         `).join('');
+    }
+    
+    generateFormationPreview(positions) {
+        // Group positions by their field sections
+        const sections = {
+            goalkeeper: [],
+            defense: [],
+            midfield: [],
+            forward: []
+        };
+        
+        positions.forEach(position => {
+            const group = this.getPositionGroup(position);
+            if (group === 'Goalkeeper') {
+                sections.goalkeeper.push(position);
+            } else if (group === 'Defense') {
+                sections.defense.push(position);
+            } else if (group === 'Midfield') {
+                sections.midfield.push(position);
+            } else if (group === 'Forward') {
+                sections.forward.push(position);
+            }
+        });
+        
+        let html = '<div class="mini-field">';
+        
+        // Goalkeeper section
+        if (sections.goalkeeper.length > 0) {
+            html += '<div class="mini-section goalkeeper">';
+            sections.goalkeeper.forEach(pos => {
+                html += `<div class="mini-position ${this.getPositionColorClass(pos)}"></div>`;
+            });
+            html += '</div>';
+        }
+        
+        // Defense section
+        if (sections.defense.length > 0) {
+            html += '<div class="mini-section defense">';
+            sections.defense.forEach(pos => {
+                html += `<div class="mini-position ${this.getPositionColorClass(pos)}"></div>`;
+            });
+            html += '</div>';
+        }
+        
+        // Midfield section
+        if (sections.midfield.length > 0) {
+            html += '<div class="mini-section midfield">';
+            sections.midfield.forEach(pos => {
+                html += `<div class="mini-position ${this.getPositionColorClass(pos)}"></div>`;
+            });
+            html += '</div>';
+        }
+        
+        // Forward section
+        if (sections.forward.length > 0) {
+            html += '<div class="mini-section forward">';
+            sections.forward.forEach(pos => {
+                html += `<div class="mini-position ${this.getPositionColorClass(pos)}"></div>`;
+            });
+            html += '</div>';
+        }
+        
+        html += '</div>';
+        return html;
     }
     
     addPlayerRow(playerName = '', selectedPositions = []) {
@@ -458,21 +560,21 @@ class SoccerApp {
                 ${!isFirstRow ? '<button type="button" class="remove-player-btn">×</button>' : ''}
             </div>
             <div class="position-checkboxes">
-                <label>
+                <label data-position="Forward">
                     <input type="checkbox" value="Forward" ${selectedPositions.includes('Forward') ? 'checked' : ''}> 
-                    ⚽ Forward
+                    Fwd
                 </label>
-                <label>
+                <label data-position="Midfield">
                     <input type="checkbox" value="Midfield" ${selectedPositions.includes('Midfield') ? 'checked' : ''}> 
-                    🏃 Midfield
+                    Mid
                 </label>
-                <label>
+                <label data-position="Defense">
                     <input type="checkbox" value="Defense" ${selectedPositions.includes('Defense') ? 'checked' : ''}> 
-                    🛡️ Defense
+                    Def
                 </label>
-                <label>
+                <label data-position="Goalkeeper">
                     <input type="checkbox" value="Goalkeeper" ${selectedPositions.includes('Goalkeeper') ? 'checked' : ''}> 
-                    🥅 Goalkeeper
+                    GK
                 </label>
             </div>
         `;
@@ -534,6 +636,10 @@ class SoccerApp {
                 team.players = players;
                 team.teamSize = teamSize;
                 team.formation = formation;
+                // Update logo if provided
+                if (window.currentLogoData !== undefined) {
+                    team.logo = window.currentLogoData;
+                }
             }
         } else {
             // Create new team
@@ -543,6 +649,7 @@ class SoccerApp {
                 players: players,
                 teamSize: teamSize,
                 formation: formation,
+                logo: window.currentLogoData || null,
                 created: new Date().toISOString()
             };
             this.teams.push(team);
@@ -552,6 +659,9 @@ class SoccerApp {
         this.renderTeams();
         this.showTeamSection();
         this.showSuccessMessage(`Team "${name}" saved successfully!`);
+        
+        // Clear logo data
+        window.currentLogoData = null;
     }
     
     selectTeam(teamId) {
@@ -579,20 +689,28 @@ class SoccerApp {
     renderTeams() {
         const container = document.getElementById('teamsList');
         
+        if (!container) {
+            console.error('❌ teamsList container not found!');
+            return;
+        }
+        
         if (this.teams.length === 0) {
             container.innerHTML = '<p class="empty-state">No teams yet. Create your first team!</p>';
             return;
         }
         
         container.innerHTML = this.teams.map(team => {
-            const playerSummary = this.getPlayerSummary(team);
+            const teamInfo = this.getTeamInfo(team);
+            const logoHtml = team.logo ? `<img src="${team.logo}" alt="${team.name} logo" class="team-logo">` : '';
             return `
                 <div class="team-card ${this.currentTeam && this.currentTeam.id === team.id ? 'selected' : ''}" 
                      data-team-id="${team.id}">
-                    <h3>${team.name}</h3>
-                    <p>${team.players.length} players</p>
-                    <div class="position-summary">
-                        ${playerSummary}
+                    <div class="team-header">
+                        ${logoHtml}
+                        <div class="team-title">
+                            <h3>${team.name}</h3>
+                            <p class="team-info">${teamInfo}</p>
+                        </div>
                     </div>
                     <div class="team-actions">
                         <button class="btn secondary edit-team-btn" data-team-id="${team.id}">✏️ Edit</button>
@@ -663,21 +781,19 @@ class SoccerApp {
         this.showSuccessMessage(`${playerName} removed from ${position}`);
     }
     
-    getPlayerSummary(team) {
-        const counts = {
-            'Forward': 0,
-            'Midfield': 0,
-            'Defense': 0,
-            'Goalkeeper': 0
-        };
-        
-        team.players.forEach(player => {
-            player.positions.forEach(pos => {
-                counts[pos]++;
-            });
-        });
-        
-        return `⚽${counts.Forward} 🏃${counts.Midfield} 🛡️${counts.Defense} 🥅${counts.Goalkeeper}`;
+    getTeamInfo(team) {
+        // Use actual team size if available, otherwise estimate
+        const teamSize = team.teamSize ? `${team.teamSize}v${team.teamSize}` : this.getEstimatedTeamSize(team);
+        return `${team.players.length} players | ${teamSize} team`;
+    }
+    
+    getEstimatedTeamSize(team) {
+        // Estimate team size based on player count
+        if (team.players.length >= 11) return '11v11';
+        if (team.players.length >= 9) return '9v9';
+        if (team.players.length >= 7) return '7v7';
+        if (team.players.length >= 5) return '5v5';
+        return '3v3';
     }
     
     // ===== GAME MANAGEMENT =====
@@ -775,18 +891,59 @@ class SoccerApp {
         document.getElementById('teamSection').style.display = 'none';
         document.getElementById('gameSection').style.display = 'block';
         this.updateGameInfo();
+        this.updateTeamHeader();
         this.renderPeriodSelector();
         this.renderField();
         this.updatePeriodSelector();
     }
     
     updateGameInfo() {
+        console.log('🔍 updateGameInfo called', { team: this.currentTeam?.name, logo: !!this.currentTeam?.logo });
         if (this.currentGame && this.currentTeam) {
+            // Update field view game header
             document.getElementById('currentTeamName').textContent = this.currentTeam.name;
             const gameDate = new Date(this.currentGame.date).toLocaleDateString();
-            const gameTiming = `${this.currentGame.periodCount} periods × ${this.currentGame.periodDuration}min`;
             document.getElementById('currentGameInfo').textContent = 
-                `vs ${this.currentGame.opponent} • ${gameDate} • ${gameTiming}`;
+                `vs ${this.currentGame.opponent} • ${gameDate}`;
+            
+            // Update team logo in field view
+            const currentTeamLogo = document.getElementById('currentTeamLogo');
+            if (currentTeamLogo) {
+                if (this.currentTeam.logo) {
+                    currentTeamLogo.src = this.currentTeam.logo;
+                    currentTeamLogo.style.display = 'block';
+                } else {
+                    currentTeamLogo.style.display = 'none';
+                }
+            }
+        }
+    }
+    
+    updateTeamHeader() {
+        // Update table view team header only (field view handled by updateGameInfo)
+        const tableTeamHeader = document.getElementById('tableTeamHeader');
+        const tableTeamHeaderLogo = document.getElementById('tableTeamHeaderLogo');
+        const tableTeamHeaderName = document.getElementById('tableTeamHeaderName');
+        const tableTeamHeaderGameInfo = document.getElementById('tableTeamHeaderGameInfo');
+        
+        if (this.currentTeam && this.currentGame && tableTeamHeader) {
+            const gameDate = new Date(this.currentGame.date).toLocaleDateString();
+            const gameInfoText = `vs ${this.currentGame.opponent} • ${gameDate}`;
+            
+            // Update table view header
+            tableTeamHeader.style.display = 'block';
+            tableTeamHeaderName.textContent = this.currentTeam.name;
+            tableTeamHeaderGameInfo.textContent = gameInfoText;
+            
+            if (this.currentTeam.logo) {
+                tableTeamHeaderLogo.src = this.currentTeam.logo;
+                tableTeamHeaderLogo.style.display = 'block';
+            } else {
+                tableTeamHeaderLogo.style.display = 'none';
+            }
+        } else if (tableTeamHeader) {
+            // Hide table team header if no team or game
+            tableTeamHeader.style.display = 'none';
         }
     }
     
@@ -822,14 +979,18 @@ class SoccerApp {
             buttonsHTML += `
                 <button class="period-btn ${isActive ? 'active' : ''}" 
                         data-period="${i}"
-                        title="Half ${halfNumber}, Period ${periodInHalf}: ${formatTime(startTime)} - ${formatTime(endTime)}">
-                    <div class="period-main">Period ${i}</div>
-                    <div class="period-timing">${formatTime(startTime)}-${formatTime(endTime)}</div>
+                        title="Period ${i} (Half ${halfNumber}, ${formatTime(startTime)} - ${formatTime(endTime)})">
+                    ${i}
                 </button>
             `;
         }
         
-        container.innerHTML = buttonsHTML;
+        container.innerHTML = `
+            <div class="periods-label">Periods</div>
+            <div class="periods-buttons">
+                ${buttonsHTML}
+            </div>
+        `;
         
         // Ensure current period is valid
         if (this.currentPeriod > periodCount) {
@@ -1036,6 +1197,17 @@ class SoccerApp {
     
     renderAvailablePlayers() {
         const container = document.getElementById('availablePlayers');
+        
+        if (!container) {
+            console.error('❌ availablePlayers container not found!');
+            return;
+        }
+        
+        if (!this.currentGame || !this.currentGame.lineup) {
+            console.error('❌ No current game or lineup data!');
+            return;
+        }
+        
         const currentLineup = this.currentGame.lineup[this.currentPeriod];
         const assignedPlayers = new Set(Object.values(currentLineup.positions));
         const benchPlayers = new Set(currentLineup.bench);
@@ -1045,9 +1217,27 @@ class SoccerApp {
             !assignedPlayers.has(player.name) && !benchPlayers.has(player.name) && !jerseyPlayers.has(player.name)
         );
         
-        container.innerHTML = availablePlayers.map(player => 
-            `<div class="player-item" draggable="true" data-positions="${player.positions.join(',')}">${player.name}</div>`
-        ).join('');
+        container.innerHTML = availablePlayers.map(player => {
+            const sittingCount = this.calculatePlayerSittingCount(player.name);
+            return `<div class="player-item" draggable="true" data-positions="${player.positions.join(',')}">
+                <span class="player-name">${player.name}</span>
+                <span class="sitting-count">${sittingCount} sits</span>
+            </div>`
+        }).join('');
+    }
+    
+    calculatePlayerSittingCount(playerName) {
+        let sittingCount = 0;
+        
+        // Count bench and jersey periods across all periods
+        for (let period = 1; period <= this.currentGame.periodCount; period++) {
+            const lineup = this.currentGame.lineup[period];
+            if (lineup.bench.includes(playerName) || (lineup.jersey && lineup.jersey.includes(playerName))) {
+                sittingCount++;
+            }
+        }
+        
+        return sittingCount;
     }
     
     renderJerseyPlayers() {
@@ -1063,9 +1253,16 @@ class SoccerApp {
             this.currentTeam.players.find(p => p.name === playerName)
         ).filter(p => p);
         
-        container.innerHTML = jerseyPlayerObjects.map(player => 
-            `<div class="player-item jersey-player" draggable="true" data-positions="${player.positions.join(',')}">${player.name}</div>`
-        ).join('');
+        if (jerseyPlayerObjects.length === 0) {
+            container.innerHTML = '';
+        } else {
+            const player = jerseyPlayerObjects[0]; // Only show first player since jersey is for 1 player
+            const sittingCount = this.calculatePlayerSittingCount(player.name);
+            container.innerHTML = `<div class="player-item jersey-player" draggable="true" data-positions="${player.positions.join(',')}">
+                <span class="player-name">${player.name}</span>
+                <span class="sitting-count">${sittingCount} sits</span>
+            </div>`;
+        }
     }
 
     renderBenchPlayers() {
@@ -1076,9 +1273,13 @@ class SoccerApp {
             this.currentTeam.players.find(p => p.name === playerName)
         ).filter(p => p);
         
-        container.innerHTML = benchPlayerObjects.map(player => 
-            `<div class="player-item bench-player" draggable="true" data-positions="${player.positions.join(',')}">${player.name}</div>`
-        ).join('');
+        container.innerHTML = benchPlayerObjects.map(player => {
+            const sittingCount = this.calculatePlayerSittingCount(player.name);
+            return `<div class="player-item bench-player" draggable="true" data-positions="${player.positions.join(',')}">
+                <span class="player-name">${player.name}</span>
+                <span class="sitting-count">${sittingCount} sits</span>
+            </div>`;
+        }).join('');
     }
     
     assignPlayer(position, playerName) {
@@ -1538,9 +1739,11 @@ class SoccerApp {
                 await this.loadHtml2Canvas();
             }
             
-            const tableContainer = document.querySelector('#tableTab .table-container');
+            // Get the entire table section including team header
+            const tableSection = document.querySelector('#tableTab .tab-section');
             
             // Temporarily modify the container for full capture
+            const tableContainer = document.querySelector('#tableTab .table-container');
             const originalHeight = tableContainer.style.height;
             const originalOverflow = tableContainer.style.overflow;
             
@@ -1550,22 +1753,26 @@ class SoccerApp {
             // Small delay to ensure layout is updated
             await new Promise(resolve => setTimeout(resolve, 100));
             
-            const canvas = await html2canvas(tableContainer, {
+            const canvas = await html2canvas(tableSection, {
                 backgroundColor: '#ffffff',
                 scale: 2,
                 logging: false,
                 useCORS: true,
-                height: tableContainer.scrollHeight,
-                windowHeight: tableContainer.scrollHeight
+                height: tableSection.scrollHeight,
+                windowHeight: tableSection.scrollHeight
             });
             
             // Restore original styles
             tableContainer.style.height = originalHeight;
             tableContainer.style.overflow = originalOverflow;
             
-            // Create download link
+            // Create download link with enhanced filename
+            const gameDate = new Date(this.currentGame.date).toISOString().split('T')[0]; // YYYY-MM-DD format
+            const teamName = this.currentTeam.name.replace(/[^a-z0-9]/gi, '_'); // Clean team name
+            const opponent = this.currentGame.opponent.replace(/[^a-z0-9]/gi, '_'); // Clean opponent name
+            
             const link = document.createElement('a');
-            link.download = `${this.currentTeam.name}-${this.currentGame.opponent}-lineup-table.png`;
+            link.download = `${teamName}_vs_${opponent}_${gameDate}_lineup.png`;
             link.href = canvas.toDataURL();
             link.click();
             
@@ -1641,6 +1848,52 @@ document.addEventListener('DOMContentLoaded', () => {
     // Make app globally accessible for onclick handlers
     window.app = app;
 });
+
+// ===== LOGO UPLOAD FUNCTIONALITY =====
+function handleLogoUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        input.value = '';
+        return;
+    }
+    
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+        alert('Image must be smaller than 2MB');
+        input.value = '';
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const logoData = e.target.result;
+        
+        // Show preview
+        const preview = document.getElementById('logoPreview');
+        const previewImg = document.getElementById('logoPreviewImg');
+        
+        previewImg.src = logoData;
+        preview.style.display = 'block';
+        
+        // Store for saving
+        window.currentLogoData = logoData;
+    };
+    
+    reader.readAsDataURL(file);
+}
+
+function removeLogo() {
+    const preview = document.getElementById('logoPreview');
+    const input = document.getElementById('teamLogoInput');
+    
+    preview.style.display = 'none';
+    input.value = '';
+    window.currentLogoData = null;
+}
 
 // ===== KEYBOARD SHORTCUTS =====
 document.addEventListener('keydown', (e) => {

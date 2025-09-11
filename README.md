@@ -1,4 +1,4 @@
-# ⚽ Soccer Lineup Manager
+# ⚽ SimpleSquad
 
 A professional web-based application for managing youth soccer team lineups with intelligent rotation, fair playing time distribution, and mobile-first design.
 
@@ -28,8 +28,8 @@ A professional web-based application for managing youth soccer team lineups with
 ### Option 2: Local Development
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/soccer-lineup-manager.git
-cd soccer-lineup-manager
+git clone https://github.com/yourusername/simplesquad.git
+cd simplesquad
 
 # Start a local server (optional, for development)
 python3 -m http.server 8080
@@ -166,4 +166,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Made with ⚽ for youth soccer coaches everywhere**
+**SimpleSquad - Made with ⚽ for youth soccer coaches everywhere**
