@@ -666,9 +666,11 @@ class SoccerApp {
     
     selectTeam(teamId) {
         this.currentTeam = this.teams.find(t => t.id === teamId);
+        console.log('Selected team:', this.currentTeam.name);
+        console.log('About to re-render teams...');
         this.renderTeams(); // Update selected state
         this.updateHeaderForTab('teamsTab'); // Update header status
-        console.log('Selected team:', this.currentTeam.name);
+        console.log('Teams re-rendered');
     }
     
     deleteTeam(teamId) {
@@ -702,8 +704,13 @@ class SoccerApp {
         container.innerHTML = this.teams.map(team => {
             const teamInfo = this.getTeamInfo(team);
             const logoHtml = team.logo ? `<img src="${team.logo}" alt="${team.name} logo" class="team-logo">` : '';
+            const isSelected = this.currentTeam && this.currentTeam.id === team.id;
+            const hasCurrentGame = this.currentGame && this.currentGame.teamId === team.id;
+            
+            console.log(`Team ${team.name}: isSelected=${isSelected}, hasCurrentGame=${hasCurrentGame}`);
+            
             return `
-                <div class="team-card ${this.currentTeam && this.currentTeam.id === team.id ? 'selected' : ''}" 
+                <div class="team-card ${isSelected ? 'selected' : ''}" 
                      data-team-id="${team.id}">
                     <div class="team-header">
                         ${logoHtml}
@@ -713,6 +720,10 @@ class SoccerApp {
                         </div>
                     </div>
                     <div class="team-actions">
+                        ${isSelected ? 
+                            '<button class="btn primary start-game-btn" data-team-id="' + team.id + '">🎮 Start New Game</button>' : 
+                            ''
+                        }
                         <button class="btn secondary edit-team-btn" data-team-id="${team.id}">✏️ Edit</button>
                         <button class="btn secondary delete-team-btn" data-team-id="${team.id}" style="color: #dc2626;">🗑️ Delete</button>
                     </div>
@@ -754,6 +765,16 @@ class SoccerApp {
                 const teamId = btn.dataset.teamId;
                 console.log('Delete team clicked:', teamId);
                 this.deleteTeam(teamId);
+            });
+        });
+        
+        // Start game buttons
+        document.querySelectorAll('.start-game-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const teamId = btn.dataset.teamId;
+                console.log('Start new game clicked:', teamId);
+                this.showGameModal();
             });
         });
     }
