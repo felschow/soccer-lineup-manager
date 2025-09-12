@@ -1094,18 +1094,30 @@ class SoccerApp {
         const fieldContainer = document.getElementById('soccerField');
         if (!this.currentTeam || !this.currentTeam.formation || !this.currentTeam.teamSize) {
             // Fallback to default 11v11 layout
-            fieldContainer.innerHTML = this.getDefaultFieldHTML();
+            fieldContainer.innerHTML = this.getDefaultFieldHTML() + this.getBenchPositionsHTML();
             return;
         }
         
         const formation = this.formations[this.currentTeam.teamSize][this.currentTeam.formation];
         if (!formation) {
-            fieldContainer.innerHTML = this.getDefaultFieldHTML();
+            fieldContainer.innerHTML = this.getDefaultFieldHTML() + this.getBenchPositionsHTML();
             return;
         }
         
         // Create field sections based on formation
-        fieldContainer.innerHTML = this.createFormationHTML(formation);
+        fieldContainer.innerHTML = this.createFormationHTML(formation) + this.getBenchPositionsHTML();
+    }
+    
+    getBenchPositionsHTML() {
+        return `
+            <div class="field-bench-area">
+                <div class="bench-position" data-bench="1"></div>
+                <div class="bench-position" data-bench="2"></div>
+                <div class="bench-position" data-bench="3"></div>
+                <div class="bench-position" data-bench="4"></div>
+                <div class="bench-position" data-bench="5"></div>
+            </div>
+        `;
     }
     
     getDefaultFieldHTML() {
@@ -1378,9 +1390,16 @@ class SoccerApp {
         if (!positionGroup) return position;
         
         const groupClass = positionGroup.toLowerCase();
-        const substitutionText = substitutionPlayer ? `<br><small>(${substitutionPlayer})</small>` : '';
         
-        return `<span class="position-card ${groupClass}">${position}${substitutionText}</span>`;
+        if (substitutionPlayer) {
+            // Display position indicator above player name for substitutions
+            return `<div class="position-substitution">
+                        <span class="position-card ${groupClass}">${position}</span>
+                        <div class="substitution-player">${substitutionPlayer}</div>
+                    </div>`;
+        }
+        
+        return `<span class="position-card ${groupClass}">${position}</span>`;
     }
     
     getPositionColorClass(position) {
