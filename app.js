@@ -10,6 +10,11 @@ class SoccerApp {
         this.currentView = 'field'; // 'field' or 'table'
         this.draggedPlayer = null;
         
+        // Device detection for mobile vs desktop experience protection
+        this.isMobile = this.detectMobileDevice();
+        this.isTouch = 'ontouchstart' in window;
+        this.isDesktop = !this.isMobile;
+        
         // Position mappings
         this.positionGroups = {
             'Forward': ['LF', 'CF', 'RF'],
@@ -47,8 +52,47 @@ class SoccerApp {
         this.init();
     }
     
+    // ===== DEVICE DETECTION FOR MOBILE VS DESKTOP PROTECTION =====
+    detectMobileDevice() {
+        // Multiple detection methods for reliability
+        const userAgent = navigator.userAgent.toLowerCase();
+        const mobileKeywords = ['mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'];
+        const hasMobileKeyword = mobileKeywords.some(keyword => userAgent.includes(keyword));
+        
+        // Check screen size (below 768px is considered mobile)
+        const isSmallScreen = window.innerWidth <= 768;
+        
+        // Check for touch capability
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        
+        // Mobile if any condition is true, but prioritize screen size for responsive behavior
+        return isSmallScreen || (hasMobileKeyword && isTouchDevice);
+    }
+    
+    // Method to ensure desktop functionality is protected
+    protectDesktopFeature(callback) {
+        if (this.isDesktop) {
+            return callback();
+        }
+        // Return null or default behavior for mobile to prevent desktop feature execution
+        return null;
+    }
+    
+    // Method to safely add mobile-only features
+    addMobileOnlyFeature(callback) {
+        if (this.isMobile) {
+            return callback();
+        }
+        return null;
+    }
+    
     init() {
         console.log('🚀 Initializing Simple Soccer App');
+        
+        // Add device classes to body for CSS targeting
+        document.body.classList.add(this.isMobile ? 'mobile-device' : 'desktop-device');
+        if (this.isTouch) document.body.classList.add('touch-device');
+        
         this.loadData();
         this.setupEventListeners();
         this.renderTeams();
@@ -321,8 +365,79 @@ class SoccerApp {
             }
         });
         
-        // Drag and Drop
-        this.setupDragAndDrop();
+        // Drag and Drop (desktop only)
+        this.protectDesktopFeature(() => {
+            this.setupDragAndDrop();
+        });
+        
+        // Mobile-specific field interactions
+        this.addMobileOnlyFeature(() => {
+            this.setupMobileFieldInteractions();
+        });
+    }
+    
+    // ===== MOBILE-SPECIFIC FIELD INTERACTIONS =====
+    setupMobileFieldInteractions() {
+        // Replace drag-and-drop with tap-to-select for mobile
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.classList && e.target.classList.contains('position')) {
+                e.preventDefault();
+                const position = e.target.dataset.position;
+                if (position) {
+                    this.showPlayerSelectionModal(position);
+                }
+            }
+            
+            // Handle clicks on bench and jersey prep headers
+            if (e.target && e.target.tagName === 'H3') {
+                if (e.target.textContent === 'Bench') {
+                    e.preventDefault();
+                    this.showPlayerSelectionModal('bench');
+                }
+                if (e.target.textContent === 'Jersey Prep') {
+                    e.preventDefault();
+                    this.showPlayerSelectionModal('jersey');
+                }
+            }
+            
+            // Handle clicks on bench and jersey prep player items to remove them
+            if (e.target && e.target.classList && 
+                (e.target.classList.contains('bench-player') || e.target.classList.contains('jersey-player'))) {
+                e.preventDefault();
+                const playerNameElement = e.target.querySelector('.player-name');
+                const playerName = playerNameElement ? playerNameElement.textContent : e.target.textContent;
+                if (playerName) {
+                    this.moveToAvailable(playerName.trim());
+                }
+            }
+            
+            // Handle clicks on player name spans within bench/jersey items
+            if (e.target && e.target.classList && e.target.classList.contains('player-name')) {
+                const playerItem = e.target.closest('.bench-player') || e.target.closest('.jersey-player');
+                if (playerItem) {
+                    e.preventDefault();
+                    const playerName = e.target.textContent;
+                    if (playerName) {
+                        this.moveToAvailable(playerName.trim());
+                    }
+                }
+            }
+        });
+        
+        // Enhanced touch feedback for field positions
+        document.addEventListener('touchstart', (e) => {
+            if (e.target && e.target.classList && e.target.classList.contains('position')) {
+                e.target.classList.add('touch-active');
+            }
+        });
+        
+        document.addEventListener('touchend', (e) => {
+            if (e.target && e.target.classList && e.target.classList.contains('position')) {
+                setTimeout(() => {
+                    e.target.classList.remove('touch-active');
+                }, 150);
+            }
+        });
     }
     
     setupDragAndDrop() {
@@ -977,55 +1092,112 @@ class SoccerApp {
         
         const periodCount = this.currentGame.periodCount || 4;
         const periodDuration = this.currentGame.periodDuration || 15;
-        const periodsPerHalf = periodCount / 2;
-        
-        let buttonsHTML = '';
-        
-        for (let i = 1; i <= periodCount; i++) {
-            const isActive = i === this.currentPeriod;
-            const halfNumber = i <= periodsPerHalf ? 1 : 2;
-            const periodInHalf = i <= periodsPerHalf ? i : i - periodsPerHalf;
-            
-            // Calculate start and end times for this period
-            const startTime = (i - 1) * periodDuration;
-            const endTime = i * periodDuration;
-            
-            // Format times as MM:SS
-            const formatTime = (minutes) => {
-                const mins = Math.floor(minutes);
-                const secs = Math.round((minutes % 1) * 60);
-                return `${mins}:${secs.toString().padStart(2, '0')}`;
-            };
-            
-            buttonsHTML += `
-                <button class="period-btn ${isActive ? 'active' : ''}" 
-                        data-period="${i}"
-                        title="Period ${i} (Half ${halfNumber}, ${formatTime(startTime)} - ${formatTime(endTime)})">
-                    ${i}
-                </button>
-            `;
-        }
-        
-        container.innerHTML = `
-            <div class="periods-label">Periods</div>
-            <div class="periods-buttons">
-                ${buttonsHTML}
-            </div>
-        `;
         
         // Ensure current period is valid
         if (this.currentPeriod > periodCount) {
             this.currentPeriod = 1;
         }
         
-        // Re-attach event listeners for period buttons
-        container.querySelectorAll('.period-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                this.currentPeriod = parseInt(e.currentTarget.dataset.period);
-                this.updatePeriodSelector();
-                this.renderField();
+        if (this.isMobile) {
+            // Mobile carousel-style period selector
+            const canGoLeft = this.currentPeriod > 1;
+            const canGoRight = this.currentPeriod < periodCount;
+            
+            // Calculate time range for current period
+            const startTime = (this.currentPeriod - 1) * periodDuration;
+            const endTime = this.currentPeriod * periodDuration;
+            const formatTime = (minutes) => {
+                const mins = Math.floor(minutes);
+                const secs = Math.round((minutes % 1) * 60);
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            };
+            const timeRange = `${formatTime(startTime)}-${formatTime(endTime)}`;
+            
+            container.innerHTML = `
+                <button class="period-nav-btn ${!canGoLeft ? 'disabled' : ''}" 
+                        id="periodPrev" 
+                        ${!canGoLeft ? 'disabled' : ''}>
+                    ←
+                </button>
+                <div class="current-period-display">
+                    Period ${this.currentPeriod}
+                </div>
+                <button class="period-nav-btn ${!canGoRight ? 'disabled' : ''}" 
+                        id="periodNext" 
+                        ${!canGoRight ? 'disabled' : ''}>
+                    →
+                </button>
+            `;
+            
+            // Add navigation event listeners
+            const prevBtn = document.getElementById('periodPrev');
+            const nextBtn = document.getElementById('periodNext');
+            
+            if (prevBtn && !prevBtn.disabled) {
+                prevBtn.addEventListener('click', () => {
+                    if (this.currentPeriod > 1) {
+                        this.currentPeriod--;
+                        this.renderPeriodSelector();
+                        this.renderField();
+                    }
+                });
+            }
+            
+            if (nextBtn && !nextBtn.disabled) {
+                nextBtn.addEventListener('click', () => {
+                    if (this.currentPeriod < periodCount) {
+                        this.currentPeriod++;
+                        this.renderPeriodSelector();
+                        this.renderField();
+                    }
+                });
+            }
+            
+        } else {
+            // Desktop grid-style period selector (unchanged)
+            const periodsPerHalf = periodCount / 2;
+            let buttonsHTML = '';
+            
+            for (let i = 1; i <= periodCount; i++) {
+                const isActive = i === this.currentPeriod;
+                const halfNumber = i <= periodsPerHalf ? 1 : 2;
+                
+                // Calculate start and end times for this period
+                const startTime = (i - 1) * periodDuration;
+                const endTime = i * periodDuration;
+                
+                // Format times as MM:SS
+                const formatTime = (minutes) => {
+                    const mins = Math.floor(minutes);
+                    const secs = Math.round((minutes % 1) * 60);
+                    return `${mins}:${secs.toString().padStart(2, '0')}`;
+                };
+                
+                buttonsHTML += `
+                    <button class="period-btn ${isActive ? 'active' : ''}" 
+                            data-period="${i}"
+                            title="Period ${i} (Half ${halfNumber}, ${formatTime(startTime)} - ${formatTime(endTime)})">
+                        ${i}
+                    </button>
+                `;
+            }
+            
+            container.innerHTML = `
+                <div class="periods-label">Periods</div>
+                <div class="periods-buttons">
+                    ${buttonsHTML}
+                </div>
+            `;
+            
+            // Re-attach event listeners for desktop period buttons
+            container.querySelectorAll('.period-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    this.currentPeriod = parseInt(e.currentTarget.dataset.period);
+                    this.updatePeriodSelector();
+                    this.renderField();
+                });
             });
-        });
+        }
     }
     
     completeGame() {
@@ -1247,7 +1419,9 @@ class SoccerApp {
         const jerseyPlayers = new Set(currentLineup.jersey || []);
         
         const availablePlayers = this.currentTeam.players.filter(player => 
-            !assignedPlayers.has(player.name) && !benchPlayers.has(player.name) && !jerseyPlayers.has(player.name)
+            !assignedPlayers.has(player.name) && 
+            !benchPlayers.has(player.name) && 
+            !jerseyPlayers.has(player.name)
         );
         
         container.innerHTML = availablePlayers.map(player => {
@@ -1318,10 +1492,23 @@ class SoccerApp {
     assignPlayer(position, playerName) {
         if (!this.currentGame) return;
         
-        // Check position validity
         const player = this.currentTeam.players.find(p => p.name === playerName);
         if (!player) return;
         
+        const currentLineup = this.currentGame.lineup[this.currentPeriod];
+        
+        // Handle bench and jersey assignments
+        if (position === 'bench') {
+            this.moveToBench(playerName);
+            return;
+        }
+        
+        if (position === 'jersey') {
+            this.moveToJersey(playerName);
+            return;
+        }
+        
+        // Handle regular field position assignments
         const validation = this.validatePlayerPosition(player, position);
         
         // Show warning for non-preferred positions but allow assignment
@@ -1331,8 +1518,6 @@ class SoccerApp {
             );
             if (!confirm) return;
         }
-        
-        const currentLineup = this.currentGame.lineup[this.currentPeriod];
         
         // Remove player from current position/bench/jersey
         Object.keys(currentLineup.positions).forEach(pos => {
@@ -1498,13 +1683,56 @@ class SoccerApp {
         const title = document.getElementById('playerModalTitle');
         const playersList = document.getElementById('playersList');
         
-        const positionGroup = this.getPositionGroup(position);
-        title.textContent = `Select Player for ${position} (${positionGroup})`;
-        
         const currentLineup = this.currentGame.lineup[this.currentPeriod];
         const assignedPlayers = new Set(Object.values(currentLineup.positions));
         const benchPlayers = new Set(currentLineup.bench);
         const jerseyPlayers = new Set(currentLineup.jersey || []);
+        
+        // Handle bench and jersey prep selections differently
+        if (position === 'bench' || position === 'jersey') {
+            const sectionName = position === 'bench' ? 'Bench' : 'Jersey Prep';
+            title.textContent = `Add Player to ${sectionName}`;
+            
+            // Show available players not assigned anywhere
+            let availablePlayers = this.currentTeam.players.filter(player => {
+                const isAvailable = !assignedPlayers.has(player.name) && 
+                                   !benchPlayers.has(player.name) && 
+                                   !jerseyPlayers.has(player.name);
+                
+                // For jersey prep, only show players who can play goalkeeper
+                if (position === 'jersey') {
+                    const canPlayGoalkeeper = player.positions.includes('Goalkeeper') || 
+                                            player.positions.includes('All');
+                    return isAvailable && canPlayGoalkeeper;
+                }
+                
+                // For bench, show all available players
+                return isAvailable;
+            });
+            
+            playersList.innerHTML = availablePlayers.map(player => {
+                return `
+                    <div class="player-option" 
+                         data-position="${position}" 
+                         data-player="${player.name}">
+                        ${player.name}
+                    </div>
+                `;
+            }).join('');
+            
+            if (availablePlayers.length === 0) {
+                const emptyMessage = position === 'jersey' 
+                    ? 'No available goalkeepers' 
+                    : 'No available players';
+                playersList.innerHTML = `<p class="empty-state">${emptyMessage}</p>`;
+            }
+            
+            modal.style.display = 'flex';
+            return;
+        }
+        
+        const positionGroup = this.getPositionGroup(position);
+        title.textContent = `Select Player for ${position} (${positionGroup})`;
         
         // Get players who were on bench in the previous period (for prioritization)
         const previousPeriodBench = new Set();
@@ -1515,9 +1743,11 @@ class SoccerApp {
             }
         }
         
-        // Show available players and jersey players who prefer this position
+        // Show available players who prefer this position (excluding those already assigned anywhere)
         let availablePlayers = this.currentTeam.players.filter(player => {
-            const isAvailable = !assignedPlayers.has(player.name) && !benchPlayers.has(player.name);
+            const isAvailable = !assignedPlayers.has(player.name) && 
+                               !benchPlayers.has(player.name) && 
+                               !jerseyPlayers.has(player.name);
             const prefersPosition = player.positions.includes(positionGroup);
             return isAvailable && prefersPosition;
         });
