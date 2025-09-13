@@ -1729,7 +1729,25 @@ body {
         display: flex;
         flex-direction: column;
         gap: 16px;
-        height: calc(100vh - 140px);
+        min-height: auto;
+    }
+    
+    /* Enable page scrolling on mobile */
+    .app-container {
+        height: auto !important;
+        min-height: 100vh;
+        overflow: visible !important;
+    }
+    
+    .content-area {
+        overflow: visible !important;
+        height: auto !important;
+        flex: none;
+    }
+    
+    .tab-content {
+        overflow: visible !important;
+        height: auto !important;
     }
     
     /* Hide available players section on mobile - not needed for tap interface */
@@ -1872,9 +1890,9 @@ body {
     
     /* Enhanced mobile field positions for better touch targets */
     .position {
-        min-height: 50px !important;
-        min-width: 50px !important;
-        font-size: 0.8rem;
+        min-height: 40px !important;
+        min-width: 40px !important;
+        font-size: 0.7rem;
         cursor: pointer;
         transition: all 0.2s ease;
     }
@@ -1887,8 +1905,8 @@ body {
     .unified-header {
         flex-direction: column;
         align-items: stretch;
-        gap: 12px;
-        padding: 16px;
+        gap: 4px;
+        padding: 8px;
     }
     
     .header-left {
@@ -1902,14 +1920,14 @@ body {
     }
     
     .team-name {
-        font-size: 1.4rem !important;
+        font-size: 1.1rem !important;
         font-weight: 700;
         display: block;
-        margin-bottom: 4px;
+        margin-bottom: 1px;
     }
     
     .game-details {
-        font-size: 0.9rem !important;
+        font-size: 0.75rem !important;
         opacity: 0.8;
         display: block;
     }
@@ -1925,23 +1943,23 @@ body {
         flex-direction: row !important;
         align-items: center !important;
         justify-content: center !important;
-        gap: 16px !important;
+        gap: 8px !important;
         background: rgba(255, 255, 255, 0.1) !important;
-        border-radius: 12px !important;
-        padding: 12px 16px !important;
+        border-radius: 8px !important;
+        padding: 6px 10px !important;
     }
     
     .period-nav-btn {
         background: rgba(99, 102, 241, 0.8);
         border: none;
         color: white;
-        width: 32px;
-        height: 32px;
+        width: 24px;
+        height: 24px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1rem;
+        font-size: 0.8rem;
         cursor: pointer;
         transition: all 0.2s ease;
     }
@@ -1960,11 +1978,11 @@ body {
     .current-period-display {
         background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
         color: white;
-        padding: 10px 20px;
-        border-radius: 20px;
+        padding: 6px 12px;
+        border-radius: 12px;
         font-weight: 700;
-        font-size: 1rem;
-        min-width: 120px;
+        font-size: 0.85rem;
+        min-width: 80px;
         text-align: center;
         box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
         white-space: nowrap;
@@ -1976,10 +1994,15 @@ body {
         order: 3;
     }
     
+    .btn.compact {
+        padding: 4px 10px !important;
+        font-size: 0.75rem !important;
+    }
+    
     /* Mobile team logo sizing - match height of team name + game info */
     .compact-team-logo {
-        width: 60px !important;
-        height: 60px !important;
+        width: 40px !important;
+        height: 40px !important;
         border-radius: 12px !important;
         border: 3px solid rgba(255, 255, 255, 0.2) !important;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
@@ -2002,44 +2025,147 @@ body {
         padding: 15px 12px !important; /* Reduced padding */
     }
     
-    /* Mobile field sections arranged vertically */
+    /* Mobile vertical soccer field - complete rewrite */
+    .soccer-field {
+        position: relative !important;
+        height: 450px !important;
+        background: 
+            /* Vertical field grass stripes */
+            repeating-linear-gradient(
+                90deg,
+                rgba(45, 122, 61, 0.8) 0px,
+                rgba(45, 122, 61, 0.8) 30px,
+                rgba(30, 95, 42, 0.9) 30px,
+                rgba(30, 95, 42, 0.9) 60px
+            ) !important;
+    }
+    
+    /* Reposition field sections on vertical field instead of hiding */
     .field-section {
-        flex-direction: row !important;
-        justify-content: center !important;
-        align-items: center !important;
+        position: absolute !important;
         width: 100% !important;
         height: auto !important;
-        min-height: 80px !important;
-        margin: 0 !important;
-        gap: 20px !important; /* Add space between positions */
-        padding: 0 20px !important; /* Add padding to center content */
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+    
+    /* Position field sections aligned with field markings */
+    .field-section.goalkeeper {
+        bottom: 1% !important;
+    }
+    
+    .field-section.defense {
+        bottom: 80px !important;
+        left: 10% !important;
+    }
+    
+    .field-section.midfield {
+        bottom: 45% !important;
+        left: 15% !important;
+    }
+    
+    .field-section.forward {
+        bottom: 70% !important;
+        left: 20% !important;
+    }
+    
+    /* Position players within their sections */
+    .field-section .position {
+        position: static !important;
+        margin: 0 10px !important;
+    }
+    
+    /* For sections with multiple players, spread them out */
+    .field-section {
+        gap: 20px !important;
+    }
+    
+    /* Mobile edit team header redesign */
+    .creation-header {
+        padding: 12px 16px !important;
+        margin-bottom: 16px !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+    }
+    
+    .creation-header h1 {
+        font-size: 1.3rem !important;
+        font-weight: 500 !important;
+        color: #374151 !important;
+    }
+    
+    .creation-header .header-left {
+        gap: 12px !important;
+    }
+    
+    .creation-header .header-right {
+        gap: 8px !important;
+    }
+    
+    .creation-header .btn {
+        padding: 8px 12px !important;
+        font-size: 0.85rem !important;
+        border-radius: 6px !important;
+        font-weight: 500 !important;
+    }
+    
+    #backToTeamsBtn {
+        color: #6b7280 !important;
+        background: #f9fafb !important;
+        border: 1px solid #e5e7eb !important;
+    }
+    
+    /* Mobile Players & Positions section - fix horizontal scrolling */
+    .players-container {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+        padding-right: 4px !important;
+    }
+    
+    .position-checkboxes {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 4px !important;
+    }
+    
+    .position-checkboxes label {
+        padding: 4px 6px !important;
+        font-size: 0.7rem !important;
+        border-radius: 3px !important;
+        min-width: 0 !important;
+        text-align: center !important;
     }
     
     /* Realistic vertical field section positioning and spacing */
     .field-section.forward {
         order: 1;
-        flex: 1.2 !important; /* Give forwards more space near opponent's goal */
-        margin-top: 25px !important; /* Position closer to top goal */
+        flex: 1 !important;
+        margin-top: 20px !important; /* Position closer to top goal */
+        justify-content: center !important;
     }
     
     .field-section.midfield {
         order: 2;
-        flex: 1.5 !important; /* Midfield gets the most space */
-        margin: 15px 0 !important; /* Centered with balanced spacing */
+        flex: 1 !important;
+        margin: 10px 0 !important; /* Centered with balanced spacing */
+        justify-content: center !important;
     }
     
     .field-section.defense {
         order: 3;
-        flex: 1.2 !important; /* Defense gets adequate space */
-        margin-bottom: 15px !important; /* Position closer to own goal but with some spacing */
+        flex: 1 !important;
+        margin: 10px 0 !important; /* Position closer to own goal but with some spacing */
+        justify-content: center !important;
     }
     
     .field-section.goalkeeper {
         order: 4;
-        flex: 0.6 !important; /* Goalkeeper gets minimal space, close to goal */
-        margin-bottom: 35px !important; /* Position very close to bottom goal */
-        min-height: 60px !important; /* Smaller height for GK area */
+        flex: 0.8 !important; /* Goalkeeper gets space near goal */
+        margin-bottom: 20px !important; /* Position close to bottom goal */
+        min-height: 50px !important;
+        justify-content: center !important;
     }
+    
     
     /* Mobile vertical field markings */
     .soccer-field::before {
@@ -2164,13 +2290,13 @@ body {
     }
     
     .position {
-        width: 45px;
-        height: 45px;
-        font-size: 0.7rem;
+        width: 36px;
+        height: 36px;
+        font-size: 0.65rem;
     }
     
     .field-and-players {
-        height: calc(100vh - 120px); /* Even more compact for small screens */
+        min-height: auto;
         padding: 12px;
     }
     
