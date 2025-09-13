@@ -168,6 +168,11 @@ class SoccerApp {
         const fab = document.getElementById('fab');
         const fabIcon = document.querySelector('.fab-icon');
         
+        // FAB element was removed from HTML, so skip if not found
+        if (!fab) {
+            return;
+        }
+        
         switch(activeTab) {
             case 'teamsTab':
                 if (this.currentTeam && !this.currentGame) {
@@ -1024,8 +1029,8 @@ class SoccerApp {
     }
     
     showGameSection() {
-        document.getElementById('teamSection').style.display = 'none';
-        document.getElementById('gameSection').style.display = 'block';
+        // Switch to field tab when game starts
+        this.switchTab('fieldTab');
         this.updateGameInfo();
         this.updateTeamHeader();
         this.renderPeriodSelector();
@@ -1057,29 +1062,24 @@ class SoccerApp {
     
     updateTeamHeader() {
         // Update table view team header only (field view handled by updateGameInfo)
-        const tableTeamHeader = document.getElementById('tableTeamHeader');
         const tableTeamHeaderLogo = document.getElementById('tableTeamHeaderLogo');
         const tableTeamHeaderName = document.getElementById('tableTeamHeaderName');
         const tableTeamHeaderGameInfo = document.getElementById('tableTeamHeaderGameInfo');
         
-        if (this.currentTeam && this.currentGame && tableTeamHeader) {
+        if (this.currentTeam && this.currentGame && tableTeamHeaderName) {
             const gameDate = new Date(this.currentGame.date).toLocaleDateString();
             const gameInfoText = `vs ${this.currentGame.opponent} • ${gameDate}`;
             
             // Update table view header
-            tableTeamHeader.style.display = 'block';
             tableTeamHeaderName.textContent = this.currentTeam.name;
             tableTeamHeaderGameInfo.textContent = gameInfoText;
             
-            if (this.currentTeam.logo) {
+            if (this.currentTeam.logo && tableTeamHeaderLogo) {
                 tableTeamHeaderLogo.src = this.currentTeam.logo;
                 tableTeamHeaderLogo.style.display = 'block';
-            } else {
+            } else if (tableTeamHeaderLogo) {
                 tableTeamHeaderLogo.style.display = 'none';
             }
-        } else if (tableTeamHeader) {
-            // Hide table team header if no team or game
-            tableTeamHeader.style.display = 'none';
         }
     }
     
@@ -1568,7 +1568,7 @@ class SoccerApp {
     
     createPositionCard(position, isBench = false, substitutionPlayer = null) {
         if (isBench) {
-            return '<span class="position-card bench">Bench</span>';
+            return '<span class="position-card bench">bench</span>';
         }
         
         const positionGroup = this.getPositionGroup(position);
@@ -1883,9 +1883,9 @@ class SoccerApp {
                     
                     // If not in a field position, check if on bench or jersey
                     if (assignment === '-' && periodLineup.jersey && periodLineup.jersey.includes(playerName)) {
-                        assignment = '<span class="position-card jersey">Jersey</span>';
+                        assignment = '<span class="position-card jersey">jersey</span>';
                     } else if (assignment === '-' && periodLineup.bench.includes(playerName)) {
-                        assignment = this.createPositionCard('', true);
+                        assignment = '<span class="position-card bench">bench</span>';
                     }
                 }
                 
