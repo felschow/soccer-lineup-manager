@@ -8,11 +8,6 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Main Header - Hidden as unified header provides same info -->
-        <header class="main-header" style="display: none;">
-            <h1 id="headerTitle">⚽ SimpleSquad Manager</h1>
-            <div class="header-status" id="headerStatus"></div>
-        </header>
 
         <!-- Main Content Area -->
         <main class="content-area">
@@ -51,6 +46,7 @@
                             </div>
                         </div>
                         <div class="header-right">
+                            <button id="clearPeriodBtn" class="btn secondary compact">🗑️ Clear Period</button>
                             <button id="completeGameBtn" class="btn success compact">✅ Complete Game</button>
                         </div>
                     </div>
@@ -269,12 +265,6 @@
                         </select>
                     </div>
                     
-                    <div class="game-timing-preview" id="timingPreview">
-                        <h4>Game Structure</h4>
-                        <p>Each period will be <strong>7.5 minutes</strong></p>
-                        <p>Total game time: <strong>60 minutes</strong> (2 × 30min halves)</p>
-                        <p>Periods per half: <strong>4</strong></p>
-                    </div>
                     
                     <div class="form-actions">
                         <button type="button" class="btn secondary modal-close">Cancel</button>

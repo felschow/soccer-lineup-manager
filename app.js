@@ -87,7 +87,6 @@ class SoccerApp {
     }
     
     init() {
-        console.log('🚀 Initializing Simple Soccer App');
         
         // Add device classes to body for CSS targeting
         document.body.classList.add(this.isMobile ? 'mobile-device' : 'desktop-device');
@@ -204,27 +203,8 @@ class SoccerApp {
     }
     
     updateHeaderForTab(tabId) {
-        const headerTitle = document.getElementById('headerTitle');
-        const headerStatus = document.getElementById('headerStatus');
-        
-        switch(tabId) {
-            case 'teamsTab':
-                headerTitle.textContent = '⚽ SimpleSquad Manager';
-                headerStatus.textContent = this.currentTeam ? `Selected: ${this.currentTeam.name}` : '';
-                break;
-            case 'fieldTab':
-                headerTitle.textContent = '⚽ Field View';
-                headerStatus.textContent = this.currentGame ? `${this.currentGame.opponent} • Period ${this.currentPeriod}` : '';
-                break;
-            case 'tableTab':
-                headerTitle.textContent = '📋 Lineup Table';
-                headerStatus.textContent = this.currentGame ? `${this.currentGame.opponent} • ${this.currentGame.periodCount} periods` : '';
-                break;
-            case 'settingsTab':
-                headerTitle.textContent = '⚙️ Settings';
-                headerStatus.textContent = '';
-                break;
-        }
+        // Header elements removed - unified headers handle this now
+        // Method kept for compatibility but no longer performs any actions
     }
     
     initializeNavigation() {
@@ -318,6 +298,10 @@ class SoccerApp {
         const completeGameBtn = document.getElementById('completeGameBtn');
         if (completeGameBtn) completeGameBtn.addEventListener('click', () => this.completeGame());
         
+        // Clear Period
+        const clearPeriodBtn = document.getElementById('clearPeriodBtn');
+        if (clearPeriodBtn) clearPeriodBtn.addEventListener('click', () => this.clearCurrentPeriod());
+        
         // Floating action button (if exists)
         const fab = document.getElementById('fab');
         if (fab) fab.addEventListener('click', () => this.handleFabClick());
@@ -370,9 +354,10 @@ class SoccerApp {
             }
         });
         
-        // Drag and Drop (desktop only)
+        // Drag and Drop + Tap interactions (desktop only)
         this.protectDesktopFeature(() => {
             this.setupDragAndDrop();
+            this.setupDesktopTapInteractions();
         });
         
         // Mobile-specific field interactions
@@ -501,6 +486,118 @@ class SoccerApp {
                     this.moveToBench(this.draggedPlayer);
                 } else if (e.target.id === 'availablePlayers' || (e.target.classList && e.target.classList.contains('available'))) {
                     this.moveToAvailable(this.draggedPlayer);
+                }
+            }
+        });
+    }
+    
+    // ===== DESKTOP TAP INTERACTIONS =====
+    setupDesktopTapInteractions() {
+        // Desktop click handlers for player names (show available positions)
+        document.addEventListener('click', (e) => {
+            // Only proceed if not already handled by drag operations
+            if (this.draggedPlayer) return;
+            
+            // Handle player name clicks in available players list
+            if (e.target && e.target.classList && e.target.classList.contains('player-name')) {
+                const playerItem = e.target.closest('.player-item');
+                if (playerItem && !playerItem.classList.contains('dragging')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const playerName = e.target.textContent.trim();
+                    this.showPositionSelectionModal(playerName);
+                }
+            }
+            
+            // Handle direct player item clicks (for players without nested elements)
+            if (e.target && e.target.classList && e.target.classList.contains('player-item') && 
+                !e.target.classList.contains('dragging')) {
+                const playerNameElement = e.target.querySelector('.player-name');
+                if (playerNameElement) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const playerName = playerNameElement.textContent.trim();
+                    this.showPositionSelectionModal(playerName);
+                }
+            }
+            
+            // Handle position clicks (show available players) - when no drag operation
+            if (e.target && e.target.classList && e.target.classList.contains('position') && 
+                !e.target.classList.contains('occupied')) {
+                e.preventDefault();
+                e.stopPropagation();
+                const position = e.target.dataset.position;
+                if (position) {
+                    this.showPlayerSelectionModal(position);
+                }
+            }
+            
+            // Handle bench/jersey area clicks
+            if (e.target && e.target.id === 'benchPlayers') {
+                e.preventDefault();
+                e.stopPropagation();
+                this.showPlayerSelectionModal('bench');
+            }
+            
+            if (e.target && e.target.id === 'jerseyPlayers') {
+                e.preventDefault();
+                e.stopPropagation();
+                this.showPlayerSelectionModal('jersey');
+            }
+            
+            // Handle bench/jersey section header clicks
+            if (e.target && e.target.tagName === 'H3') {
+                if (e.target.textContent === 'Bench') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.showPlayerSelectionModal('bench');
+                }
+                if (e.target.textContent === 'Jersey Prep') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.showPlayerSelectionModal('jersey');
+                }
+            }
+        });
+        
+        // Handle modal option clicks for both player and position selection
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.classList) {
+                // Handle player option clicks (assign player to position)
+                if (e.target.classList.contains('player-option')) {
+                    e.preventDefault();
+                    const playerName = e.target.dataset.player;
+                    const position = e.target.dataset.position;
+                    
+                    if (position === 'bench') {
+                        this.moveToBench(playerName);
+                    } else if (position === 'jersey') {
+                        this.moveToJersey(playerName);
+                    } else {
+                        this.assignPlayer(position, playerName);
+                    }
+                    
+                    // Close modal
+                    document.getElementById('playerModal').style.display = 'none';
+                }
+                
+                // Handle position option clicks (assign position to player)
+                if (e.target.classList.contains('position-option')) {
+                    e.preventDefault();
+                    const playerName = e.target.dataset.player;
+                    const position = e.target.dataset.position;
+                    const positionType = e.target.dataset.positionType;
+                    
+                    if (positionType === 'bench') {
+                        this.moveToBench(playerName);
+                    } else if (positionType === 'jersey') {
+                        this.moveToJersey(playerName);
+                    } else {
+                        this.assignPlayer(position, playerName);
+                    }
+                    
+                    // Close modal
+                    document.getElementById('playerModal').style.display = 'none';
                 }
             }
         });
@@ -786,11 +883,8 @@ class SoccerApp {
     
     selectTeam(teamId) {
         this.currentTeam = this.teams.find(t => t.id === teamId);
-        console.log('Selected team:', this.currentTeam.name);
-        console.log('About to re-render teams...');
         this.renderTeams(); // Update selected state
         this.updateHeaderForTab('teamsTab'); // Update header status
-        console.log('Teams re-rendered');
     }
     
     deleteTeam(teamId) {
@@ -804,7 +898,6 @@ class SoccerApp {
             this.saveData();
             this.renderTeams();
             this.updateHeaderForTab('teamsTab');
-            console.log('Deleted team:', team.name);
         }
     }
     
@@ -827,7 +920,6 @@ class SoccerApp {
             const isSelected = this.currentTeam && this.currentTeam.id === team.id;
             const hasCurrentGame = this.currentGame && this.currentGame.teamId === team.id;
             
-            console.log(`Team ${team.name}: isSelected=${isSelected}, hasCurrentGame=${hasCurrentGame}`);
             
             return `
                 <div class="team-card ${isSelected ? 'selected' : ''}" 
@@ -863,7 +955,6 @@ class SoccerApp {
                 if (e.target.closest('.team-actions')) return;
                 
                 const teamId = card.dataset.teamId;
-                console.log('Team card clicked:', teamId);
                 this.selectTeam(teamId);
             });
         });
@@ -873,7 +964,6 @@ class SoccerApp {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const teamId = btn.dataset.teamId;
-                console.log('Edit team clicked:', teamId);
                 this.editTeam(teamId);
             });
         });
@@ -883,7 +973,6 @@ class SoccerApp {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const teamId = btn.dataset.teamId;
-                console.log('Delete team clicked:', teamId);
                 this.deleteTeam(teamId);
             });
         });
@@ -893,7 +982,6 @@ class SoccerApp {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const teamId = btn.dataset.teamId;
-                console.log('Start new game clicked:', teamId);
                 this.showGameModal();
             });
         });
@@ -1039,7 +1127,6 @@ class SoccerApp {
     }
     
     updateGameInfo() {
-        console.log('🔍 updateGameInfo called', { team: this.currentTeam?.name, logo: !!this.currentTeam?.logo });
         if (this.currentGame && this.currentTeam) {
             // Update field view game header
             document.getElementById('currentTeamName').textContent = this.currentTeam.name;
@@ -1220,6 +1307,26 @@ class SoccerApp {
             // Return to team section
             this.showTeamSection();
             this.showSuccessMessage(`Game vs ${opponent} completed and saved!`);
+        }
+    }
+    
+    clearCurrentPeriod() {
+        if (!this.currentGame || !this.currentPeriod) return;
+        
+        if (confirm(`Clear all player assignments for Period ${this.currentPeriod}?\n\nThis will move all players back to Available.`)) {
+            // Clear the current period's assignments
+            const periodLineup = this.currentGame.lineup[this.currentPeriod];
+            if (periodLineup) {
+                periodLineup.positions = {};
+                periodLineup.bench = [];
+                periodLineup.jersey = [];
+            }
+            
+            // Save changes and refresh the field view
+            this.saveData();
+            this.renderField();
+            this.renderPlayers();
+            this.showSuccessMessage(`Period ${this.currentPeriod} cleared!`);
         }
     }
     
@@ -1804,6 +1911,132 @@ class SoccerApp {
         modal.style.display = 'flex';
     }
     
+    showPositionSelectionModal(playerName) {
+        if (!this.currentGame || !this.currentTeam) return;
+        
+        const modal = document.getElementById('playerModal');
+        const title = document.getElementById('playerModalTitle');
+        const playersList = document.getElementById('playersList');
+        
+        const currentLineup = this.currentGame.lineup[this.currentPeriod];
+        const player = this.currentTeam.players.find(p => p.name === playerName);
+        
+        if (!player) return;
+        
+        console.log(`🔍 showPositionSelectionModal called for player: ${playerName}`);
+        console.log(`Player's preferred positions:`, player.positions);
+        console.log(`Current lineup positions:`, currentLineup.positions);
+        console.log(`Current team formation:`, this.currentTeam.formation);
+        
+        title.textContent = `Select Position for ${playerName}`;
+        
+        // Get all available positions (not currently occupied)
+        const occupiedPositions = new Set(Object.keys(currentLineup.positions));
+        
+        // Get the current position of this player (if any)
+        let currentPlayerPosition = null;
+        for (const [pos, name] of Object.entries(currentLineup.positions)) {
+            if (name === playerName) {
+                currentPlayerPosition = pos;
+                break;
+            }
+        }
+        
+        console.log(`Player's current position:`, currentPlayerPosition);
+        console.log(`All occupied positions:`, Array.from(occupiedPositions));
+        
+        // Generate available position options
+        const availablePositions = [];
+        
+        // Add field positions based on formation
+        const teamSize = this.currentTeam.teamSize;
+        const formation = this.currentTeam.formation;
+        console.log(`Team size: ${teamSize}, Team formation: ${formation}`);
+        console.log(`Available formations:`, Object.keys(this.formations || {}));
+        
+        if (teamSize && formation && this.formations[teamSize] && this.formations[teamSize][formation]) {
+            const formationData = this.formations[teamSize][formation];
+            const formationPositions = formationData.positions;
+            console.log(`Formation data:`, formationData);
+            console.log(`Formation positions:`, formationPositions);
+            
+            formationPositions.forEach(pos => {
+                const occupiedByOtherPlayer = currentLineup.positions[pos] && currentLineup.positions[pos] !== playerName;
+                const positionGroup = this.getPositionGroup(pos);
+                const canPlay = player.positions.includes(positionGroup) || player.positions.includes('All');
+                const isCurrent = currentPlayerPosition === pos;
+                
+                console.log(`Position ${pos}: occupiedByOther=${occupiedByOtherPlayer}, positionGroup=${positionGroup}, canPlay=${canPlay}, isCurrent=${isCurrent}`);
+                
+                // Include position if it's not occupied by another player
+                if (!occupiedByOtherPlayer) {
+                    availablePositions.push({
+                        position: pos,
+                        type: 'field',
+                        canPlay: canPlay,
+                        isCurrent: isCurrent
+                    });
+                    console.log(`✅ Added position ${pos} to available positions`);
+                } else {
+                    console.log(`❌ Position ${pos} occupied by ${currentLineup.positions[pos]}`);
+                }
+            });
+        } else {
+            console.log(`❌ No formation found or formations not loaded`);
+        }
+        
+        // Add bench option
+        const isOnBench = currentLineup.bench.includes(playerName);
+        availablePositions.push({
+            position: 'bench',
+            type: 'bench', 
+            canPlay: true,
+            isCurrent: isOnBench
+        });
+        
+        // Add jersey prep option (only for goalkeepers)
+        const canPlayGoalkeeper = player.positions.includes('Goalkeeper') || player.positions.includes('All');
+        const isInJersey = currentLineup.jersey && currentLineup.jersey.includes(playerName);
+        if (canPlayGoalkeeper) {
+            availablePositions.push({
+                position: 'jersey',
+                type: 'jersey',
+                canPlay: true,
+                isCurrent: isInJersey
+            });
+        }
+        
+        // Sort positions: current first, then preferred, then others
+        availablePositions.sort((a, b) => {
+            if (a.isCurrent && !b.isCurrent) return -1;
+            if (!a.isCurrent && b.isCurrent) return 1;
+            if (a.canPlay && !b.canPlay) return -1;
+            if (!a.canPlay && b.canPlay) return 1;
+            return 0;
+        });
+        
+        playersList.innerHTML = availablePositions.map(pos => {
+            const currentClass = pos.isCurrent ? 'current-assignment' : '';
+            const preferredClass = pos.canPlay ? 'preferred-position' : 'non-preferred-position';
+            const positionDisplay = pos.position === 'bench' ? 'Bench' : 
+                                   pos.position === 'jersey' ? 'Jersey Prep' : pos.position;
+            const icon = pos.isCurrent ? '✓ ' : pos.canPlay ? '' : '⚠️ ';
+            
+            return `
+                <div class="position-option ${currentClass} ${preferredClass}" 
+                     data-player="${playerName}" 
+                     data-position="${pos.position}"
+                     data-position-type="${pos.type}">
+                    ${icon}${positionDisplay}
+                </div>
+            `;
+        }).join('');
+        
+        console.log(`📋 Final available positions for ${playerName}:`, availablePositions.map(p => `${p.position} (canPlay: ${p.canPlay}, isCurrent: ${p.isCurrent})`));
+        
+        modal.style.display = 'flex';
+    }
+    
     // ===== VIEW MANAGEMENT =====
     toggleView() {
         this.currentView = this.currentView === 'field' ? 'table' : 'field';
@@ -2086,9 +2319,11 @@ class SoccerApp {
             this.showTeamSection();
         }
         
-        // Update new game button visibility
-        document.getElementById('newGameBtn').style.display = 
-            this.currentTeam && !this.currentGame ? 'inline-flex' : 'none';
+        // Update new game button visibility (if it exists)
+        const newGameBtn = document.getElementById('newGameBtn');
+        if (newGameBtn) {
+            newGameBtn.style.display = this.currentTeam && !this.currentGame ? 'inline-flex' : 'none';
+        }
     }
     
     closeModals() {
@@ -2106,15 +2341,13 @@ class SoccerApp {
         }, 3000);
         
         // Console log for now
-        console.log(`✅ ${message}`);
     }
 }
 
 // ===== INITIALIZE APP =====
 let app;
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🏁 DOM loaded, starting app...');
-    app = new SoccerApp();
+        app = new SoccerApp();
     // Make app globally accessible for onclick handlers
     window.app = app;
 });

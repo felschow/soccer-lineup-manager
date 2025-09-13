@@ -44,31 +44,6 @@ body {
     overflow: hidden;
 }
 
-/* Main Header */
-.main-header {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    padding: 16px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.1);
-    flex-shrink: 0;
-    z-index: 100;
-}
-
-.main-header h1 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #2d3748;
-    margin: 0;
-}
-
-.header-status {
-    font-size: 0.875rem;
-    color: #64748b;
-    font-weight: 500;
-}
 
 /* Buttons */
 .btn {
@@ -443,6 +418,7 @@ body {
     display: flex;
     justify-content: flex-end;
     flex: 1;
+    gap: 8px;
 }
 
 /* .view-title removed - no longer needed as view context comes from bottom nav */
@@ -1483,13 +1459,15 @@ body {
 }
 
 .form-actions .btn {
-    padding: 10px 20px;
+    padding: 10px 24px;
     font-weight: 600;
     font-size: 0.9rem;
     border-radius: 10px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
+    min-width: 100px;
+    white-space: nowrap;
 }
 
 .form-actions .btn.secondary {
@@ -1521,57 +1499,6 @@ body {
     transform: translateY(0);
 }
 
-/* Game Timing Preview */
-.game-timing-preview {
-    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-    border: 2px solid #bae6fd;
-    border-radius: 12px;
-    padding: 16px;
-    margin: 18px 0;
-    position: relative;
-    overflow: hidden;
-}
-
-.game-timing-preview::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #0ea5e9, #06b6d4, #0891b2);
-    border-radius: 16px 16px 0 0;
-}
-
-.game-timing-preview h4 {
-    color: #0c4a6e;
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin: 0 0 12px 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.game-timing-preview h4::before {
-    content: '⏱️';
-    font-size: 1.2rem;
-}
-
-.game-timing-preview p {
-    color: #0369a1;
-    font-size: 0.95rem;
-    margin: 8px 0;
-    line-height: 1.5;
-}
-
-.game-timing-preview strong {
-    color: #0c4a6e;
-    font-weight: 700;
-    background: rgba(14, 165, 233, 0.1);
-    padding: 2px 6px;
-    border-radius: 6px;
-}
 
 .players-selection {
     padding: 16px;
@@ -1593,30 +1520,53 @@ body {
     background: #eef2ff;
 }
 
-/* Game Timing Preview */
-.game-timing-preview {
-    background: #f0f9ff;
-    border: 1px solid #0ea5e9;
+.position-option {
+    padding: 12px 16px;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
-    padding: 16px;
-    margin: 16px 0;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.game-timing-preview h4 {
-    color: #0c4a6e;
-    margin: 0 0 8px 0;
-    font-size: 1rem;
+.position-option:hover {
+    border-color: #4f46e5;
+    background: #eef2ff;
 }
 
-.game-timing-preview p {
-    color: #0369a1;
-    margin: 4px 0;
-    font-size: 0.9rem;
-}
-
-.game-timing-preview strong {
-    color: #0c4a6e;
+.position-option.current-assignment {
+    border-color: #10b981;
+    background: #ecfdf5;
     font-weight: 600;
+}
+
+.position-option.current-assignment:hover {
+    border-color: #059669;
+    background: #d1fae5;
+}
+
+.position-option.preferred-position {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.position-option.preferred-position:hover {
+    border-color: #2563eb;
+    background: #dbeafe;
+}
+
+.position-option.non-preferred-position {
+    border-color: #f59e0b;
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.position-option.non-preferred-position:hover {
+    border-color: #d97706;
+    background: #fef3c7;
 }
 
 /* Responsive Design */
@@ -2330,6 +2280,29 @@ body {
     .modal-content {
         width: 95%;
         margin: 20px;
+        max-height: 85vh;
+    }
+    
+    .modal form {
+        padding: 16px !important;
+    }
+    
+    .form-group {
+        margin-bottom: 14px !important;
+    }
+    
+    .form-actions {
+        margin-top: 16px !important;
+        padding-top: 12px !important;
+        gap: 8px !important;
+    }
+    
+    .form-actions .btn {
+        padding: 12px 20px !important;
+        font-size: 0.9rem !important;
+        min-height: 44px !important;
+        min-width: 110px !important;
+        white-space: nowrap !important;
     }
 }
 
