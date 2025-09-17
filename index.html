@@ -118,6 +118,170 @@
                 </section>
             </div>
 
+            <!-- Timer Tab Content -->
+            <div class="tab-content" id="timerTab">
+                <section class="tab-section">
+                    <!-- Game Timer Interface -->
+                    <div id="gameTimerContainer" class="game-timer-container">
+                        <!-- Modern Timer Display -->
+                        <div class="modern-timer-display">
+                            <div class="period-badge" id="timerPeriodTitle">Period 1 of 4</div>
+
+                            <div class="digital-clock">
+                                <div class="time-digits">
+                                    <span id="timerCurrent">00:00</span>
+                                </div>
+                                <div class="time-remaining">
+                                    <span id="timerTimeRemaining">15:00 remaining</span>
+                                </div>
+                            </div>
+
+                            <div class="timer-controls-modern">
+                                <button id="timerPrevious" class="control-btn secondary" title="Previous Period">
+                                    <span class="control-icon">⏮️</span>
+                                </button>
+                                <button id="timerPlayPause" class="control-btn primary" title="Play/Pause">
+                                    <span class="control-icon">▶️</span>
+                                </button>
+                                <button id="timerNext" class="control-btn secondary" title="Next Period">
+                                    <span class="control-icon">⏭️</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="timer-progress-container">
+                            <div class="timer-progress-bar">
+                                <div id="timerProgressFill" class="timer-progress-fill" style="width: 0%"></div>
+                            </div>
+                            <div class="progress-percentage">
+                                <span id="timerProgressPercent">0%</span>
+                            </div>
+                        </div>
+
+                        <!-- Upcoming Substitutions -->
+                        <div class="timer-notifications">
+                            <h3>🔔 Upcoming Substitutions</h3>
+                            <div id="timerUpcomingSubs" class="upcoming-subs-list">
+                                <p class="no-subs-message">No upcoming substitutions scheduled</p>
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="timer-quick-actions">
+                            <h3>⚡ Quick Actions</h3>
+                            <div class="quick-actions-grid">
+                                <button id="emergencySubBtn" class="btn quick-action-btn warning">
+                                    <span class="quick-action-icon">🔄</span>
+                                    <span class="quick-action-text">Emergency Sub</span>
+                                </button>
+                                <button id="injurySubBtn" class="btn quick-action-btn danger">
+                                    <span class="quick-action-icon">🤕</span>
+                                    <span class="quick-action-text">Injury Sub</span>
+                                </button>
+                                <button id="skipPeriodBtn" class="btn quick-action-btn secondary">
+                                    <span class="quick-action-icon">⏭️</span>
+                                    <span class="quick-action-text">Skip Period</span>
+                                </button>
+                                <button id="gameNotesBtn" class="btn quick-action-btn secondary">
+                                    <span class="quick-action-icon">📝</span>
+                                    <span class="quick-action-text">Game Notes</span>
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- No Game State -->
+                    <div id="noGameTimerMessage" class="empty-state" style="display: none;">
+                        <h3>No Active Game</h3>
+                        <p>Start a game from the Teams tab to use the timer functionality.</p>
+                        <button class="btn primary" onclick="app.switchTab('teamsTab')">Go to Teams</button>
+                    </div>
+                </section>
+            </div>
+
+            <!-- History Tab Content -->
+            <div class="tab-content" id="historyTab">
+                <section class="tab-section">
+                    <div class="section-header">
+                        <h2>Game History</h2>
+                        <div class="history-controls">
+                            <button id="backToCurrentBtn" class="btn secondary" style="display: none;">
+                                ← Back to Current Game
+                            </button>
+                        </div>
+                    </div>
+                    <div class="history-content">
+                        <div id="gameHistoryList" class="games-list">
+                            <p class="empty-state">No completed games yet. Complete a game to see it here!</p>
+                        </div>
+
+                        <!-- Historical Game View -->
+                        <div id="historicalGameView" style="display: none;">
+                            <div class="historical-game-header">
+                                <div class="game-info">
+                                    <h3 id="historicalGameTitle">Game vs Opponent</h3>
+                                    <p id="historicalGameDate">Date • Team Name</p>
+                                </div>
+                                <div class="view-toggle">
+                                    <button id="historicalFieldBtn" class="btn secondary">⚽ Field View</button>
+                                    <button id="historicalTableBtn" class="btn secondary active">📋 Table View</button>
+                                </div>
+                            </div>
+
+                            <!-- Read-only Field View -->
+                            <div id="historicalFieldView" class="historical-view" style="display: none;">
+                                <div class="read-only-banner">
+                                    <span>📖 Read-Only Mode • Historical Game</span>
+                                </div>
+                                <div class="field-and-players">
+                                    <div id="historicalSoccerField" class="soccer-field read-only">
+                                        <!-- Field positions will be rendered dynamically -->
+                                    </div>
+                                    <div class="players-panel read-only">
+                                        <div class="available-players-section">
+                                            <h3>Available Players</h3>
+                                            <div id="historicalAvailablePlayers" class="players-list available"></div>
+                                        </div>
+                                        <div class="bench-section">
+                                            <h3>Bench</h3>
+                                            <div id="historicalBenchPlayers" class="players-list bench"></div>
+                                        </div>
+                                        <div class="jersey-section">
+                                            <h3>Jersey Prep</h3>
+                                            <div id="historicalJerseyPlayers" class="jersey-slot"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Read-only Table View -->
+                            <div id="historicalTableView" class="historical-view">
+                                <div class="read-only-banner">
+                                    <span>📖 Read-Only Mode • Historical Game</span>
+                                </div>
+                                <div class="table-container">
+                                    <table id="historicalLineupTable" class="lineup-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Player</th>
+                                                <th>Period 1</th>
+                                                <th>Period 2</th>
+                                                <th>Period 3</th>
+                                                <th>Period 4</th>
+                                                <th>Statistics</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
             <!-- Settings Tab Content -->
             <div class="tab-content" id="settingsTab">
                 <section class="tab-section">
@@ -285,23 +449,25 @@
             </div>
         </div>
 
-        <!-- Streamlined Navigation -->
-        <nav class="streamlined-nav">
-            <button class="nav-item active" data-tab="teamsTab">
+        <!-- Native App Navigation -->
+        <nav class="native-nav">
+            <button class="nav-item active" data-tab="teamsTab" title="Teams">
                 <span class="nav-icon">👥</span>
-                <span class="nav-text">Teams</span>
             </button>
-            <button class="nav-item" data-tab="fieldTab">
+            <button class="nav-item" data-tab="fieldTab" title="Field">
                 <span class="nav-icon">⚽</span>
-                <span class="nav-text">Field</span>
             </button>
-            <button class="nav-item" data-tab="tableTab">
+            <button class="nav-item" data-tab="tableTab" title="Table">
                 <span class="nav-icon">📋</span>
-                <span class="nav-text">Table</span>
             </button>
-            <button class="nav-item" data-tab="settingsTab">
+            <button class="nav-item" data-tab="timerTab" title="Timer">
+                <span class="nav-icon">⏱️</span>
+            </button>
+            <button class="nav-item" data-tab="historyTab" title="History">
+                <span class="nav-icon">📚</span>
+            </button>
+            <button class="nav-item" data-tab="settingsTab" title="Settings">
                 <span class="nav-icon">⚙️</span>
-                <span class="nav-text">Settings</span>
             </button>
         </nav>
 

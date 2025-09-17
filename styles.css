@@ -91,6 +91,18 @@ body {
     transform: translateY(-2px);
 }
 
+.btn.danger {
+    background: #f87171;
+    color: #991b1b;
+    border: 2px solid #ef4444;
+}
+
+.btn.danger:hover {
+    background: #ef4444;
+    color: white;
+    transform: translateY(-2px);
+}
+
 /* Content Area */
 .content-area {
     flex: 1;
@@ -102,8 +114,9 @@ body {
 .tab-content {
     display: none;
     height: 100%;
-    overflow: hidden;
+    overflow-y: auto;
     padding: 12px;
+    padding-bottom: 80px; /* Extra space for footer navigation */
 }
 
 .tab-content.active {
@@ -119,11 +132,11 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     border-radius: 16px;
-    padding: 20px;
+    padding: 16px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
@@ -2087,27 +2100,25 @@ body {
     }
     
     /* Mobile home page fixes */
-    .streamlined-nav {
-        height: 44px !important;
-        padding: 4px 16px calc(4px + env(safe-area-inset-bottom)) !important;
+    .native-nav {
+        height: 50px !important;
+        padding: 6px 16px calc(6px + env(safe-area-inset-bottom)) !important;
         box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.05) !important;
     }
     
     .nav-item {
-        padding: 6px 12px !important;
-        min-height: 32px !important;
-        font-size: 0.8rem !important;
-        gap: 0 !important;
+        padding: 8px !important;
+        min-height: 40px !important;
+        min-width: 40px !important;
+        border-radius: 10px !important;
+        flex: 1 !important;
+        max-width: 56px !important;
     }
-    
-    /* Hide nav icons, show text only */
+
+    /* Show nav icons only for native app feel */
     .nav-item .nav-icon {
-        display: none !important;
-    }
-    
-    .nav-item .nav-text {
-        font-size: 0.8rem !important;
-        font-weight: 500 !important;
+        font-size: 1.25rem !important;
+        display: block !important;
     }
     
     /* Ultra compact team cards for mobile */
@@ -2389,8 +2400,8 @@ body {
     }
 }
 
-/* ===== STREAMLINED NAVIGATION ===== */
-.streamlined-nav {
+/* ===== NATIVE APP NAVIGATION ===== */
+.native-nav {
     position: fixed;
     bottom: 0;
     left: 0;
@@ -2401,10 +2412,10 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 6px 20px calc(6px + env(safe-area-inset-bottom));
+    padding: 8px 20px calc(8px + env(safe-area-inset-bottom));
     z-index: 1000;
     box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
-    height: 56px;
+    height: 64px;
 }
 
 /* Legacy bottom-nav support for any remaining references */
@@ -2428,18 +2439,19 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
     background: none;
     border: none;
-    padding: 8px 16px;
+    padding: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
-    border-radius: 8px;
-    min-height: 40px;
+    border-radius: 12px;
+    min-height: 48px;
+    min-width: 48px;
     position: relative;
     color: #64748b;
     font-weight: 500;
-    font-size: 0.875rem;
+    flex: 1;
+    max-width: 64px;
 }
 
 .nav-item:hover {
@@ -2454,14 +2466,12 @@ body {
 }
 
 .nav-item .nav-icon {
-    font-size: 1rem;
+    font-size: 1.5rem;
     line-height: 1;
+    transition: transform 0.2s ease;
 }
 
-.nav-item .nav-text {
-    font-size: 0.875rem;
-    font-weight: 500;
-}
+/* Nav text removed for native app feel */
 
 /* Legacy nav-tab styles for any remaining references */
 .nav-tab {
@@ -3329,15 +3339,549 @@ body {
 
 /* Jersey player styling */
 .jersey-player {
-    background: #7c3aed !important;
+    background: #ea580c !important;
     color: white !important;
-    border-color: #6d28d9 !important;
+    border-color: #dc2626 !important;
 }
 
 .jersey-player:hover {
-    background: #6d28d9 !important;
-    border-color: #5b21b6 !important;
+    background: #dc2626 !important;
+    border-color: #b91c1c !important;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25) !important;
+    box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25) !important;
 }
+}
+
+/* ===== HISTORY INTERFACE STYLES ===== */
+.history-content {
+    padding: 0.5rem;
+    max-height: 100%;
+    overflow-y: auto;
+}
+
+.history-controls {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Game History List */
+.games-list {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.game-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.game-card:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+    transform: translateY(-1px);
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.game-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.game-date {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.game-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.game-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+/* Historical Game View */
+.historical-game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+.game-info h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.game-info p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.view-toggle {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.view-toggle .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+.view-toggle .btn.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+/* Read-only Banner */
+.read-only-banner {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #92400e;
+}
+
+/* Read-only Field and Players Panel */
+.soccer-field.read-only,
+.players-panel.read-only {
+    opacity: 0.9;
+    pointer-events: none;
+}
+
+.soccer-field.read-only .position,
+.players-panel.read-only .player-item {
+    cursor: default !important;
+}
+
+.soccer-field.read-only .position:hover,
+.players-panel.read-only .player-item:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .historical-game-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .game-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+
+    .game-details {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+
+    .game-actions {
+        justify-content: stretch;
+    }
+
+    .view-game-btn {
+        width: 100%;
+    }
+}
+
+/* ===== GAME TIMER STYLES ===== */
+.game-timer-container {
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 12px;
+    margin: 1rem 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Modern Timer Display */
+.modern-timer-display {
+    text-align: center;
+    padding: 2rem 1rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    color: white;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.period-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.digital-clock {
+    margin: 1.5rem 0;
+}
+
+.time-digits {
+    font-size: 4rem;
+    font-weight: 200;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Courier New', monospace;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.1em;
+}
+
+.time-remaining {
+    font-size: 1rem;
+    opacity: 0.9;
+    font-weight: 500;
+}
+
+.timer-controls-modern {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.control-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    touch-action: manipulation;
+    user-select: none;
+}
+
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+}
+
+.control-btn:active {
+    transform: translateY(0);
+}
+
+.control-btn.primary {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.control-btn.primary:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.control-icon {
+    font-size: 1.5rem;
+    color: white;
+}
+
+.control-btn.primary .control-icon {
+    font-size: 2rem;
+}
+
+/* Progress Bar */
+.timer-progress-container {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.timer-progress-bar {
+    width: 100%;
+    height: 12px;
+    background: #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+}
+
+.timer-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #059669);
+    border-radius: 6px;
+    transition: width 0.3s ease;
+}
+
+.progress-percentage {
+    text-align: center;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+/* Notifications */
+.timer-notifications {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.timer-notifications h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.upcoming-subs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.upcoming-sub {
+    padding: 0.75rem;
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.sub-time {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #92400e;
+    text-transform: uppercase;
+}
+
+.sub-change {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #451a03;
+}
+
+.no-subs-message {
+    margin: 0;
+    padding: 1rem;
+    text-align: center;
+    color: #64748b;
+    font-style: italic;
+    background: #f1f5f9;
+    border-radius: 8px;
+}
+
+/* Quick Actions */
+.timer-quick-actions {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.timer-quick-actions h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.quick-action-btn {
+    min-height: 64px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    font-weight: 600;
+    touch-action: manipulation;
+    user-select: none;
+    transition: all 0.2s ease;
+}
+
+.quick-action-btn:active {
+    transform: scale(0.95);
+}
+
+.quick-action-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.quick-action-text {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.quick-action-btn.warning {
+    background: #fbbf24;
+    border-color: #f59e0b;
+    color: #92400e;
+}
+
+.quick-action-btn.warning:hover {
+    background: #f59e0b;
+    color: white;
+}
+
+.quick-action-btn.danger {
+    background: #f87171;
+    border-color: #ef4444;
+    color: #991b1b;
+}
+
+.quick-action-btn.danger:hover {
+    background: #ef4444;
+    color: white;
+}
+
+/* Time Warning Notifications */
+.time-warning-notification {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fbbf24;
+    color: #92400e;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    z-index: 9999;
+    animation: warningPulse 0.5s ease-in-out;
+    border: 2px solid #f59e0b;
+}
+
+@keyframes warningPulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+    .game-timer-container {
+        margin: 0.5rem 0;
+        padding: 0.75rem;
+    }
+
+    .modern-timer-display {
+        padding: 1.5rem 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .time-digits {
+        font-size: 3rem;
+    }
+
+    .timer-controls-modern {
+        gap: 0.75rem;
+    }
+
+    .control-btn {
+        width: 50px;
+        height: 50px;
+    }
+
+    .control-btn.primary {
+        width: 70px;
+        height: 70px;
+    }
+
+    .control-icon {
+        font-size: 1.25rem;
+    }
+
+    .control-btn.primary .control-icon {
+        font-size: 1.75rem;
+    }
+
+    .quick-actions-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .timer-notifications,
+    .timer-quick-actions {
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+    }
+}
+
+/* High Contrast Mode for Outdoor Use */
+@media (prefers-contrast: high) {
+    .game-timer-container {
+        background: white;
+        border: 2px solid #000;
+    }
+
+    .timer-display {
+        color: #000;
+        text-shadow: none;
+    }
+
+    .timer-progress-fill {
+        background: #000;
+    }
 }

@@ -9,6 +9,21 @@ class SoccerApp {
         this.currentPeriod = 1;
         this.currentView = 'field'; // 'field' or 'table'
         this.draggedPlayer = null;
+
+        // History functionality
+        this.historicalGame = null;
+        this.isViewingHistory = false;
+
+        // Game Timer functionality
+        this.gameTimer = {
+            isRunning: false,
+            startTime: null,
+            elapsedTime: 0,
+            intervalId: null,
+            notifications: [],
+            threeMinuteWarning: false,
+            oneMinuteWarning: false
+        };
         
         // Device detection for mobile vs desktop experience protection
         this.isMobile = this.detectMobileDevice();
@@ -122,13 +137,13 @@ class SoccerApp {
         
         // Handle tab-specific logic
         if (targetTab === 'fieldTab' || targetTab === 'tableTab') {
-            // Ensure we have a current game
-            if (!this.currentGame) {
+            // Ensure we have a current game (unless viewing history)
+            if (!this.currentGame && !this.isViewingHistory) {
                 this.switchTab('teamsTab');
                 return;
             }
         }
-        
+
         if (targetTab === 'fieldTab') {
             this.renderField();
             this.updateGameInfo();
@@ -136,6 +151,10 @@ class SoccerApp {
             this.renderTable();
             this.updateExportButtonVisibility();
             this.updateTeamHeader();
+        } else if (targetTab === 'historyTab') {
+            this.renderGameHistory();
+        } else if (targetTab === 'timerTab') {
+            this.initializeGameTimer();
         }
         
         // Update FAB
@@ -309,6 +328,36 @@ class SoccerApp {
         // Export table functionality
         const exportTableBtn = document.getElementById('exportTableBtn');
         if (exportTableBtn) exportTableBtn.addEventListener('click', () => this.exportTableView());
+
+        // Settings functionality
+        const exportDataBtn = document.getElementById('exportDataBtn');
+        if (exportDataBtn) exportDataBtn.addEventListener('click', () => this.exportAllData());
+        const clearDataBtn = document.getElementById('clearDataBtn');
+        if (clearDataBtn) clearDataBtn.addEventListener('click', () => this.clearAllData());
+
+        // History functionality
+        const backToCurrentBtn = document.getElementById('backToCurrentBtn');
+        if (backToCurrentBtn) backToCurrentBtn.addEventListener('click', () => this.backToCurrentGame());
+        const historicalFieldBtn = document.getElementById('historicalFieldBtn');
+        if (historicalFieldBtn) historicalFieldBtn.addEventListener('click', () => this.showHistoricalView('field'));
+        const historicalTableBtn = document.getElementById('historicalTableBtn');
+        if (historicalTableBtn) historicalTableBtn.addEventListener('click', () => this.showHistoricalView('table'));
+
+        // Game Timer functionality
+        const timerPlayPause = document.getElementById('timerPlayPause');
+        if (timerPlayPause) timerPlayPause.addEventListener('click', () => this.toggleTimer());
+        const timerPrevious = document.getElementById('timerPrevious');
+        if (timerPrevious) timerPrevious.addEventListener('click', () => this.previousPeriod());
+        const timerNext = document.getElementById('timerNext');
+        if (timerNext) timerNext.addEventListener('click', () => this.nextPeriod());
+        const emergencySubBtn = document.getElementById('emergencySubBtn');
+        if (emergencySubBtn) emergencySubBtn.addEventListener('click', () => this.showEmergencySubModal());
+        const injurySubBtn = document.getElementById('injurySubBtn');
+        if (injurySubBtn) injurySubBtn.addEventListener('click', () => this.showInjurySubModal());
+        const skipPeriodBtn = document.getElementById('skipPeriodBtn');
+        if (skipPeriodBtn) skipPeriodBtn.addEventListener('click', () => this.skipToNextPeriod());
+        const gameNotesBtn = document.getElementById('gameNotesBtn');
+        if (gameNotesBtn) gameNotesBtn.addEventListener('click', () => this.showGameNotesModal());
         
         // Modal handling
         document.addEventListener('click', (e) => {
@@ -2341,6 +2390,649 @@ class SoccerApp {
         }, 3000);
         
         // Console log for now
+    }
+
+    // ===== GAME TIMER FUNCTIONALITY =====
+    initializeGameTimer() {
+        const gameTimerContainer = document.getElementById('gameTimerContainer');
+        const noGameMessage = document.getElementById('noGameTimerMessage');
+
+        if (!this.currentGame) {
+            // Show no game message
+            if (gameTimerContainer) gameTimerContainer.style.display = 'none';
+            if (noGameMessage) noGameMessage.style.display = 'block';
+            return;
+        }
+
+        // Show timer interface
+        if (gameTimerContainer) gameTimerContainer.style.display = 'block';
+        if (noGameMessage) noGameMessage.style.display = 'none';
+
+        const periodCount = this.currentGame.periodCount || 4;
+        const periodDuration = this.currentGame.periodDuration || 15;
+
+        // Update period title
+        const timerPeriodTitle = document.getElementById('timerPeriodTitle');
+        if (timerPeriodTitle) {
+            timerPeriodTitle.textContent = `Period ${this.currentPeriod} of ${periodCount}`;
+        }
+
+        // Update timer total
+        const timerTotal = document.getElementById('timerTotal');
+        if (timerTotal) {
+            timerTotal.textContent = this.formatTime(periodDuration * 60);
+        }
+
+        // Reset timer if not running
+        if (!this.gameTimer.isRunning && this.gameTimer.elapsedTime === 0) {
+            this.resetTimer();
+        }
+
+        // Update display
+        this.updateTimerDisplay();
+        this.updateUpcomingSubstitutions();
+    }
+
+    toggleTimer() {
+        if (this.gameTimer.isRunning) {
+            this.pauseTimer();
+        } else {
+            this.startTimer();
+        }
+    }
+
+    startTimer() {
+        if (!this.currentGame) return;
+
+        this.gameTimer.isRunning = true;
+        this.gameTimer.startTime = Date.now() - this.gameTimer.elapsedTime;
+
+        // Update UI
+        const playPauseBtn = document.getElementById('timerPlayPause');
+        playPauseBtn.querySelector('.control-icon').textContent = '⏸️';
+
+        // Start interval
+        this.gameTimer.intervalId = setInterval(() => {
+            this.updateTimerDisplay();
+        }, 1000);
+    }
+
+    pauseTimer() {
+        this.gameTimer.isRunning = false;
+        if (this.gameTimer.intervalId) {
+            clearInterval(this.gameTimer.intervalId);
+            this.gameTimer.intervalId = null;
+        }
+
+        // Update UI
+        const playPauseBtn = document.getElementById('timerPlayPause');
+        playPauseBtn.querySelector('.control-icon').textContent = '▶️';
+    }
+
+    resetTimer() {
+        this.gameTimer.isRunning = false;
+        this.gameTimer.elapsedTime = 0;
+        this.gameTimer.startTime = null;
+        this.gameTimer.threeMinuteWarning = false;
+        this.gameTimer.oneMinuteWarning = false;
+
+        if (this.gameTimer.intervalId) {
+            clearInterval(this.gameTimer.intervalId);
+            this.gameTimer.intervalId = null;
+        }
+
+        this.updateTimerDisplay();
+    }
+
+    updateTimerDisplay() {
+        if (!this.currentGame) return;
+
+        const periodDuration = this.currentGame.periodDuration || 15;
+        const totalSeconds = periodDuration * 60;
+
+        // Calculate current elapsed time
+        if (this.gameTimer.isRunning && this.gameTimer.startTime) {
+            this.gameTimer.elapsedTime = Date.now() - this.gameTimer.startTime;
+        }
+
+        const currentSeconds = Math.floor(this.gameTimer.elapsedTime / 1000);
+        const remainingSeconds = Math.max(0, totalSeconds - currentSeconds);
+        const progressPercent = Math.min(100, (currentSeconds / totalSeconds) * 100);
+
+        // Update timer elements
+        document.getElementById('timerCurrent').textContent = this.formatTime(currentSeconds);
+        document.getElementById('timerTimeRemaining').textContent = `${this.formatTime(remainingSeconds)} remaining`;
+        document.getElementById('timerProgressPercent').textContent = `${Math.round(progressPercent)}%`;
+        document.getElementById('timerProgressFill').style.width = `${progressPercent}%`;
+
+        // Check for warnings
+        this.checkTimeWarnings(remainingSeconds);
+
+        // Check for period end
+        if (currentSeconds >= totalSeconds && this.gameTimer.isRunning) {
+            this.onPeriodEnd();
+        }
+    }
+
+    checkTimeWarnings(remainingSeconds) {
+        // 3 minute warning
+        if (remainingSeconds <= 180 && remainingSeconds > 179 && !this.gameTimer.threeMinuteWarning && this.gameTimer.isRunning) {
+            this.gameTimer.threeMinuteWarning = true;
+            this.playWarningSound();
+            this.showTimeWarning('3 minutes remaining!');
+        }
+
+        // 1 minute warning
+        if (remainingSeconds <= 60 && remainingSeconds > 59 && !this.gameTimer.oneMinuteWarning && this.gameTimer.isRunning) {
+            this.gameTimer.oneMinuteWarning = true;
+            this.playWarningSound();
+            this.showTimeWarning('1 minute remaining!');
+        }
+    }
+
+    playWarningSound() {
+        // Create audio context for beep sound
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = 800; // 800 Hz beep
+            oscillator.type = 'sine';
+
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        } catch (error) {
+            console.log('Audio not available:', error);
+        }
+    }
+
+    showTimeWarning(message) {
+        // Visual notification
+        const notification = document.createElement('div');
+        notification.className = 'time-warning-notification';
+        notification.textContent = message;
+
+        // Add to timer container
+        const timerContainer = document.getElementById('gameTimerContainer');
+        if (timerContainer) {
+            timerContainer.appendChild(notification);
+
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 3000);
+        }
+
+        // Also show browser notification if available
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Soccer Timer', {
+                body: message,
+                icon: '⏱️'
+            });
+        }
+    }
+
+    formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    onPeriodEnd() {
+        this.pauseTimer();
+
+        const periodCount = this.currentGame.periodCount || 4;
+
+        if (this.currentPeriod < periodCount) {
+            // Show period end notification
+            if (confirm(`Period ${this.currentPeriod} complete!\n\nAdvance to Period ${this.currentPeriod + 1}?`)) {
+                this.nextPeriod();
+            }
+        } else {
+            // Game complete
+            alert(`Game Complete!\n\nAll ${periodCount} periods finished.`);
+        }
+    }
+
+    nextPeriod() {
+        if (!this.currentGame) return;
+
+        const periodCount = this.currentGame.periodCount || 4;
+
+        if (this.currentPeriod < periodCount) {
+            this.currentPeriod++;
+            this.resetTimer();
+            this.updatePeriodSelector();
+            this.renderField();
+            this.initializeGameTimer();
+            this.saveData();
+        }
+    }
+
+    previousPeriod() {
+        if (!this.currentGame) return;
+
+        if (this.currentPeriod > 1) {
+            this.currentPeriod--;
+            this.resetTimer();
+            this.updatePeriodSelector();
+            this.renderField();
+            this.initializeGameTimer();
+            this.saveData();
+        }
+    }
+
+    skipToNextPeriod() {
+        if (confirm('Skip to next period?\n\nThis will end the current period timer.')) {
+            this.nextPeriod();
+        }
+    }
+
+    updateUpcomingSubstitutions() {
+        const upcomingContainer = document.getElementById('timerUpcomingSubs');
+        if (!upcomingContainer || !this.currentGame) return;
+
+        // This is a placeholder - we'll implement smart substitution predictions
+        const currentLineup = this.currentGame.lineup[this.currentPeriod];
+        const nextPeriodLineup = this.currentGame.lineup[this.currentPeriod + 1];
+
+        if (!nextPeriodLineup) {
+            upcomingContainer.innerHTML = '<p class="no-subs-message">No upcoming substitutions scheduled</p>';
+            return;
+        }
+
+        // Compare current and next period to find changes
+        const changes = this.detectLineupChanges(currentLineup, nextPeriodLineup);
+
+        if (changes.length === 0) {
+            upcomingContainer.innerHTML = '<p class="no-subs-message">No substitutions planned for next period</p>';
+        } else {
+            const changesHtml = changes.map(change =>
+                `<div class="upcoming-sub">
+                    <span class="sub-time">Next period:</span>
+                    <span class="sub-change">${change.out} OUT → ${change.in} IN (${change.position})</span>
+                </div>`
+            ).join('');
+            upcomingContainer.innerHTML = changesHtml;
+        }
+    }
+
+    detectLineupChanges(currentLineup, nextLineup) {
+        const changes = [];
+
+        if (!currentLineup?.positions || !nextLineup?.positions) return changes;
+
+        // Compare each position
+        for (const position in nextLineup.positions) {
+            const currentPlayer = currentLineup.positions[position];
+            const nextPlayer = nextLineup.positions[position];
+
+            if (currentPlayer && nextPlayer && currentPlayer !== nextPlayer) {
+                changes.push({
+                    position: position,
+                    out: currentPlayer,
+                    in: nextPlayer
+                });
+            }
+        }
+
+        return changes;
+    }
+
+
+    // Quick action methods (placeholders for now)
+    showEmergencySubModal() {
+        alert('Emergency substitution feature coming soon!');
+    }
+
+    showInjurySubModal() {
+        alert('Injury substitution feature coming soon!');
+    }
+
+    showGameNotesModal() {
+        alert('Game notes feature coming soon!');
+    }
+
+    // ===== HISTORY FUNCTIONALITY =====
+    renderGameHistory() {
+        const gameHistoryList = document.getElementById('gameHistoryList');
+        const historicalGameView = document.getElementById('historicalGameView');
+
+        // Show the game list, hide the historical game view
+        gameHistoryList.style.display = 'block';
+        historicalGameView.style.display = 'none';
+
+        const completedGames = JSON.parse(localStorage.getItem('soccer_completed_games') || '[]');
+
+        if (completedGames.length === 0) {
+            gameHistoryList.innerHTML = '<p class="empty-state">No completed games yet. Complete a game to see it here!</p>';
+            return;
+        }
+
+        // Sort games by completion date (most recent first)
+        completedGames.sort((a, b) => new Date(b.completed) - new Date(a.completed));
+
+        const gameCards = completedGames.map(game => {
+            const team = this.teams.find(t => t.id === game.teamId);
+            const teamName = team ? team.name : 'Unknown Team';
+            const gameDate = new Date(game.date).toLocaleDateString();
+            const completedDate = new Date(game.completed).toLocaleDateString();
+
+            return `
+                <div class="game-card" data-game-id="${game.id}">
+                    <div class="game-header">
+                        <h3>${teamName} vs ${game.opponent}</h3>
+                        <span class="game-date">${gameDate}</span>
+                    </div>
+                    <div class="game-details">
+                        <span class="game-info">${game.periodCount} periods • ${game.periodDuration} min each</span>
+                        <span class="completed-date">Completed: ${completedDate}</span>
+                    </div>
+                    <div class="game-actions">
+                        <button class="btn secondary view-game-btn" data-game-id="${game.id}">
+                            📋 View Game
+                        </button>
+                        <button class="btn danger delete-game-btn" data-game-id="${game.id}">
+                            🗑️ Delete
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        gameHistoryList.innerHTML = gameCards;
+
+        // Add event listeners for view game buttons
+        document.querySelectorAll('.view-game-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const gameId = e.target.dataset.gameId;
+                this.viewHistoricalGame(gameId);
+            });
+        });
+
+        // Add event listeners for delete game buttons
+        document.querySelectorAll('.delete-game-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const gameId = e.target.dataset.gameId;
+                this.deleteHistoricalGame(gameId);
+            });
+        });
+    }
+
+    viewHistoricalGame(gameId) {
+        const completedGames = JSON.parse(localStorage.getItem('soccer_completed_games') || '[]');
+        const game = completedGames.find(g => g.id === gameId);
+
+        if (!game) return;
+
+        this.historicalGame = game;
+        this.isViewingHistory = true;
+
+        // Find the team for this historical game
+        const team = this.teams.find(t => t.id === game.teamId);
+
+        // Show historical game view
+        const gameHistoryList = document.getElementById('gameHistoryList');
+        const historicalGameView = document.getElementById('historicalGameView');
+
+        gameHistoryList.style.display = 'none';
+        historicalGameView.style.display = 'block';
+
+        // Update game title and info
+        const gameDate = new Date(game.date).toLocaleDateString();
+        document.getElementById('historicalGameTitle').textContent = `${team ? team.name : 'Unknown Team'} vs ${game.opponent}`;
+        document.getElementById('historicalGameDate').textContent = `${gameDate} • ${game.periodCount} periods`;
+
+        // Show back to current game button if there's a current game
+        const backToCurrentBtn = document.getElementById('backToCurrentBtn');
+        if (this.currentGame) {
+            backToCurrentBtn.style.display = 'inline-flex';
+        }
+
+        // Default to table view
+        this.showHistoricalView('table');
+    }
+
+    deleteHistoricalGame(gameId) {
+        const completedGames = JSON.parse(localStorage.getItem('soccer_completed_games') || '[]');
+        const game = completedGames.find(g => g.id === gameId);
+
+        if (!game) return;
+
+        const team = this.teams.find(t => t.id === game.teamId);
+        const teamName = team ? team.name : 'Unknown Team';
+        const gameDate = new Date(game.date).toLocaleDateString();
+
+        if (confirm(`Are you sure you want to delete this game?\n\n${teamName} vs ${game.opponent}\n${gameDate}\n\nThis action cannot be undone.`)) {
+            // Remove the game from completed games
+            const updatedGames = completedGames.filter(g => g.id !== gameId);
+            localStorage.setItem('soccer_completed_games', JSON.stringify(updatedGames));
+
+            // If we're currently viewing this historical game, go back to history list
+            if (this.isViewingHistory && this.historicalGame && this.historicalGame.id === gameId) {
+                this.isViewingHistory = false;
+                this.historicalGame = null;
+            }
+
+            // Re-render the game history to update the list
+            this.renderGameHistory();
+
+            this.showSuccessMessage(`Game vs ${game.opponent} deleted from history`);
+        }
+    }
+
+    showHistoricalView(viewType) {
+        const fieldView = document.getElementById('historicalFieldView');
+        const tableView = document.getElementById('historicalTableView');
+        const fieldBtn = document.getElementById('historicalFieldBtn');
+        const tableBtn = document.getElementById('historicalTableBtn');
+
+        // Update button states
+        fieldBtn.classList.toggle('active', viewType === 'field');
+        tableBtn.classList.toggle('active', viewType === 'table');
+
+        if (viewType === 'field') {
+            fieldView.style.display = 'block';
+            tableView.style.display = 'none';
+            this.renderHistoricalField();
+        } else {
+            fieldView.style.display = 'none';
+            tableView.style.display = 'block';
+            this.renderHistoricalTable();
+        }
+    }
+
+    renderHistoricalField() {
+        if (!this.historicalGame) return;
+
+        // This would be similar to renderField() but read-only
+        // For now, we'll focus on the table view as it's more important
+        const fieldContainer = document.getElementById('historicalSoccerField');
+        fieldContainer.innerHTML = '<p class="empty-state">Field view for historical games coming soon!</p>';
+    }
+
+    renderHistoricalTable() {
+        if (!this.historicalGame) return;
+
+        const team = this.teams.find(t => t.id === this.historicalGame.teamId);
+        if (!team) return;
+
+        const table = document.getElementById('historicalLineupTable');
+        const tbody = table.querySelector('tbody');
+
+        // Update table headers based on period count
+        const thead = table.querySelector('thead tr');
+        const periodCount = this.historicalGame.periodCount || 4;
+
+        // Clear and rebuild headers
+        thead.innerHTML = '<th>Player</th>';
+        for (let i = 1; i <= periodCount; i++) {
+            thead.innerHTML += `<th>Period ${i}</th>`;
+        }
+        thead.innerHTML += '<th>Statistics</th>';
+
+        // Build table rows using the same logic as renderTable()
+        this.renderTableForGame(this.historicalGame, team, tbody);
+    }
+
+    renderTableForGame(game, team, tbody) {
+        let tableHTML = '';
+
+        team.players.forEach(player => {
+            const playerName = player.name;
+            const stats = this.calculatePlayerStatsForGame(game, playerName);
+
+            let row = `<tr><td class="player-name">${playerName}</td>`;
+
+            // Add period columns
+            for (let period = 1; period <= game.periodCount; period++) {
+                const periodLineup = game.lineup[period];
+                let assignment = '-';
+
+                if (periodLineup && periodLineup.positions) {
+                    // Check field positions
+                    for (const [position, assignedPlayer] of Object.entries(periodLineup.positions)) {
+                        if (assignedPlayer === playerName) {
+                            assignment = this.createPositionCard(position, false);
+                            break;
+                        }
+                    }
+
+                    // If not in a field position, check if on bench or jersey
+                    if (assignment === '-' && periodLineup.jersey && periodLineup.jersey.includes(playerName)) {
+                        assignment = '<span class="position-card jersey">Jersey</span>';
+                    } else if (assignment === '-' && periodLineup.bench.includes(playerName)) {
+                        assignment = '<span class="position-card bench">Bench</span>';
+                    }
+                }
+
+                row += `<td>${assignment}</td>`;
+            }
+
+            // Add statistics
+            const positionCounts = stats.positionCounts;
+            const positionsHtml = Object.entries(positionCounts)
+                .filter(([_, count]) => count > 0)
+                .map(([position, count]) => this.createStatPositionCard(position, count))
+                .join(' ');
+
+            row += `<td class="player-stats">
+                <div class="stat-line positions">${positionsHtml}</div>
+                <div class="stat-line">Sits: ${stats.benchCount}</div>
+            </td>`;
+
+            row += '</tr>';
+            tableHTML += row;
+        });
+
+        tbody.innerHTML = tableHTML;
+    }
+
+    calculatePlayerStatsForGame(game, playerName) {
+        let benchCount = 0;
+        let jerseyCount = 0;
+        const positionCounts = {};
+        let periodCount = 0;
+        let totalPlayingMinutes = 0;
+
+        const periodDuration = game.periodDuration || 15;
+
+        for (let period = 1; period <= game.periodCount; period++) {
+            const periodLineup = game.lineup[period];
+            if (periodLineup) {
+                periodCount++;
+                let wasPlaying = false;
+
+                // Check field positions
+                for (const [position, assignedPlayer] of Object.entries(periodLineup.positions || {})) {
+                    if (assignedPlayer === playerName) {
+                        const positionGroup = this.getPositionGroup(position);
+                        positionCounts[positionGroup] = (positionCounts[positionGroup] || 0) + 1;
+                        totalPlayingMinutes += periodDuration;
+                        wasPlaying = true;
+                        break;
+                    }
+                }
+
+                // Check if player is on jersey (preparing for GK)
+                if (periodLineup.jersey && periodLineup.jersey.includes(playerName)) {
+                    jerseyCount++;
+                    positionCounts['Jersey'] = (positionCounts['Jersey'] || 0) + 1;
+                } else if (periodLineup.bench.includes(playerName)) {
+                    // Check if player is on bench
+                    benchCount++;
+                }
+            }
+        }
+
+        return {
+            positionCounts,
+            benchCount,
+            jerseyCount,
+            periodCount,
+            totalPlayingMinutes,
+            periodsPlayed: periodCount - benchCount - jerseyCount,
+            averageMinutesPerPeriod: totalPlayingMinutes / Math.max(1, periodCount - benchCount - jerseyCount)
+        };
+    }
+
+    backToCurrentGame() {
+        this.isViewingHistory = false;
+        this.historicalGame = null;
+
+        // Hide back button
+        document.getElementById('backToCurrentBtn').style.display = 'none';
+
+        // Go back to field tab for current game
+        this.switchTab('fieldTab');
+    }
+
+    // ===== SETTINGS FUNCTIONALITY =====
+    exportAllData() {
+        const data = {
+            teams: this.teams,
+            currentGame: this.currentGame,
+            completedGames: JSON.parse(localStorage.getItem('soccer_completed_games') || '[]'),
+            exported: new Date().toISOString()
+        };
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `soccer-manager-data-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    clearAllData() {
+        if (confirm('Are you sure you want to clear ALL data? This will delete all teams, games, and history. This cannot be undone.')) {
+            localStorage.removeItem('soccer_teams');
+            localStorage.removeItem('soccer_current_game');
+            localStorage.removeItem('soccer_completed_games');
+
+            // Reset app state
+            this.teams = [];
+            this.currentTeam = null;
+            this.currentGame = null;
+            this.historicalGame = null;
+            this.isViewingHistory = false;
+
+            // Go back to teams tab
+            this.switchTab('teamsTab');
+            this.renderTeams();
+
+            alert('All data has been cleared.');
+        }
     }
 }
 
