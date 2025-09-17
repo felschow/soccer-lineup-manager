@@ -3246,7 +3246,7 @@ body {
 }
 
 .position-jersey, .position-card.jersey {
-    background-color: #7c3aed; /* Deep Violet */
+    background-color: #ea580c; /* Bright Orange */
 }
 
 /* Statistics position cards */
@@ -3299,8 +3299,8 @@ body {
 }
 
 .stat-position-card.jersey {
-    color: #7c3aed;
-    border-color: #7c3aed;
+    color: #ea580c;
+    border-color: #ea580c;
 }
 
 /* Compact player stats for table */

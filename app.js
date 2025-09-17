@@ -1675,7 +1675,7 @@ class SoccerApp {
     
     createPositionCard(position, isBench = false, substitutionPlayer = null) {
         if (isBench) {
-            return '<span class="position-card bench">bench</span>';
+            return '<span class="position-card bench">Bench</span>';
         }
         
         const positionGroup = this.getPositionGroup(position);
@@ -2116,9 +2116,9 @@ class SoccerApp {
                     
                     // If not in a field position, check if on bench or jersey
                     if (assignment === '-' && periodLineup.jersey && periodLineup.jersey.includes(playerName)) {
-                        assignment = '<span class="position-card jersey">jersey</span>';
+                        assignment = '<span class="position-card jersey">Jersey</span>';
                     } else if (assignment === '-' && periodLineup.bench.includes(playerName)) {
-                        assignment = '<span class="position-card bench">bench</span>';
+                        assignment = '<span class="position-card bench">Bench</span>';
                     }
                 }
                 
