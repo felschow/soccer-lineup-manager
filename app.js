@@ -2199,8 +2199,219 @@ class SoccerApp {
             summaryHTML += '</tr>';
             tbody.innerHTML += summaryHTML;
         }
+
+        // Also render mobile accordion version
+        this.renderMobileAccordion();
     }
-    
+
+    // ===== MOBILE ACCORDION TABLE =====
+    renderMobileAccordion() {
+        if (!this.currentGame || !this.currentTeam) return;
+
+        const accordion = document.getElementById('mobileLineupAccordion');
+        const statsContent = document.getElementById('mobileStatsContent');
+
+        if (!accordion || !statsContent) return;
+
+        const periodCount = this.currentGame.periodCount || 4;
+        const periodDuration = this.currentGame.periodDuration || 15;
+
+        // Clear existing content
+        accordion.innerHTML = '';
+
+        // Create period sections
+        for (let period = 1; period <= periodCount; period++) {
+            const periodLineup = this.currentGame.lineup[period];
+            const startTime = (period - 1) * periodDuration;
+            const endTime = period * periodDuration;
+
+            const periodSection = document.createElement('div');
+            periodSection.className = 'accordion-section';
+
+            const header = document.createElement('div');
+            header.className = 'accordion-header';
+            header.dataset.section = `period-${period}`;
+
+            const timeRange = `${this.formatTimeMinutes(startTime)}-${this.formatTimeMinutes(endTime)}`;
+            header.innerHTML = `
+                <h3>⚽ Period ${period} <small>(${timeRange})</small></h3>
+                <span class="accordion-toggle">▼</span>
+            `;
+
+            const content = document.createElement('div');
+            content.className = 'accordion-content';
+            content.innerHTML = this.createPeriodContent(period, periodLineup);
+
+            periodSection.appendChild(header);
+            periodSection.appendChild(content);
+            accordion.appendChild(periodSection);
+
+            // Add click handler for accordion toggle
+            header.addEventListener('click', () => {
+                this.toggleAccordionSection(header, content);
+            });
+        }
+
+        // Render statistics content
+        this.renderMobileStats(statsContent);
+
+        // Add click handler for stats section
+        const statsHeader = document.querySelector('[data-section="stats"]');
+        const statsContentElement = document.getElementById('mobileStatsContent');
+        if (statsHeader && statsContentElement) {
+            statsHeader.addEventListener('click', () => {
+                this.toggleAccordionSection(statsHeader, statsContentElement);
+            });
+        }
+    }
+
+    createPeriodContent(period, periodLineup) {
+        if (!periodLineup) {
+            return '<div class="period-lineup"><p class="empty-state">No lineup set for this period</p></div>';
+        }
+
+        const assignments = [];
+        const benchPlayers = [];
+        const jerseyPlayers = [];
+
+        // Process field positions
+        Object.entries(periodLineup.positions || {}).forEach(([position, playerName]) => {
+            const positionGroup = this.getPositionGroup(position);
+            assignments.push({
+                player: playerName,
+                position: position,
+                positionGroup: positionGroup?.toLowerCase() || 'other'
+            });
+        });
+
+        // Process bench players
+        if (periodLineup.bench) {
+            periodLineup.bench.forEach(playerName => {
+                benchPlayers.push(playerName);
+            });
+        }
+
+        // Process jersey players
+        if (periodLineup.jersey) {
+            periodLineup.jersey.forEach(playerName => {
+                jerseyPlayers.push(playerName);
+            });
+        }
+
+        // Sort assignments by position group for better organization
+        assignments.sort((a, b) => {
+            const order = { 'forward': 1, 'midfield': 2, 'defense': 3, 'goalkeeper': 4 };
+            return (order[a.positionGroup] || 5) - (order[b.positionGroup] || 5);
+        });
+
+        let html = '<div class="period-lineup">';
+
+        // Field assignments
+        if (assignments.length > 0) {
+            assignments.forEach(assignment => {
+                html += `
+                    <div class="player-assignment ${assignment.positionGroup}">
+                        <span class="player-name-mobile">${assignment.player}</span>
+                        <span class="position-badge-mobile ${assignment.positionGroup}">${assignment.position}</span>
+                    </div>
+                `;
+            });
+        }
+
+        // Bench players
+        if (benchPlayers.length > 0) {
+            benchPlayers.forEach(playerName => {
+                html += `
+                    <div class="player-assignment bench">
+                        <span class="player-name-mobile">${playerName}</span>
+                        <span class="position-badge-mobile bench">Bench</span>
+                    </div>
+                `;
+            });
+        }
+
+        // Jersey players
+        if (jerseyPlayers.length > 0) {
+            jerseyPlayers.forEach(playerName => {
+                html += `
+                    <div class="player-assignment jersey">
+                        <span class="player-name-mobile">${playerName}</span>
+                        <span class="position-badge-mobile jersey">Jersey</span>
+                    </div>
+                `;
+            });
+        }
+
+        html += '</div>';
+        return html;
+    }
+
+    renderMobileStats(statsContent) {
+        if (!this.currentTeam) return;
+
+        let html = '<div class="stats-grid">';
+
+        this.currentTeam.players.forEach(player => {
+            const stats = this.calculatePlayerStats(player.name);
+            if (!stats) return;
+
+            const positionCounts = stats.positionCounts;
+            const mostPlayedPosition = Object.entries(positionCounts)
+                .reduce((a, b) => (positionCounts[a[0]] || 0) > (positionCounts[b[0]] || 0) ? a : b, ['None', 0]);
+
+            const playingTime = `${stats.totalPlayingMinutes}min`;
+            const mostPlayed = mostPlayedPosition[1] > 0 ?
+                `${mostPlayedPosition[0]} (${mostPlayedPosition[1]}x)` : 'None';
+
+            html += `
+                <div class="stat-player">
+                    <div class="stat-player-name">${player.name}</div>
+                    <div class="stat-summary">
+                        <span>${playingTime}</span>
+                        <span>${mostPlayed}</span>
+                        <span>Sits: ${stats.benchCount}</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        statsContent.innerHTML = html;
+    }
+
+    toggleAccordionSection(header, content) {
+        const isActive = header.classList.contains('active');
+
+        // Close all other sections
+        document.querySelectorAll('.accordion-header.active').forEach(activeHeader => {
+            if (activeHeader !== header) {
+                activeHeader.classList.remove('active');
+                const activeContent = activeHeader.nextElementSibling;
+                if (activeContent) {
+                    activeContent.classList.remove('expanded');
+                }
+            }
+        });
+
+        // Toggle current section
+        if (isActive) {
+            header.classList.remove('active');
+            content.classList.remove('expanded');
+        } else {
+            header.classList.add('active');
+            content.classList.add('expanded');
+        }
+    }
+
+    formatTimeMinutes(minutes) {
+        const hrs = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        if (hrs > 0) {
+            return `${hrs}:${mins.toString().padStart(2, '0')}`;
+        }
+        return `${mins}min`;
+    }
+
     // ===== PLAYER STATISTICS =====
     calculatePlayerStats(playerName) {
         if (!this.currentGame || !this.currentTeam) return null;

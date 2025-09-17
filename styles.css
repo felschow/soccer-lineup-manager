@@ -3337,6 +3337,212 @@ body {
     box-shadow: 0 4px 12px rgba(107, 114, 128, 0.25) !important;
 }
 
+/* ===== MOBILE ACCORDION TABLE ===== */
+.mobile-table-container {
+    display: none; /* Hidden by default, shown on mobile */
+}
+
+.lineup-accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.accordion-section {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.accordion-header {
+    padding: 16px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.accordion-header:hover {
+    background: #f1f5f9;
+}
+
+.accordion-header.active {
+    background: #eef2ff;
+    border-bottom-color: #c7d2fe;
+}
+
+.accordion-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.accordion-toggle {
+    font-size: 1.2rem;
+    color: #64748b;
+    transition: transform 0.2s ease;
+}
+
+.accordion-header.active .accordion-toggle {
+    transform: rotate(180deg);
+}
+
+.accordion-content {
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.accordion-content.expanded {
+    padding: 16px;
+    max-height: 1000px; /* Large enough to accommodate content */
+}
+
+.period-lineup {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+
+.player-assignment {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    border-left: 3px solid #e2e8f0;
+    font-size: 0.875rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.player-assignment.forward {
+    border-left-color: #6366f1;
+    background: #fafbff;
+}
+
+.player-assignment.midfield {
+    border-left-color: #059669;
+    background: #f0fdf4;
+}
+
+.player-assignment.defense {
+    border-left-color: #d97706;
+    background: #fffbeb;
+}
+
+.player-assignment.goalkeeper {
+    border-left-color: #be185d;
+    background: #fdf2f8;
+}
+
+.player-assignment.bench {
+    border-left-color: #6b7280;
+    background: #f9fafb;
+}
+
+.player-assignment.jersey {
+    border-left-color: #dc2626;
+    background: #fef2f2;
+}
+
+.player-name-mobile {
+    font-weight: 500;
+    color: #1e293b;
+}
+
+.position-badge-mobile {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.position-badge-mobile.forward {
+    background: #eef2ff;
+    color: #6366f1;
+}
+
+.position-badge-mobile.midfield {
+    background: #ecfdf5;
+    color: #059669;
+}
+
+.position-badge-mobile.defense {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.position-badge-mobile.goalkeeper {
+    background: #fce7f3;
+    color: #be185d;
+}
+
+.position-badge-mobile.bench {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.position-badge-mobile.jersey {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+
+.stat-player {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border-left: 3px solid #e2e8f0;
+}
+
+.stat-player-name {
+    font-weight: 500;
+    color: #1e293b;
+}
+
+.stat-summary {
+    display: flex;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+/* Desktop/Mobile toggle */
+@media (max-width: 768px) {
+    .desktop-table {
+        display: none !important;
+    }
+
+    .mobile-table-container {
+        display: block !important;
+    }
+}
+
+@media (min-width: 769px) {
+    .mobile-table-container {
+        display: none !important;
+    }
+
+    .desktop-table {
+        display: block !important;
+    }
+}
+
 /* Jersey player styling */
 .jersey-player {
     background: #ea580c !important;
