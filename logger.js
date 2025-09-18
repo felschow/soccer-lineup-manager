@@ -36,11 +36,18 @@ class SecureLogger {
 
     // Error logging - always enabled but sanitized
     error(...args) {
-        const sanitizedArgs = this.sanitizeLogData(args);
-        console.error('[ERROR]', ...sanitizedArgs);
+        try {
+            const sanitizedArgs = this.sanitizeLogData(args);
+            console.error('[ERROR]', ...sanitizedArgs);
 
-        if (this.enableErrorReporting) {
-            this.reportToErrorService('error', sanitizedArgs);
+            if (this.enableErrorReporting && !this._reportingError) {
+                this._reportingError = true;
+                this.reportToErrorService('error', sanitizedArgs);
+                this._reportingError = false;
+            }
+        } catch (e) {
+            // Fallback for critical errors
+            console.error('[LOGGER ERROR]', e.message);
         }
     }
 
@@ -53,14 +60,20 @@ class SecureLogger {
 
     // Sanitize sensitive data from logs
     sanitizeLogData(data) {
+        if (!Array.isArray(data)) return data;
+
         return data.map(item => {
-            if (typeof item === 'object' && item !== null) {
-                return this.sanitizeObject(item);
+            try {
+                if (typeof item === 'object' && item !== null) {
+                    return this.sanitizeObject(item);
+                }
+                if (typeof item === 'string') {
+                    return this.sanitizeString(item);
+                }
+                return item;
+            } catch (error) {
+                return '[Sanitization Error]';
             }
-            if (typeof item === 'string') {
-                return this.sanitizeString(item);
-            }
-            return item;
         });
     }
 
