@@ -27,11 +27,593 @@
     }
 }
 
+/* ===== NATIVE MOBILE INTERACTIONS ===== */
+/* Pull-to-refresh indicator */
+.pull-to-refresh-indicator {
+    position: absolute;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(79, 70, 229, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.pull-to-refresh-indicator.active {
+    opacity: 1;
+    top: 20px;
+}
+
+.pull-to-refresh-indicator .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #4f46e5;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Swipe gesture feedback */
+.swipe-feedback {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.swipe-feedback.left {
+    left: 20px;
+}
+
+.swipe-feedback.right {
+    right: 20px;
+}
+
+.swipe-feedback.show {
+    opacity: 1;
+}
+
+/* Touch ripple effect for buttons */
+.btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.4s ease, height 0.4s ease;
+}
+
+.btn.ripple::after {
+    width: 300px;
+    height: 300px;
+}
+
+/* Floating Action Button */
+.fab {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #4f46e5;
+    color: white;
+    border: none;
+    box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 1000;
+}
+
+.fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.5);
+}
+
+.fab:active {
+    transform: scale(0.95);
+}
+
+/* Native scroll indicators for overflowing content */
+.scroll-indicator {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 50px;
+    background: rgba(79, 70, 229, 0.2);
+    border-radius: 1px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.scroll-indicator.visible {
+    opacity: 1;
+}
+
+/* Smooth scrolling for all containers */
+.tab-content,
+.teams-grid,
+.players-list,
+.substitutions-list {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Context menu for long press gestures */
+.context-menu {
+    position: fixed;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    border-radius: 12px;
+    padding: 8px 0;
+    min-width: 160px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    opacity: 0;
+    transform: scale(0.9);
+    animation: contextMenuAppear 0.2s ease forwards;
+}
+
+@keyframes contextMenuAppear {
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.context-menu-item {
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.context-menu-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.context-menu-item:first-child {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+.context-menu-item:last-child {
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+/* Enhanced mobile animations */
+@media (max-width: 768px) {
+    .btn,
+    .nav-item,
+    .team-card,
+    .player-item {
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn:active,
+    .nav-item:active,
+    .team-card:active,
+    .player-item:active {
+        transform: scale(0.98);
+    }
+
+    /* Optimize animations for mobile performance */
+    * {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+
+    /* Smooth page transitions */
+    .tab-content {
+        transform: translateZ(0);
+        will-change: transform, opacity;
+    }
+
+    .tab-content.entering {
+        animation: slideInRight 0.3s ease;
+    }
+
+    .tab-content.leaving {
+        animation: slideOutLeft 0.3s ease;
+    }
+
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOutLeft {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(-100%);
+            opacity: 0;
+        }
+    }
+
+    /* Loading state animations */
+    .loading {
+        opacity: 0.6;
+        pointer-events: none;
+        transform: scale(0.98);
+        filter: brightness(0.9);
+    }
+
+    /* Success animations */
+    .success-pulse {
+        animation: successPulse 0.6s ease;
+    }
+
+    @keyframes successPulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+        }
+    }
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile */
     color: #333;
+    /* Safe area support for notched devices */
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+    /* Prevent zoom on double tap */
+    touch-action: manipulation;
+    /* Optimize text rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/* ===== SPLASH SCREEN ===== */
+.splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.splash-screen.fade-out {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.splash-content {
+    text-align: center;
+    color: white;
+    animation: splashFadeIn 1s ease;
+}
+
+.splash-logo {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 24px;
+}
+
+.splash-icon {
+    font-size: 80px;
+    display: block;
+    animation: bounceIn 1.2s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.splash-pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+    z-index: 1;
+}
+
+.splash-title {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.5px;
+    animation: slideUpIn 1s ease 0.3s both;
+}
+
+.splash-subtitle {
+    font-size: 16px;
+    margin: 0 0 32px 0;
+    opacity: 0.9;
+    font-weight: 400;
+    animation: slideUpIn 1s ease 0.5s both;
+}
+
+.splash-loading {
+    animation: slideUpIn 1s ease 0.7s both;
+}
+
+.loading-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.loading-dots .dot {
+    width: 8px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    animation: dotPulse 1.4s infinite ease-in-out both;
+}
+
+.loading-dots .dot:nth-child(1) { animation-delay: -0.32s; }
+.loading-dots .dot:nth-child(2) { animation-delay: -0.16s; }
+.loading-dots .dot:nth-child(3) { animation-delay: 0s; }
+
+@keyframes splashFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+    70% {
+        transform: scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes slideUpIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.3;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 0.1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.3;
+    }
+}
+
+@keyframes dotPulse {
+    0%, 80%, 100% {
+        transform: scale(0);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ===== PWA INSTALL PROMPTS ===== */
+.install-prompt {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    z-index: 10000;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.install-prompt.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.install-content {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    gap: 16px;
+}
+
+.install-icon {
+    font-size: 32px;
+    flex-shrink: 0;
+}
+
+.install-text {
+    flex: 1;
+}
+
+.install-text h3 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.install-text p {
+    margin: 0;
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.install-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.install-actions .btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 8px;
+}
+
+/* Install success toast */
+.install-success-toast {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    background: #059669;
+    color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(5, 150, 105, 0.3);
+    z-index: 10000;
+    transform: translateY(-100px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.install-success-toast.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    gap: 12px;
+}
+
+.toast-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.toast-text strong {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.toast-text p {
+    margin: 0;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+/* Mobile optimizations for install prompts */
+@media (max-width: 768px) {
+    .install-prompt {
+        bottom: calc(80px + env(safe-area-inset-bottom));
+        left: 16px;
+        right: 16px;
+    }
+
+    .install-content {
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .install-text h3 {
+        font-size: 15px;
+    }
+
+    .install-text p {
+        font-size: 13px;
+    }
+
+    .install-actions .btn {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+
+    .install-success-toast {
+        top: calc(20px + env(safe-area-inset-top));
+        left: 16px;
+        right: 16px;
+    }
 }
 
 .app-container {
@@ -39,9 +621,53 @@ body {
     margin: 0 auto;
     padding: 0;
     height: 100vh;
+    height: 100dvh; /* Dynamic viewport height */
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    /* Account for safe areas */
+    min-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    min-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+}
+
+/* Enhanced safe area support */
+@supports (height: 100dvh) {
+    .app-container {
+        height: 100dvh;
+        min-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    }
+}
+
+/* Status bar overlay for standalone mode */
+@media (display-mode: standalone) {
+    body {
+        /* Remove safe area padding in standalone mode - handled per element */
+        padding: 0;
+    }
+
+    .app-container {
+        /* Full height in standalone mode */
+        height: 100vh;
+        height: 100dvh;
+        min-height: 100vh;
+        min-height: 100dvh;
+    }
+
+    /* Status bar area styling */
+    .app-header {
+        padding-top: max(env(safe-area-inset-top), 20px);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    /* Bottom navigation safe area */
+    .native-nav {
+        padding-bottom: max(env(safe-area-inset-bottom), 8px);
+    }
+
+    /* FAB positioning in standalone mode */
+    .fab {
+        bottom: calc(80px + max(env(safe-area-inset-bottom), 0px));
+    }
 }
 
 
@@ -2942,14 +3568,69 @@ body {
     right: 0;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(20px);
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(79, 70, 229, 0.1);
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 8px 20px calc(8px + env(safe-area-inset-bottom));
     z-index: 1000;
-    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.12);
     height: 64px;
+    transition: all 0.3s ease;
+}
+
+/* Dynamic navbar that adapts to scroll */
+.native-nav.scrolled {
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Enhanced navigation item with better touch targets */
+.nav-item {
+    position: relative;
+    border-radius: 16px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
+}
+
+/* Improved active state with smooth transitions */
+.nav-item.active {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+    box-shadow:
+        0 4px 12px rgba(79, 70, 229, 0.4),
+        0 2px 4px rgba(79, 70, 229, 0.2);
+    transform: scale(1.05);
+}
+
+.nav-item.active .nav-icon {
+    transform: scale(1.1);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Micro-interactions for better feedback */
+.nav-item:active {
+    transform: scale(0.95);
+}
+
+.nav-item.active:active {
+    transform: scale(1.0);
+}
+
+/* Performance optimizations for mobile */
+.nav-item,
+.fab,
+.btn {
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+/* Smooth tab content transitions */
+.tab-content {
+    transform: translateZ(0);
+    will-change: scroll-position;
 }
 
 /* Legacy bottom-nav support for any remaining references */

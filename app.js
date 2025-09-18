@@ -4075,3 +4075,740 @@ document.addEventListener('keydown', (e) => {
         app.toggleView();
     }
 });
+
+// ===== NATIVE MOBILE INTERACTIONS =====
+class MobileInteractions {
+    constructor() {
+        this.isMobile = window.innerWidth <= 768;
+        this.isTouch = 'ontouchstart' in window;
+        this.pullToRefreshThreshold = 60;
+        this.swipeThreshold = 50;
+        this.vibrationEnabled = 'vibrate' in navigator;
+
+        if (this.isMobile && this.isTouch) {
+            this.initializeMobileInteractions();
+        }
+    }
+
+    initializeMobileInteractions() {
+        this.setupPullToRefresh();
+        this.setupSwipeNavigation();
+        this.setupTouchRipples();
+        this.setupHapticFeedback();
+        this.setupFloatingActionButton();
+        this.setupDynamicNavbar();
+        this.setupLongPressGestures();
+    }
+
+    // Pull-to-refresh functionality
+    setupPullToRefresh() {
+        let startY = 0;
+        let pullDistance = 0;
+        let isPulling = false;
+        let isRefreshing = false;
+
+        const indicator = this.createPullToRefreshIndicator();
+
+        document.addEventListener('touchstart', (e) => {
+            const scrollTop = document.querySelector('.tab-content.active')?.scrollTop || 0;
+            if (scrollTop <= 0) {
+                startY = e.touches[0].clientY;
+                isPulling = true;
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!isPulling || isRefreshing) return;
+
+            const currentY = e.touches[0].clientY;
+            pullDistance = Math.max(0, currentY - startY);
+
+            if (pullDistance > 10) {
+                e.preventDefault();
+                const progress = Math.min(pullDistance / this.pullToRefreshThreshold, 1);
+                this.updatePullIndicator(indicator, progress);
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchend', () => {
+            if (!isPulling) return;
+
+            if (pullDistance > this.pullToRefreshThreshold && !isRefreshing) {
+                this.triggerRefresh(indicator);
+                this.hapticFeedback('medium');
+            }
+
+            this.resetPullIndicator(indicator);
+            isPulling = false;
+            pullDistance = 0;
+        });
+    }
+
+    createPullToRefreshIndicator() {
+        const indicator = document.createElement('div');
+        indicator.className = 'pull-to-refresh-indicator';
+        indicator.innerHTML = '<div class="spinner"></div>';
+        document.body.appendChild(indicator);
+        return indicator;
+    }
+
+    updatePullIndicator(indicator, progress) {
+        indicator.style.opacity = progress;
+        indicator.style.transform = `translateX(-50%) scale(${0.5 + progress * 0.5})`;
+    }
+
+    resetPullIndicator(indicator) {
+        indicator.classList.remove('active');
+        indicator.style.opacity = '0';
+        indicator.style.transform = 'translateX(-50%) scale(0.5)';
+    }
+
+    async triggerRefresh(indicator) {
+        indicator.classList.add('active');
+
+        // Refresh current view
+        if (app.currentView === 'teams') {
+            await app.loadTeams();
+        } else if (app.currentView === 'game' && app.currentGame) {
+            app.renderField();
+        }
+
+        // Show completion after delay
+        setTimeout(() => {
+            this.resetPullIndicator(indicator);
+        }, 1000);
+    }
+
+    // Swipe navigation between tabs
+    setupSwipeNavigation() {
+        let startX = 0;
+        let startY = 0;
+        let isSwipeValid = false;
+
+        const feedback = this.createSwipeFeedback();
+
+        document.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            isSwipeValid = true;
+        }, { passive: true });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!isSwipeValid) return;
+
+            const deltaX = e.touches[0].clientX - startX;
+            const deltaY = e.touches[0].clientY - startY;
+
+            // If vertical movement is too much, cancel swipe
+            if (Math.abs(deltaY) > Math.abs(deltaX) * 2) {
+                isSwipeValid = false;
+                return;
+            }
+
+            // Show swipe feedback
+            if (Math.abs(deltaX) > this.swipeThreshold) {
+                this.showSwipeFeedback(feedback, deltaX > 0 ? 'right' : 'left');
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchend', (e) => {
+            if (!isSwipeValid) return;
+
+            const deltaX = e.changedTouches[0].clientX - startX;
+
+            if (Math.abs(deltaX) > this.swipeThreshold) {
+                this.handleSwipeNavigation(deltaX > 0 ? 'right' : 'left');
+                this.hapticFeedback('light');
+            }
+
+            this.hideSwipeFeedback(feedback);
+            isSwipeValid = false;
+        });
+    }
+
+    createSwipeFeedback() {
+        const left = document.createElement('div');
+        left.className = 'swipe-feedback left';
+        left.textContent = '← Back';
+
+        const right = document.createElement('div');
+        right.className = 'swipe-feedback right';
+        right.textContent = 'Next →';
+
+        document.body.appendChild(left);
+        document.body.appendChild(right);
+
+        return { left, right };
+    }
+
+    showSwipeFeedback(feedback, direction) {
+        feedback[direction].classList.add('show');
+    }
+
+    hideSwipeFeedback(feedback) {
+        feedback.left.classList.remove('show');
+        feedback.right.classList.remove('show');
+    }
+
+    handleSwipeNavigation(direction) {
+        const tabs = ['teams', 'game'];
+        const currentIndex = tabs.indexOf(app.currentView);
+
+        if (direction === 'left' && currentIndex < tabs.length - 1) {
+            app.setActiveTab(tabs[currentIndex + 1]);
+        } else if (direction === 'right' && currentIndex > 0) {
+            app.setActiveTab(tabs[currentIndex - 1]);
+        }
+    }
+
+    // Touch ripple effects
+    setupTouchRipples() {
+        document.addEventListener('touchstart', (e) => {
+            const button = e.target.closest('.btn, .nav-item, .player-item');
+            if (!button) return;
+
+            button.classList.add('ripple');
+            setTimeout(() => button.classList.remove('ripple'), 400);
+        });
+    }
+
+    // Haptic feedback
+    setupHapticFeedback() {
+        // Add haptic feedback to important interactions
+        document.addEventListener('click', (e) => {
+            const target = e.target.closest('.btn.primary, .nav-item, .position-button');
+            if (target) {
+                this.hapticFeedback('light');
+            }
+        });
+    }
+
+    hapticFeedback(intensity = 'light') {
+        if (!this.vibrationEnabled) return;
+
+        const patterns = {
+            light: [10],
+            medium: [20],
+            heavy: [30],
+            success: [10, 10, 10],
+            error: [100, 50, 100]
+        };
+
+        if (patterns[intensity]) {
+            navigator.vibrate(patterns[intensity]);
+        }
+    }
+
+    // Floating Action Button
+    setupFloatingActionButton() {
+        const fab = document.createElement('button');
+        fab.className = 'fab mobile-only';
+        fab.innerHTML = '+';
+        fab.setAttribute('aria-label', 'Quick action');
+
+        fab.addEventListener('click', () => {
+            this.handleFabClick();
+            this.hapticFeedback('medium');
+        });
+
+        document.body.appendChild(fab);
+        this.updateFabIcon();
+
+        // Update FAB icon based on current view
+        const observer = new MutationObserver(() => {
+            this.updateFabIcon();
+        });
+
+        observer.observe(document.querySelector('.app-container'), {
+            attributes: true,
+            subtree: true
+        });
+    }
+
+    updateFabIcon() {
+        const fab = document.querySelector('.fab');
+        if (!fab) return;
+
+        if (app.currentView === 'teams') {
+            fab.innerHTML = '👥';
+            fab.title = 'Create new team';
+        } else if (app.currentView === 'game' && app.currentTeam) {
+            fab.innerHTML = '⚽';
+            fab.title = 'Start new game';
+        } else {
+            fab.style.display = 'none';
+            return;
+        }
+
+        fab.style.display = 'flex';
+    }
+
+    handleFabClick() {
+        if (app.currentView === 'teams') {
+            app.showCreateTeamModal();
+        } else if (app.currentView === 'game' && app.currentTeam) {
+            app.startNewGame();
+        }
+    }
+
+    // Dynamic navbar scroll effects
+    setupDynamicNavbar() {
+        let lastScrollY = 0;
+        const navbar = document.querySelector('.native-nav');
+
+        const handleScroll = () => {
+            const scrollY = document.querySelector('.tab-content.active')?.scrollTop || 0;
+
+            if (scrollY > 50) {
+                navbar?.classList.add('scrolled');
+            } else {
+                navbar?.classList.remove('scrolled');
+            }
+
+            lastScrollY = scrollY;
+        };
+
+        // Add scroll listener to active tab content
+        const observer = new MutationObserver(() => {
+            const activeTab = document.querySelector('.tab-content.active');
+            if (activeTab) {
+                activeTab.addEventListener('scroll', handleScroll, { passive: true });
+            }
+        });
+
+        observer.observe(document.querySelector('.app-container'), {
+            attributes: true,
+            subtree: true
+        });
+    }
+
+    // Enhanced loading states with smooth transitions
+    showLoadingState(element) {
+        if (!element) return;
+
+        element.style.opacity = '0.6';
+        element.style.pointerEvents = 'none';
+        element.style.transform = 'scale(0.98)';
+        element.style.transition = 'all 0.2s ease';
+    }
+
+    hideLoadingState(element) {
+        if (!element) return;
+
+        element.style.opacity = '1';
+        element.style.pointerEvents = 'auto';
+        element.style.transform = 'scale(1)';
+    }
+
+    // Long press gesture detection
+    setupLongPressGestures() {
+        let pressTimer;
+        let isLongPress = false;
+
+        document.addEventListener('touchstart', (e) => {
+            const target = e.target.closest('.player-item, .team-card, .btn');
+            if (!target) return;
+
+            isLongPress = false;
+            pressTimer = setTimeout(() => {
+                isLongPress = true;
+                this.handleLongPress(target, e);
+                this.hapticFeedback('medium');
+            }, 500);
+        });
+
+        document.addEventListener('touchend', () => {
+            clearTimeout(pressTimer);
+        });
+
+        document.addEventListener('touchmove', () => {
+            clearTimeout(pressTimer);
+        });
+    }
+
+    handleLongPress(target, event) {
+        // Show context menu or additional options
+        if (target.classList.contains('player-item')) {
+            this.showPlayerContextMenu(target, event);
+        } else if (target.classList.contains('team-card')) {
+            this.showTeamContextMenu(target, event);
+        }
+    }
+
+    showPlayerContextMenu(playerElement, event) {
+        // Create contextual menu for player actions
+        const menu = document.createElement('div');
+        menu.className = 'context-menu';
+        menu.innerHTML = `
+            <div class="context-menu-item">Edit Player</div>
+            <div class="context-menu-item">Remove from Lineup</div>
+            <div class="context-menu-item">Player Stats</div>
+        `;
+
+        document.body.appendChild(menu);
+        this.positionContextMenu(menu, event);
+
+        setTimeout(() => menu.remove(), 3000);
+    }
+
+    positionContextMenu(menu, event) {
+        const rect = event.target.getBoundingClientRect();
+        menu.style.position = 'fixed';
+        menu.style.top = `${rect.top - 10}px`;
+        menu.style.left = `${rect.left}px`;
+        menu.style.zIndex = '10000';
+    }
+}
+
+// Enhanced scroll behavior management
+class ScrollBehaviorManager {
+    constructor() {
+        this.setupInertialScrolling();
+        this.setupScrollOptimizations();
+    }
+
+    setupInertialScrolling() {
+        // Add momentum scrolling for iOS
+        const scrollContainers = document.querySelectorAll('.tab-content, .modal-content');
+        scrollContainers.forEach(container => {
+            container.style.webkitOverflowScrolling = 'touch';
+            container.style.overflowScrolling = 'touch';
+        });
+    }
+
+    setupScrollOptimizations() {
+        // Passive scroll listeners for better performance
+        document.addEventListener('scroll', this.handleScroll.bind(this), { passive: true });
+        document.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: true });
+    }
+
+    handleScroll() {
+        // Debounced scroll handling
+        if (this.scrollTimeout) {
+            clearTimeout(this.scrollTimeout);
+        }
+
+        this.scrollTimeout = setTimeout(() => {
+            this.updateScrollIndicators();
+        }, 16); // ~60fps
+    }
+
+    updateScrollIndicators() {
+        const scrollContainers = document.querySelectorAll('.tab-content');
+        scrollContainers.forEach(container => {
+            const indicator = container.querySelector('.scroll-indicator');
+            if (!indicator) return;
+
+            const isScrollable = container.scrollHeight > container.clientHeight;
+            const isNearBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 10;
+
+            if (isScrollable && !isNearBottom) {
+                indicator.classList.add('visible');
+            } else {
+                indicator.classList.remove('visible');
+            }
+        });
+    }
+
+    handleTouchStart() {
+        // Prepare for smooth scrolling
+        document.body.style.touchAction = 'manipulation';
+    }
+}
+
+// Performance monitoring and optimization
+class PerformanceOptimizer {
+    constructor() {
+        this.setupLazyLoading();
+        this.setupImageOptimization();
+        this.setupMemoryManagement();
+    }
+
+    setupLazyLoading() {
+        // Lazy load non-critical content
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    this.loadLazyContent(entry.target);
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { rootMargin: '50px' });
+
+        // Observe elements marked for lazy loading
+        document.querySelectorAll('[data-lazy]').forEach(el => {
+            observer.observe(el);
+        });
+    }
+
+    loadLazyContent(element) {
+        // Load content when it comes into view
+        const src = element.dataset.src;
+        if (src) {
+            element.src = src;
+            element.removeAttribute('data-src');
+        }
+    }
+
+    setupImageOptimization() {
+        // Optimize images for mobile
+        const images = document.querySelectorAll('img');
+        images.forEach(img => {
+            img.loading = 'lazy';
+            img.decoding = 'async';
+        });
+    }
+
+    setupMemoryManagement() {
+        // Clean up unused DOM elements periodically
+        setInterval(() => {
+            this.cleanupUnusedElements();
+        }, 30000); // Every 30 seconds
+    }
+
+    cleanupUnusedElements() {
+        // Remove hidden modals and temporary elements
+        const hiddenModals = document.querySelectorAll('.modal[style*="display: none"]');
+        hiddenModals.forEach(modal => {
+            const content = modal.querySelector('.modal-content');
+            if (content && content.children.length === 0) {
+                modal.remove();
+            }
+        });
+    }
+}
+
+// App startup and splash screen management
+class AppStartup {
+    constructor() {
+        this.splashScreen = document.getElementById('splash-screen');
+        this.appContainer = document.querySelector('.app-container');
+        this.minSplashTime = 2000; // Minimum 2 seconds for branding
+        this.startTime = Date.now();
+
+        this.initializeApp();
+    }
+
+    async initializeApp() {
+        try {
+            // Simulate app loading and initialization
+            await Promise.all([
+                this.loadCriticalResources(),
+                this.initializeServices(),
+                this.waitMinimumTime()
+            ]);
+
+            this.hideSplashScreen();
+        } catch (error) {
+            console.error('App initialization failed:', error);
+            this.hideSplashScreen(); // Still show app even if some initialization fails
+        }
+    }
+
+    async loadCriticalResources() {
+        // Preload critical resources
+        const promises = [];
+
+        // Preload Firebase if not already loaded
+        if (!window.firebase) {
+            promises.push(new Promise(resolve => {
+                const checkFirebase = () => {
+                    if (window.firebase) resolve();
+                    else setTimeout(checkFirebase, 100);
+                };
+                checkFirebase();
+            }));
+        }
+
+        return Promise.all(promises);
+    }
+
+    async initializeServices() {
+        // Initialize app services
+        return new Promise(resolve => {
+            // Wait for DOM to be fully ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', resolve);
+            } else {
+                resolve();
+            }
+        });
+    }
+
+    async waitMinimumTime() {
+        const elapsed = Date.now() - this.startTime;
+        const remaining = Math.max(0, this.minSplashTime - elapsed);
+
+        if (remaining > 0) {
+            return new Promise(resolve => setTimeout(resolve, remaining));
+        }
+    }
+
+    hideSplashScreen() {
+        this.splashScreen.classList.add('fade-out');
+
+        setTimeout(() => {
+            this.splashScreen.style.display = 'none';
+            this.appContainer.style.display = 'flex';
+
+            // Trigger app initialization
+            this.startMainApp();
+        }, 500);
+    }
+
+    startMainApp() {
+        // Initialize all app components
+        new MobileInteractions();
+        new ScrollBehaviorManager();
+        new PerformanceOptimizer();
+        new PWAInstallManager();
+
+        // Signal that app is ready
+        window.dispatchEvent(new CustomEvent('appReady'));
+    }
+}
+
+// PWA Installation and App Badge Management
+class PWAInstallManager {
+    constructor() {
+        this.deferredPrompt = null;
+        this.isInstalled = this.checkIfInstalled();
+
+        this.setupInstallPrompt();
+        this.setupAppBadge();
+    }
+
+    checkIfInstalled() {
+        // Check if app is installed
+        return window.matchMedia('(display-mode: standalone)').matches ||
+               window.navigator.standalone === true ||
+               document.referrer.includes('android-app://');
+    }
+
+    setupInstallPrompt() {
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent default mini-infobar
+            e.preventDefault();
+            this.deferredPrompt = e;
+
+            // Show custom install button
+            this.showInstallPrompt();
+        });
+
+        window.addEventListener('appinstalled', () => {
+            this.isInstalled = true;
+            this.hideInstallPrompt();
+            this.showInstallSuccess();
+        });
+    }
+
+    showInstallPrompt() {
+        if (this.isInstalled) return;
+
+        // Create install prompt
+        const installPrompt = document.createElement('div');
+        installPrompt.className = 'install-prompt';
+        installPrompt.innerHTML = `
+            <div class="install-content">
+                <div class="install-icon">⚽</div>
+                <div class="install-text">
+                    <h3>Install SimpleSquad</h3>
+                    <p>Get the full app experience with offline access</p>
+                </div>
+                <div class="install-actions">
+                    <button class="btn primary install-btn">Install</button>
+                    <button class="btn secondary dismiss-btn">Later</button>
+                </div>
+            </div>
+        `;
+
+        // Add event listeners
+        installPrompt.querySelector('.install-btn').addEventListener('click', () => {
+            this.triggerInstall();
+        });
+
+        installPrompt.querySelector('.dismiss-btn').addEventListener('click', () => {
+            installPrompt.remove();
+        });
+
+        document.body.appendChild(installPrompt);
+
+        // Auto-show after delay
+        setTimeout(() => {
+            installPrompt.classList.add('show');
+        }, 100);
+
+        // Auto-dismiss after 10 seconds
+        setTimeout(() => {
+            if (installPrompt.parentNode) {
+                installPrompt.classList.remove('show');
+                setTimeout(() => installPrompt.remove(), 300);
+            }
+        }, 10000);
+    }
+
+    async triggerInstall() {
+        if (!this.deferredPrompt) return;
+
+        this.deferredPrompt.prompt();
+        const { outcome } = await this.deferredPrompt.userChoice;
+
+        if (outcome === 'accepted') {
+            console.log('User accepted install prompt');
+        }
+
+        this.deferredPrompt = null;
+        document.querySelector('.install-prompt')?.remove();
+    }
+
+    hideInstallPrompt() {
+        document.querySelector('.install-prompt')?.remove();
+    }
+
+    showInstallSuccess() {
+        const successToast = document.createElement('div');
+        successToast.className = 'install-success-toast';
+        successToast.innerHTML = `
+            <div class="toast-content">
+                <div class="toast-icon">✅</div>
+                <div class="toast-text">
+                    <strong>App Installed!</strong>
+                    <p>SimpleSquad is now available on your home screen</p>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(successToast);
+
+        setTimeout(() => {
+            successToast.classList.add('show');
+        }, 100);
+
+        setTimeout(() => {
+            successToast.classList.remove('show');
+            setTimeout(() => successToast.remove(), 300);
+        }, 4000);
+    }
+
+    setupAppBadge() {
+        // Setup app badge for notifications (if supported)
+        if ('setAppBadge' in navigator) {
+            this.updateAppBadge();
+        }
+    }
+
+    updateAppBadge(count = 0) {
+        if ('setAppBadge' in navigator) {
+            if (count > 0) {
+                navigator.setAppBadge(count);
+            } else {
+                navigator.clearAppBadge();
+            }
+        }
+    }
+}
+
+// Initialize app startup
+document.addEventListener('DOMContentLoaded', () => {
+    new AppStartup();
+});

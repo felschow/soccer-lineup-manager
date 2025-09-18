@@ -2,12 +2,60 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>⚽ SimpleSquad Manager</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Professional soccer team lineup and game management">
+    <meta name="theme-color" content="#667eea">
+    <meta name="background-color" content="#667eea">
+
+    <!-- Apple Touch Icons -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SimpleSquad">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white'>⚽</text></svg>">
+
+    <!-- Additional Touch Icons for different devices -->
+    <link rel="apple-touch-icon" sizes="120x120" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><circle cx='60' cy='60' r='55' fill='%23667eea'/><text x='60' y='78' font-size='70' text-anchor='middle' fill='white'>⚽</text></svg>">
+    <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><circle cx='90' cy='90' r='80' fill='%23667eea'/><text x='90' y='115' font-size='100' text-anchor='middle' fill='white'>⚽</text></svg>">
+
+    <!-- Splash Screens for iOS -->
+    <meta name="apple-touch-startup-image" content="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 375 812'><defs><linearGradient id='bg' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='%23667eea'/><stop offset='100%' stop-color='%23764ba2'/></linearGradient></defs><rect width='375' height='812' fill='url(%23bg)'/><circle cx='187.5' cy='356' r='60' fill='white' opacity='0.1'/><text x='187.5' y='406' font-size='80' text-anchor='middle' fill='white'>⚽</text><text x='187.5' y='450' font-size='24' text-anchor='middle' fill='white' opacity='0.9'>SimpleSquad</text><text x='187.5' y='480' font-size='16' text-anchor='middle' fill='white' opacity='0.7'>Soccer Team Manager</text></svg>">
+
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileColor" content="#667eea">
+    <meta name="msapplication-TileImage" content="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white'>⚽</text></svg>">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white'>⚽</text></svg>">
+
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="app-container">
+    <!-- App Loading Splash Screen -->
+    <div id="splash-screen" class="splash-screen">
+        <div class="splash-content">
+            <div class="splash-logo">
+                <div class="splash-icon">⚽</div>
+                <div class="splash-pulse"></div>
+            </div>
+            <h1 class="splash-title">SimpleSquad</h1>
+            <p class="splash-subtitle">Soccer Team Manager</p>
+            <div class="splash-loading">
+                <div class="loading-dots">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container" style="display: none;">
 
         <!-- App Header -->
         <header class="app-header">

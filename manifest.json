@@ -1,97 +1,89 @@
 {
-  "name": "SimpleSquad",
+  "name": "SimpleSquad Manager",
   "short_name": "SimpleSquad",
-  "description": "Simple, clean, and beautiful youth soccer team lineup management",
+  "description": "Professional soccer team lineup and game management",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "any",
-  "theme_color": "#0f172a",
-  "background_color": "#f8fafc",
-  "lang": "en-US",
+  "background_color": "#667eea",
+  "theme_color": "#667eea",
+  "orientation": "portrait-primary",
   "scope": "/",
+  "lang": "en-US",
   "categories": ["sports", "productivity", "utilities"],
-  "display_override": ["window-controls-overlay", "minimal-ui"],
   "icons": [
     {
-      "src": "icons/icon-72x72.png",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white'>⚽</text></svg>",
       "sizes": "72x72",
-      "type": "image/png"
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
     },
     {
-      "src": "icons/icon-96x96.png", 
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white'>⚽</text></svg>",
       "sizes": "96x96",
-      "type": "image/png"
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
     },
     {
-      "src": "icons/icon-128x128.png",
-      "sizes": "128x128", 
-      "type": "image/png"
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white'>⚽</text></svg>",
+      "sizes": "128x128",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
     },
     {
-      "src": "icons/icon-144x144.png",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white'>⚽</text></svg>",
       "sizes": "144x144",
-      "type": "image/png"
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
     },
     {
-      "src": "icons/icon-152x152.png",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white'>⚽</text></svg>",
       "sizes": "152x152",
-      "type": "image/png"
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
     },
     {
-      "src": "icons/icon-192x192.png",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white'>⚽</text></svg>",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
     },
     {
-      "src": "icons/icon-384x384.png",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white'>⚽</text></svg>",
       "sizes": "384x384",
-      "type": "image/png"
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
     },
     {
-      "src": "icons/icon-512x512.png",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white'>⚽</text></svg>",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
     }
   ],
   "shortcuts": [
     {
-      "name": "Quick Auto-Fill",
-      "short_name": "Auto-Fill",
-      "description": "Quickly generate lineup with 5-rule algorithm",
-      "url": "/?action=autofill",
+      "name": "Create Team",
+      "short_name": "New Team",
+      "description": "Quickly create a new soccer team",
+      "url": "/?action=create-team",
       "icons": [
         {
-          "src": "icons/shortcut-autofill.png",
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%2310b981'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white'>👥</text></svg>",
           "sizes": "96x96"
         }
       ]
     },
     {
-      "name": "View Stats",
-      "short_name": "Stats", 
-      "description": "Check player statistics and game balance",
-      "url": "/?action=stats",
+      "name": "Start Game",
+      "short_name": "New Game",
+      "description": "Start a new game quickly",
+      "url": "/?action=start-game",
       "icons": [
         {
-          "src": "icons/shortcut-stats.png",
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23ef4444'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white'>🎮</text></svg>",
           "sizes": "96x96"
         }
       ]
-    }
-  ],
-  "prefer_related_applications": false,
-  "edge_side_panel": {
-    "preferred_width": 400
-  },
-  "launch_handler": {
-    "client_mode": "focus-existing"
-  },
-  "protocol_handlers": [
-    {
-      "protocol": "web+simplesquad",
-      "url": "/?lineup=%s"
     }
   ]
 }
