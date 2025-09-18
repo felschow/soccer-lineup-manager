@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /_private/
+Disallow: /admin/
+
+# Sitemap location (update with your actual domain)
+Sitemap: https://yourdomain.com/sitemap.xml
+
+# Security: Prevent crawling of sensitive paths
+Disallow: /*.json$
+Disallow: /*?*
+Disallow: /config.js
+Disallow: /.env
+Disallow: /error-handler.js

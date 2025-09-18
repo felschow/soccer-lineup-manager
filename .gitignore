@@ -116,3 +116,9 @@ out/
 .cache/
 *.tmp
 *.temp
+
+# Firebase
+.firebase/
+firebase-debug.log
+ui-debug.log
+.firebaserc.local

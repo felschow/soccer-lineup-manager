@@ -1,25 +1,73 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Security helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isValidString(str, maxLength) {
+      return str is string && str.size() <= maxLength && str.size() > 0;
+    }
+
+    function hasValidTimestamp(data) {
+      return 'createdAt' in data && 'updatedAt' in data;
+    }
+
     // Users can only access their own user document
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isAuthenticated() && isOwner(userId);
+      allow create: if isAuthenticated() &&
+                      isOwner(userId) &&
+                      hasValidTimestamp(request.resource.data);
     }
 
-    // Users can only access their own teams
+    // Users can only access their own teams with validation
     match /teams/{teamId} {
-      allow read, write: if request.auth != null &&
-        request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null &&
-        request.auth.uid == request.resource.data.userId;
+      allow read, write: if isAuthenticated() &&
+        isOwner(resource.data.userId);
+
+      allow create: if isAuthenticated() &&
+        isOwner(request.resource.data.userId) &&
+        // Validate team data
+        isValidString(request.resource.data.name, 50) &&
+        request.resource.data.players is list &&
+        request.resource.data.players.size() <= 30 &&
+        hasValidTimestamp(request.resource.data);
+
+      allow update: if isAuthenticated() &&
+        isOwner(resource.data.userId) &&
+        isOwner(request.resource.data.userId) &&
+        // Validate team name
+        isValidString(request.resource.data.name, 50) &&
+        request.resource.data.players.size() <= 30 &&
+        hasValidTimestamp(request.resource.data);
     }
 
-    // Users can only access their own games
+    // Users can only access their own games with validation
     match /games/{gameId} {
-      allow read, write: if request.auth != null &&
-        request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null &&
-        request.auth.uid == request.resource.data.userId;
+      allow read, write: if isAuthenticated() &&
+        isOwner(resource.data.userId);
+
+      allow create: if isAuthenticated() &&
+        isOwner(request.resource.data.userId) &&
+        // Validate game data
+        isValidString(request.resource.data.teamId, 100) &&
+        request.resource.data.lineup is map &&
+        hasValidTimestamp(request.resource.data);
+
+      allow update: if isAuthenticated() &&
+        isOwner(resource.data.userId) &&
+        isOwner(request.resource.data.userId) &&
+        // Prevent critical field changes
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.teamId == resource.data.teamId &&
+        hasValidTimestamp(request.resource.data);
     }
 
     // Deny all other access

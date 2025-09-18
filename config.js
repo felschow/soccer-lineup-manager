@@ -24,40 +24,35 @@ class Config {
     }
 
     getFirebaseConfig() {
-        // Firebase config with environment-specific settings
-        const configs = {
-            development: {
-                apiKey: "AIzaSyBIhPmJfQKiay3ymDZYetK8erAlWBF0kC0",
-                authDomain: "simplesquad-d2b96.firebaseapp.com",
-                projectId: "simplesquad-d2b96",
-                storageBucket: "simplesquad-d2b96.firebasestorage.app",
-                messagingSenderId: "838946254361",
-                appId: "1:838946254361:web:29618041ce08a45777c488",
-                measurementId: "G-Z3DSVQ2E3K"
-            },
-            staging: {
-                // Use same config for staging (you can create a separate Firebase project later)
-                apiKey: "AIzaSyBIhPmJfQKiay3ymDZYetK8erAlWBF0kC0",
-                authDomain: "simplesquad-d2b96.firebaseapp.com",
-                projectId: "simplesquad-d2b96",
-                storageBucket: "simplesquad-d2b96.firebasestorage.app",
-                messagingSenderId: "838946254361",
-                appId: "1:838946254361:web:29618041ce08a45777c488",
-                measurementId: "G-Z3DSVQ2E3K"
-            },
-            production: {
-                // Production config - same for now, but you might want separate project
-                apiKey: "AIzaSyBIhPmJfQKiay3ymDZYetK8erAlWBF0kC0",
-                authDomain: "simplesquad-d2b96.firebaseapp.com",
-                projectId: "simplesquad-d2b96",
-                storageBucket: "simplesquad-d2b96.firebasestorage.app",
-                messagingSenderId: "838946254361",
-                appId: "1:838946254361:web:29618041ce08a45777c488",
-                measurementId: "G-Z3DSVQ2E3K"
-            }
+        // Secure Firebase config using environment variables or build-time injection
+        const defaultConfig = {
+            // Default/fallback for development - will be overridden in production
+            apiKey: "AIzaSyBIhPmJfQKiay3ymDZYetK8erAlWBF0kC0",
+            authDomain: "simplesquad-d2b96.firebaseapp.com",
+            projectId: "simplesquad-d2b96",
+            storageBucket: "simplesquad-d2b96.firebasestorage.app",
+            messagingSenderId: "838946254361",
+            appId: "1:838946254361:web:29618041ce08a45777c488",
+            measurementId: "G-Z3DSVQ2E3K"
         };
 
-        return configs[this.environment] || configs.development;
+        // In production, these will be injected by build process or environment variables
+        const productionConfig = {
+            apiKey: window.FIREBASE_API_KEY || defaultConfig.apiKey,
+            authDomain: window.FIREBASE_AUTH_DOMAIN || defaultConfig.authDomain,
+            projectId: window.FIREBASE_PROJECT_ID || defaultConfig.projectId,
+            storageBucket: window.FIREBASE_STORAGE_BUCKET || defaultConfig.storageBucket,
+            messagingSenderId: window.FIREBASE_MESSAGING_SENDER_ID || defaultConfig.messagingSenderId,
+            appId: window.FIREBASE_APP_ID || defaultConfig.appId,
+            measurementId: window.FIREBASE_MEASUREMENT_ID || defaultConfig.measurementId
+        };
+
+        // Use production config if in production environment
+        if (this.isProduction()) {
+            return productionConfig;
+        }
+
+        return defaultConfig;
     }
 
     // Feature flags

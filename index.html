@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>⚽ SimpleSquad Manager</title>
 
+    <!-- Security Meta Tags -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+
     <!-- PWA Meta Tags -->
     <meta name="description" content="Professional soccer team lineup and game management">
     <meta name="theme-color" content="#667eea">
@@ -34,6 +41,12 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white'>⚽</text></svg>">
 
     <link rel="stylesheet" href="styles.css">
+
+    <!-- Load configuration and security first -->
+    <script src="production-config.js"></script>
+    <script src="config.js"></script>
+    <script src="logger.js"></script>
+    <script src="security-utils.js"></script>
 </head>
 <body>
     <!-- App Loading Splash Screen -->
