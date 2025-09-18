@@ -1,38 +1,11 @@
-// Production Environment Configuration
-// This file will be loaded in production to inject environment variables
-
+// Production Environment Detection
 (function() {
     'use strict';
 
-    // Production environment detection
-    const isProduction = window.location.hostname !== 'localhost' &&
-                        window.location.hostname !== '127.0.0.1' &&
-                        !window.location.hostname.includes('github.io');
-
-    if (isProduction) {
-        // Inject Firebase config from environment
-        // These will be replaced during build/deployment
-        window.FIREBASE_API_KEY = 'AIzaSyBIhPmJfQKiay3ymDZYetK8erAlWBF0kC0';
-        window.FIREBASE_AUTH_DOMAIN = 'simplesquad-d2b96.firebaseapp.com';
-        window.FIREBASE_PROJECT_ID = 'simplesquad-d2b96';
-        window.FIREBASE_STORAGE_BUCKET = 'simplesquad-d2b96.firebasestorage.app';
-        window.FIREBASE_MESSAGING_SENDER_ID = '838946254361';
-        window.FIREBASE_APP_ID = '1:838946254361:web:29618041ce08a45777c488';
-        window.FIREBASE_MEASUREMENT_ID = 'G-Z3DSVQ2E3K';
-
-        // Production feature flags
+    // Wait for config to load, then set production flags
+    if (window.appConfig && window.appConfig.isProduction()) {
         window.PRODUCTION_MODE = true;
         window.DEBUG_MODE = false;
-        window.ANALYTICS_ENABLED = false; // Keep disabled for now
-        window.ERROR_REPORTING_ENABLED = true;
-
-        // Performance optimizations removed - causing CSP issues
-        // Resources will load naturally as needed
-
-        // Security: Remove development helpers
-        delete window.eval;
-        delete window._originalConsole;
-
         console.log('🔥 SimpleSquad Production Mode Active');
     }
 })();
