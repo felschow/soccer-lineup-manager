@@ -16,6 +16,8 @@ class Config {
             return 'development';
         } else if (hostname.includes('staging') || hostname.includes('test')) {
             return 'staging';
+        } else if (hostname.includes('github.io')) {
+            return 'production';
         } else {
             return 'production';
         }
@@ -75,7 +77,7 @@ class Config {
             },
             production: {
                 enableDebugLogging: false,
-                enableAnalytics: true,
+                enableAnalytics: false, // Disable for GitHub Pages to avoid errors
                 enableErrorReporting: true,
                 showDevTools: false
             }

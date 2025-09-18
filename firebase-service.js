@@ -22,6 +22,13 @@ class FirebaseService {
             return;
         }
 
+        // Additional check for Firebase readiness
+        if (!window.firebaseAuth || !window.firebaseDb) {
+            console.log('Firebase services not ready, retrying...');
+            setTimeout(() => this.initializeAuthListener(), 100);
+            return;
+        }
+
         // Set up auth state listener
         this.auth.onAuthStateChanged((user) => {
             this.currentUser = user;

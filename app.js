@@ -120,14 +120,27 @@ class SoccerApp {
     initializeAuth() {
         try {
             // Wait for Firebase service to be available
-            if (typeof window.firebaseService === 'undefined' || !window.firebaseAuth) {
+            if (typeof window.firebaseService === 'undefined' || !window.firebaseAuth || !window.firebaseDb) {
+                console.log('Waiting for Firebase services...');
+                setTimeout(() => this.initializeAuth(), 200);
+                return;
+            }
+
+            // Additional check for Firebase readiness
+            if (!window.firebaseService.auth || !window.firebaseService.db) {
+                console.log('Firebase service not fully initialized...');
                 setTimeout(() => this.initializeAuth(), 200);
                 return;
             }
 
         } catch (error) {
             console.error('Error during Firebase initialization check:', error);
-            setTimeout(() => this.initializeAuth(), 500);
+            // Show user-friendly error instead of infinite retry
+            if (window.errorHandler) {
+                window.errorHandler.reportCustomError('Initialization Error',
+                    'Failed to connect to database services', { error: error.message });
+            }
+            setTimeout(() => this.initializeAuth(), 1000);
             return;
         }
 
