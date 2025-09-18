@@ -9,6 +9,20 @@
 <body>
     <div class="app-container">
 
+        <!-- App Header -->
+        <header class="app-header">
+            <div class="app-title">
+                <span class="app-icon">⚽</span>
+                <h1>SimpleSquad Manager</h1>
+            </div>
+            <button id="userIcon" class="user-icon-btn" style="display: none;" title="User Menu">
+                <div class="user-icon-avatar">
+                    <img id="userIconAvatar" src="" alt="User" onerror="this.style.display='none'">
+                    <span id="userIconInitials" class="user-icon-initials"></span>
+                </div>
+            </button>
+        </header>
+
         <!-- Main Content Area -->
         <main class="content-area">
             
@@ -17,10 +31,6 @@
                 <section class="tab-section">
                     <div class="section-header">
                         <h2>Team Management</h2>
-                        <button id="createTeamBtn" class="btn primary">
-                            <span class="btn-icon">🚀</span>
-                            <span class="btn-text">Create Team</span>
-                        </button>
                     </div>
                     <div id="teamsList" class="teams-list">
                         <p class="empty-state">No teams yet. Create your first team!</p>
@@ -406,6 +416,123 @@
         </section>
 
         <!-- Modals -->
+
+        <!-- Authentication Modal -->
+        <div id="authModal" class="modal" style="display: block;">
+            <div class="modal-content auth-modal">
+                <div class="auth-header">
+                    <div class="auth-logo">
+                        <span class="logo-icon">⚽</span>
+                        <h2>SimpleSquad Manager</h2>
+                        <p>Your cloud-based soccer team management solution</p>
+                    </div>
+                </div>
+
+                <div class="auth-forms-container">
+                    <!-- Sign In Form -->
+                    <div id="signInForm" class="auth-form active">
+                        <h3>Welcome Back</h3>
+                        <p class="auth-subtitle">Sign in to access your teams and games from any device</p>
+
+                        <button id="googleSignInBtn" class="btn auth-google">
+                            <span class="google-icon">🔗</span>
+                            Continue with Google
+                        </button>
+
+                        <div class="auth-divider">
+                            <span>or</span>
+                        </div>
+
+                        <form id="emailSignInForm">
+                            <div class="form-group">
+                                <label for="signInEmail">Email</label>
+                                <input type="email" id="signInEmail" required placeholder="your@email.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="signInPassword">Password</label>
+                                <input type="password" id="signInPassword" required placeholder="Enter your password">
+                            </div>
+                            <button type="submit" class="btn primary auth-submit">Sign In</button>
+                        </form>
+
+                        <div class="auth-switch">
+                            <p>Don't have an account? <button id="showSignUpBtn" class="link-btn">Sign up</button></p>
+                        </div>
+                    </div>
+
+                    <!-- Sign Up Form -->
+                    <div id="signUpForm" class="auth-form">
+                        <h3>Create Account</h3>
+                        <p class="auth-subtitle">Join thousands of coaches managing their teams in the cloud</p>
+
+                        <button id="googleSignUpBtn" class="btn auth-google">
+                            <span class="google-icon">🔗</span>
+                            Continue with Google
+                        </button>
+
+                        <div class="auth-divider">
+                            <span>or</span>
+                        </div>
+
+                        <form id="emailSignUpForm">
+                            <div class="form-group">
+                                <label for="signUpEmail">Email</label>
+                                <input type="email" id="signUpEmail" required placeholder="your@email.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="signUpPassword">Password</label>
+                                <input type="password" id="signUpPassword" required placeholder="Create a password" minlength="6">
+                            </div>
+                            <div class="form-group">
+                                <label for="confirmPassword">Confirm Password</label>
+                                <input type="password" id="confirmPassword" required placeholder="Confirm your password">
+                            </div>
+                            <button type="submit" class="btn primary auth-submit">Create Account</button>
+                        </form>
+
+                        <div class="auth-switch">
+                            <p>Already have an account? <button id="showSignInBtn" class="link-btn">Sign in</button></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="authLoading" class="auth-loading" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <p>Signing you in...</p>
+                </div>
+
+                <!-- Error Display -->
+                <div id="authError" class="auth-error" style="display: none;">
+                    <p class="error-message"></p>
+                    <button id="authErrorClose" class="btn secondary">Try Again</button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- User Menu (appears when signed in) -->
+        <div id="userMenu" class="user-menu" style="display: none;">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <img id="userAvatar" src="" alt="User Avatar" onerror="this.style.display='none'">
+                    <span id="userInitials" class="user-initials"></span>
+                </div>
+                <div class="user-details">
+                    <span id="userDisplayName" class="user-name">Loading...</span>
+                    <span id="userEmail" class="user-email">Loading...</span>
+                </div>
+            </div>
+            <div class="user-actions">
+                <button id="accountSettingsBtn" class="btn secondary user-action">
+                    ⚙️ Account Settings
+                </button>
+                <button id="signOutBtn" class="btn secondary user-action">
+                    🚪 Sign Out
+                </button>
+            </div>
+        </div>
+
         <!-- Game Creation Modal -->
         <div id="gameModal" class="modal" style="display: none;">
             <div class="modal-content">
@@ -493,6 +620,37 @@
         <!-- Floating Action Button removed - redundant with Complete Game button in header -->
     </div>
 
+    <!-- Configuration -->
+    <script src="config.js"></script>
+
+    <!-- Error Handling -->
+    <script src="error-handler.js"></script>
+
+    <!-- Firebase SDK -->
+    <!-- Firebase SDK v9 -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Initialize Firebase with environment-specific configuration
+        const firebaseConfig = window.appConfig.firebaseConfig;
+        firebase.initializeApp(firebaseConfig);
+
+        // Initialize Analytics only in production
+        if (window.appConfig.getFeatureFlags().enableAnalytics) {
+            firebase.analytics();
+        }
+
+        // Make Firebase services available globally
+        window.firebaseApp = firebase.app();
+        window.firebaseAuth = firebase.auth();
+        window.firebaseDb = firebase.firestore();
+
+        console.log('Firebase initialized successfully');
+    </script>
+
+    <script src="firebase-service.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

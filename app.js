@@ -63,8 +63,7 @@ class SoccerApp {
             }
         };
         
-        // Initialize app
-        this.init();
+        // Note: init() will be called asynchronously after DOM is ready
     }
     
     // ===== DEVICE DETECTION FOR MOBILE VS DESKTOP PROTECTION =====
@@ -101,21 +100,545 @@ class SoccerApp {
         return null;
     }
     
-    init() {
-        
+    async init() {
+
         // Add device classes to body for CSS targeting
         document.body.classList.add(this.isMobile ? 'mobile-device' : 'desktop-device');
         if (this.isTouch) document.body.classList.add('touch-device');
-        
-        this.loadData();
+
+        // Initialize authentication
+        this.initializeAuth();
+
+        await this.loadData();
         this.setupEventListeners();
         this.renderTeams();
         this.updateUI();
         this.initializeNavigation();
     }
-    
+
+    // ===== AUTHENTICATION =====
+    initializeAuth() {
+        try {
+            // Wait for Firebase service to be available
+            if (typeof window.firebaseService === 'undefined' || !window.firebaseAuth) {
+                setTimeout(() => this.initializeAuth(), 200);
+                return;
+            }
+
+        } catch (error) {
+            console.error('Error during Firebase initialization check:', error);
+            setTimeout(() => this.initializeAuth(), 500);
+            return;
+        }
+
+        // Set up authentication event listeners
+        window.addEventListener('userSignedIn', (event) => {
+            this.onUserSignedIn(event.detail);
+        });
+
+        window.addEventListener('userSignedOut', () => {
+            this.onUserSignedOut();
+        });
+
+        // Set up auth form event listeners
+        this.setupAuthEventListeners();
+
+        // Check initial auth state
+        if (window.firebaseService.isAuthenticated()) {
+            this.hideAuthModal();
+            this.showUserMenu();
+            this.loadCloudData();
+        } else {
+            this.showAuthModal();
+        }
+    }
+
+    setupAuthEventListeners() {
+
+        // Use event delegation for form toggles
+        document.addEventListener('click', (e) => {
+
+            // Sign up form toggle
+            if (e.target.id === 'showSignUpBtn' || e.target.closest('#showSignUpBtn')) {
+                this.switchAuthForm('signUp');
+            }
+
+            // Sign in form toggle
+            if (e.target.id === 'showSignInBtn' || e.target.closest('#showSignInBtn')) {
+                this.switchAuthForm('signIn');
+            }
+        });
+
+        // Google sign in buttons
+        const googleSignInBtn = document.getElementById('googleSignInBtn');
+        const googleSignUpBtn = document.getElementById('googleSignUpBtn');
+
+        if (googleSignInBtn) {
+            googleSignInBtn.addEventListener('click', () => this.handleGoogleSignIn());
+        }
+
+        if (googleSignUpBtn) {
+            googleSignUpBtn.addEventListener('click', () => this.handleGoogleSignIn());
+        }
+
+        // Email forms
+        const emailSignInForm = document.getElementById('emailSignInForm');
+        const emailSignUpForm = document.getElementById('emailSignUpForm');
+
+        if (emailSignInForm) {
+            emailSignInForm.addEventListener('submit', (e) => this.handleEmailSignIn(e));
+        }
+
+        if (emailSignUpForm) {
+            emailSignUpForm.addEventListener('submit', (e) => this.handleEmailSignUp(e));
+        }
+
+        // User menu
+        const signOutBtn = document.getElementById('signOutBtn');
+        if (signOutBtn) {
+            signOutBtn.addEventListener('click', () => this.handleSignOut());
+        }
+
+        // User icon click to toggle menu
+        const userIcon = document.getElementById('userIcon');
+        if (userIcon) {
+            userIcon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleUserMenu();
+            });
+        }
+
+        // Auth error handling
+        const authErrorClose = document.getElementById('authErrorClose');
+        if (authErrorClose) {
+            authErrorClose.addEventListener('click', () => this.hideAuthError());
+        }
+
+        // Click outside user menu to close
+        document.addEventListener('click', (e) => {
+            const userMenu = document.getElementById('userMenu');
+            const userIcon = document.getElementById('userIcon');
+
+            if (userMenu && userMenu.style.display !== 'none' &&
+                !userMenu.contains(e.target) &&
+                !userIcon.contains(e.target)) {
+                userMenu.style.display = 'none';
+            }
+        });
+    }
+
+    switchAuthForm(formType) {
+        const signInForm = document.getElementById('signInForm');
+        const signUpForm = document.getElementById('signUpForm');
+
+        if (!signInForm || !signUpForm) return;
+
+        // Remove active class from both forms
+        signInForm.classList.remove('active');
+        signUpForm.classList.remove('active');
+
+        // Add active class to target form
+        if (formType === 'signUp') {
+            signUpForm.classList.add('active');
+
+            // On mobile/small screen, scroll to show the sign up form
+            if (window.innerWidth <= 768) {
+                setTimeout(() => {
+                    const authModal = document.querySelector('.auth-modal');
+                    if (authModal && signUpForm) {
+                        // Scroll to the bottom of the modal to show sign up form
+                        authModal.scrollTo({
+                            top: authModal.scrollHeight,
+                            behavior: 'smooth'
+                        });
+                    }
+                }, 200);
+            }
+        } else {
+            signInForm.classList.add('active');
+
+            // On mobile/small screen, scroll to the new form
+            if (window.innerWidth <= 768) {
+                setTimeout(() => {
+                    const authModal = document.querySelector('.auth-modal');
+                    if (authModal) {
+                        authModal.scrollTo({
+                            top: 0,
+                            behavior: 'smooth'
+                        });
+                    }
+                }, 200);
+            }
+        }
+    }
+
+    async handleGoogleSignIn() {
+        this.showAuthLoading();
+
+        const result = await window.firebaseService.signInWithGoogle();
+
+        if (result.success) {
+            // Success is handled by the auth state listener
+        } else {
+            this.showAuthError(result.error);
+            if (window.errorHandler) {
+                window.errorHandler.reportCustomError('Authentication Error',
+                    'Google sign in failed', { error: result.error });
+            }
+        }
+
+        this.hideAuthLoading();
+    }
+
+    async handleEmailSignIn(event) {
+        event.preventDefault();
+        this.showAuthLoading();
+
+        const email = document.getElementById('signInEmail').value;
+        const password = document.getElementById('signInPassword').value;
+
+        const result = await window.firebaseService.signInWithEmail(email, password);
+
+        if (result.success) {
+            // Success is handled by the auth state listener
+        } else {
+            this.showAuthError(result.error);
+        }
+    }
+
+    async handleEmailSignUp(event) {
+        event.preventDefault();
+
+        const email = document.getElementById('signUpEmail').value;
+        const password = document.getElementById('signUpPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        if (password !== confirmPassword) {
+            this.showAuthError('Passwords do not match');
+            return;
+        }
+
+        if (password.length < 6) {
+            this.showAuthError('Password must be at least 6 characters');
+            return;
+        }
+
+        this.showAuthLoading();
+
+        const result = await window.firebaseService.signUpWithEmail(email, password);
+
+        if (result.success) {
+            // Success is handled by the auth state listener
+        } else {
+            this.showAuthError(result.error);
+        }
+    }
+
+    async handleSignOut() {
+        const result = await window.firebaseService.signOut();
+
+        if (result.success) {
+            // Sign out is handled by the auth state listener
+        } else {
+            console.error('Sign out error:', result.error);
+        }
+    }
+
+    onUserSignedIn(user) {
+        this.hideAuthModal();
+        this.showUserMenu();
+        this.updateUserDisplay(user);
+        this.loadCloudData();
+    }
+
+    onUserSignedOut() {
+        this.hideUserMenu();
+        this.showAuthModal();
+        this.clearLocalData();
+    }
+
+    updateUserDisplay(user) {
+        const userDisplayName = document.getElementById('userDisplayName');
+        const userEmail = document.getElementById('userEmail');
+        const userAvatar = document.getElementById('userAvatar');
+        const userInitials = document.getElementById('userInitials');
+
+        if (userDisplayName) {
+            userDisplayName.textContent = user.displayName || user.email.split('@')[0];
+        }
+
+        if (userEmail) {
+            userEmail.textContent = user.email;
+        }
+
+        if (user.photoURL && userAvatar) {
+            userAvatar.src = user.photoURL;
+            userAvatar.style.display = 'block';
+            userInitials.style.display = 'none';
+        } else if (userInitials) {
+            const name = user.displayName || user.email;
+            const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+            userInitials.textContent = initials;
+            userInitials.style.display = 'flex';
+            if (userAvatar) userAvatar.style.display = 'none';
+        }
+    }
+
+    // Auth UI Management
+    showAuthModal() {
+        const authModal = document.getElementById('authModal');
+        if (authModal) {
+            authModal.style.display = 'flex';
+            this.hideAuthLoading();
+            this.hideAuthError();
+        }
+    }
+
+    hideAuthModal() {
+        const authModal = document.getElementById('authModal');
+        if (authModal) {
+            authModal.style.display = 'none';
+        }
+    }
+
+    showUserMenu() {
+        const userMenu = document.getElementById('userMenu');
+        if (userMenu) {
+            userMenu.style.display = 'block';
+        }
+    }
+
+    hideUserMenu() {
+        const userMenu = document.getElementById('userMenu');
+        if (userMenu) {
+            userMenu.style.display = 'none';
+        }
+    }
+
+    showAuthLoading() {
+        const authLoading = document.getElementById('authLoading');
+        const signInForm = document.getElementById('signInForm');
+        const signUpForm = document.getElementById('signUpForm');
+        const authError = document.getElementById('authError');
+
+        if (authLoading) authLoading.style.display = 'block';
+        if (signInForm) signInForm.style.display = 'none';
+        if (signUpForm) signUpForm.style.display = 'none';
+        if (authError) authError.style.display = 'none';
+    }
+
+    hideAuthLoading() {
+        const authLoading = document.getElementById('authLoading');
+        const signInForm = document.getElementById('signInForm');
+
+        if (authLoading) authLoading.style.display = 'none';
+        if (signInForm) signInForm.style.display = 'block';
+    }
+
+    showAuthError(message) {
+        const authError = document.getElementById('authError');
+        const errorMessage = authError?.querySelector('.error-message');
+        const authLoading = document.getElementById('authLoading');
+        const signInForm = document.getElementById('signInForm');
+        const signUpForm = document.getElementById('signUpForm');
+
+        if (authError && errorMessage) {
+            errorMessage.textContent = message;
+            authError.style.display = 'block';
+        }
+
+        if (authLoading) authLoading.style.display = 'none';
+        if (signInForm) signInForm.style.display = 'none';
+        if (signUpForm) signUpForm.style.display = 'none';
+    }
+
+    hideAuthError() {
+        const authError = document.getElementById('authError');
+        const signInForm = document.getElementById('signInForm');
+
+        if (authError) authError.style.display = 'none';
+        if (signInForm) signInForm.style.display = 'block';
+    }
+
+    async loadCloudData() {
+        try {
+            // Load teams from Firestore
+            const cloudTeams = await window.firebaseService.getTeams();
+            if (cloudTeams.length > 0) {
+                this.teams = cloudTeams;
+            }
+
+            // Load current game from Firestore
+            const currentGame = await window.firebaseService.getCurrentGame();
+            if (currentGame) {
+                this.currentGame = currentGame;
+                this.currentTeam = this.teams.find(t => t.id === currentGame.teamId);
+            }
+
+            // Refresh UI with cloud data
+            this.renderTeams();
+            this.updateUI();
+            this.initializeNavigation();
+
+        } catch (error) {
+            console.error('Error loading cloud data:', error);
+            // Fall back to local data if cloud fails
+            this.loadData();
+        }
+    }
+
+    clearLocalData() {
+        // Clear local state
+        this.teams = [];
+        this.currentTeam = null;
+        this.currentGame = null;
+        this.currentPeriod = 1;
+        this.historicalGame = null;
+        this.isViewingHistory = false;
+
+        // Clear localStorage as backup
+        localStorage.removeItem('soccer_teams');
+        localStorage.removeItem('soccer_current_game');
+        localStorage.removeItem('soccer_completed_games');
+
+        // Reset UI
+        this.renderTeams();
+        this.updateUI();
+        this.switchTab('teamsTab');
+    }
+
+    async handleSignOut() {
+        try {
+            // Sign out from Firebase
+            const result = await window.firebaseService.signOut();
+
+            if (result.success) {
+                // The userSignedOut event will be triggered automatically by Firebase
+                // which will call handleUserSignedOut() to clear data and update UI
+            } else {
+                console.error('Sign out error:', result.error);
+                this.showErrorMessage('Failed to sign out. Please try again.');
+            }
+        } catch (error) {
+            console.error('Sign out error:', error);
+            this.showErrorMessage('Failed to sign out. Please try again.');
+        }
+    }
+
+    async onUserSignedIn(user) {
+
+        try {
+            // Show user icon, hide auth modal
+            const userIcon = document.getElementById('userIcon');
+            const authModal = document.getElementById('authModal');
+
+            if (userIcon) userIcon.style.display = 'block';
+            if (authModal) authModal.style.display = 'none';
+        } catch (error) {
+            console.error('Error updating UI elements:', error);
+        }
+
+        try {
+            // Update user info in menu
+            const userDisplayName = document.getElementById('userDisplayName');
+            const userEmail = document.getElementById('userEmail');
+
+            if (userDisplayName) userDisplayName.textContent = user.displayName || user.email;
+            if (userEmail) userEmail.textContent = user.email;
+
+            // Create initials from email or display name
+            const name = user.displayName || user.email;
+            const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+            // Set user avatar or initials in both menu and icon
+            const menuAvatar = document.getElementById('userAvatar');
+            const menuInitials = document.getElementById('userInitials');
+            const iconAvatar = document.getElementById('userIconAvatar');
+            const iconInitials = document.getElementById('userIconInitials');
+
+            if (user.photoURL) {
+                // Set photo for both menu and icon
+                if (menuAvatar) {
+                    menuAvatar.src = user.photoURL;
+                    menuAvatar.style.display = 'block';
+                }
+                if (menuInitials) menuInitials.style.display = 'none';
+
+                if (iconAvatar) {
+                    iconAvatar.src = user.photoURL;
+                    iconAvatar.style.display = 'block';
+                }
+                if (iconInitials) iconInitials.style.display = 'none';
+            } else {
+                // Set initials for both menu and icon
+                if (menuAvatar) menuAvatar.style.display = 'none';
+                if (menuInitials) {
+                    menuInitials.style.display = 'flex';
+                    menuInitials.textContent = initials;
+                }
+
+                if (iconAvatar) iconAvatar.style.display = 'none';
+                if (iconInitials) {
+                    iconInitials.style.display = 'flex';
+                    iconInitials.textContent = initials;
+                }
+            }
+        } catch (error) {
+            console.error('Error updating user display:', error);
+        }
+
+        // Load user's cloud data
+        try {
+            await this.loadCloudData();
+        } catch (error) {
+            console.error('Error loading cloud data:', error);
+        }
+    }
+
+    onUserSignedOut() {
+
+        // Hide user icon and menu
+        document.getElementById('userIcon').style.display = 'none';
+        document.getElementById('userMenu').style.display = 'none';
+
+        // Show authentication modal
+        document.getElementById('authModal').style.display = 'block';
+
+        // Clear user data and switch to localStorage
+        this.handleUserSignedOut();
+    }
+
+    handleUserSignedOut() {
+        // Clear all user data
+        this.clearLocalData();
+
+        // Re-render teams (will show empty state for non-authenticated user)
+        this.renderTeams();
+
+        // Switch back to teams tab
+        this.switchTab('teamsTab');
+
+        // Update UI
+        this.updateUI();
+    }
+
+    toggleUserMenu() {
+        try {
+            const userMenu = document.getElementById('userMenu');
+            if (userMenu) {
+                if (userMenu.style.display === 'none' || userMenu.style.display === '') {
+                    userMenu.style.display = 'flex';
+                } else {
+                    userMenu.style.display = 'none';
+                }
+            }
+        } catch (error) {
+            console.error('Error toggling user menu:', error);
+        }
+    }
+
     // ===== TAB NAVIGATION =====
-    switchTab(targetTab) {
+    async switchTab(targetTab) {
         // Hide all tab contents
         document.querySelectorAll('.tab-content').forEach(content => {
             content.classList.remove('active');
@@ -152,7 +675,7 @@ class SoccerApp {
             this.updateExportButtonVisibility();
             this.updateTeamHeader();
         } else if (targetTab === 'historyTab') {
-            this.renderGameHistory();
+            await this.renderGameHistory();
         } else if (targetTab === 'timerTab') {
             this.initializeGameTimer();
         }
@@ -236,26 +759,73 @@ class SoccerApp {
     }
     
     // ===== DATA PERSISTENCE =====
-    loadData() {
+    async loadData() {
+        // For authenticated users, use Firebase; otherwise use localStorage as fallback
+        if (window.firebaseService && window.firebaseService.isAuthenticated()) {
+            try {
+                // Load teams from Firebase
+                this.teams = await window.firebaseService.getTeams();
+
+                // Load current game from Firebase
+                const currentGame = await window.firebaseService.getCurrentGame();
+                if (currentGame) {
+                    this.currentGame = currentGame;
+                    // Find the team for this game
+                    this.currentTeam = this.teams.find(t => t.id === this.currentGame.teamId);
+                }
+            } catch (error) {
+                console.error('Error loading cloud data:', error);
+                // Fallback to localStorage
+                this.loadLocalData();
+            }
+        } else {
+            // Load from localStorage for non-authenticated users
+            this.loadLocalData();
+        }
+    }
+
+    loadLocalData() {
         try {
             const savedTeams = localStorage.getItem('soccer_teams');
             const savedGame = localStorage.getItem('soccer_current_game');
-            
+
             if (savedTeams) {
                 this.teams = JSON.parse(savedTeams);
             }
-            
+
             if (savedGame) {
                 this.currentGame = JSON.parse(savedGame);
                 // Find the team for this game
                 this.currentTeam = this.teams.find(t => t.id === this.currentGame.teamId);
             }
         } catch (error) {
-            console.error('Error loading data:', error);
+            console.error('Error loading local data:', error);
         }
     }
-    
-    saveData() {
+
+    async saveData() {
+        // For authenticated users, save to Firebase; otherwise use localStorage
+        if (window.firebaseService && window.firebaseService.isAuthenticated()) {
+            try {
+                // Save teams to Firebase
+                await this.saveTeamsToFirebase();
+
+                // Save current game to Firebase
+                if (this.currentGame) {
+                    await window.firebaseService.saveGame(this.currentGame);
+                }
+            } catch (error) {
+                console.error('Error saving to cloud:', error);
+                // Fallback to localStorage
+                this.saveLocalData();
+            }
+        } else {
+            // Save to localStorage for non-authenticated users
+            this.saveLocalData();
+        }
+    }
+
+    saveLocalData() {
         try {
             localStorage.setItem('soccer_teams', JSON.stringify(this.teams));
             if (this.currentGame) {
@@ -264,7 +834,18 @@ class SoccerApp {
                 localStorage.removeItem('soccer_current_game');
             }
         } catch (error) {
-            console.error('Error saving data:', error);
+            console.error('Error saving local data:', error);
+        }
+    }
+
+    async saveTeamsToFirebase() {
+        // Save each team individually to Firebase
+        for (const team of this.teams) {
+            try {
+                await window.firebaseService.saveTeam(team);
+            } catch (error) {
+                console.error('Error saving team to Firebase:', team.name, error);
+            }
         }
     }
     
@@ -272,15 +853,19 @@ class SoccerApp {
     setupEventListeners() {
         // Navigation (both new and legacy)
         document.querySelectorAll('.nav-item, .nav-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => {
+            tab.addEventListener('click', async (e) => {
                 const targetTab = e.currentTarget.dataset.tab;
-                this.switchTab(targetTab);
+                await this.switchTab(targetTab);
             });
         });
 
-        // Team management
-        const createTeamBtn = document.getElementById('createTeamBtn');
-        if (createTeamBtn) createTeamBtn.addEventListener('click', () => this.showTeamCreation());
+        // Team management - Create team button with document delegation
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.create-team-btn') || e.target.closest('#createTeamBtn')) {
+                console.log('Create team button clicked via document delegation!');
+                this.showTeamCreation();
+            }
+        });
         
         // Team creation page
         const backToTeamsBtn = document.getElementById('backToTeamsBtn');
@@ -660,8 +1245,15 @@ class SoccerApp {
     }
     
     showTeamCreation(team = null) {
+        console.log('showTeamCreation called', team); // Debug log
+
         // Show the team creation overlay
-        document.getElementById('teamCreationSection').style.display = 'block';
+        const teamCreationSection = document.getElementById('teamCreationSection');
+        if (!teamCreationSection) {
+            console.error('teamCreationSection element not found');
+            return;
+        }
+        teamCreationSection.style.display = 'block';
         
         const title = document.getElementById('teamCreationTitle');
         const nameInput = document.getElementById('teamName');
@@ -929,24 +1521,68 @@ class SoccerApp {
         // Clear logo data
         window.currentLogoData = null;
     }
-    
-    selectTeam(teamId) {
+
+    async loadCurrentGameForTeam(teamId) {
+        try {
+            if (window.firebaseService && window.firebaseService.isAuthenticated()) {
+                // Load from Firebase - get active game for specific team
+                this.currentGame = await window.firebaseService.getCurrentGameForTeam(teamId);
+            } else {
+                // Load from localStorage
+                const games = JSON.parse(localStorage.getItem('soccer_games') || '[]');
+                const activeGame = games.find(game =>
+                    game.teamId === teamId && !game.completed
+                );
+
+                this.currentGame = activeGame || null;
+            }
+        } catch (error) {
+            console.error('Error loading current game for team:', error);
+            this.currentGame = null;
+        }
+    }
+
+    async selectTeam(teamId) {
         this.currentTeam = this.teams.find(t => t.id === teamId);
-        this.renderTeams(); // Update selected state
-        this.updateHeaderForTab('teamsTab'); // Update header status
+
+        // Find the active game for this specific team
+        await this.loadCurrentGameForTeam(teamId);
+
+        // Re-render teams to update game buttons and selection state
+        this.renderTeams();
+
+        // Update header status
+        this.updateHeaderForTab('teamsTab');
+
+        // Update navigation state based on whether this team has a game
+        this.initializeNavigation();
     }
     
-    deleteTeam(teamId) {
+    async deleteTeam(teamId) {
         const team = this.teams.find(t => t.id === teamId);
         if (team && confirm(`Are you sure you want to delete "${team.name}"?`)) {
-            this.teams = this.teams.filter(t => t.id !== teamId);
-            if (this.currentTeam && this.currentTeam.id === teamId) {
-                this.currentTeam = null;
-                this.currentGame = null;
+            try {
+                // Delete from Firebase if authenticated
+                if (window.firebaseService && window.firebaseService.isAuthenticated()) {
+                    await window.firebaseService.deleteTeam(teamId);
+                }
+
+                // Update local data
+                this.teams = this.teams.filter(t => t.id !== teamId);
+                if (this.currentTeam && this.currentTeam.id === teamId) {
+                    this.currentTeam = null;
+                    this.currentGame = null;
+                }
+
+                await this.saveData();
+                this.renderTeams();
+                this.updateHeaderForTab('teamsTab');
+
+                this.showSuccessMessage(`Team "${team.name}" deleted successfully`);
+            } catch (error) {
+                console.error('Error deleting team:', error);
+                this.showErrorMessage('Failed to delete team. Please try again.');
             }
-            this.saveData();
-            this.renderTeams();
-            this.updateHeaderForTab('teamsTab');
         }
     }
     
@@ -958,12 +1594,30 @@ class SoccerApp {
             return;
         }
         
+        // Create Team Card (always show)
+        const createTeamCard = `
+            <div class="create-team-card" id="createTeamCard">
+                <div class="create-team-content">
+                    <div class="create-team-icon">🚀</div>
+                    <h3>Create New Team</h3>
+                    <p>Build your perfect lineup with players and formations</p>
+                    <button class="create-team-btn" id="createTeamBtn">
+                        <span class="btn-text">Get Started</span>
+                        <span class="btn-arrow">→</span>
+                    </button>
+                </div>
+            </div>
+        `;
+
         if (this.teams.length === 0) {
-            container.innerHTML = '<p class="empty-state">No teams yet. Create your first team!</p>';
+            container.innerHTML = createTeamCard;
+            // Still need to attach event listeners even when no teams exist
+            this.attachTeamEventListeners();
             return;
         }
-        
-        container.innerHTML = this.teams.map(team => {
+
+        // Render teams with Create Team card at the end
+        const teamsHTML = this.teams.map(team => {
             const teamInfo = this.getTeamInfo(team);
             const logoHtml = team.logo ? `<img src="${team.logo}" alt="${team.name} logo" class="team-logo">` : '';
             const isSelected = this.currentTeam && this.currentTeam.id === team.id;
@@ -981,8 +1635,11 @@ class SoccerApp {
                         </div>
                     </div>
                     <div class="team-actions">
-                        ${isSelected ? 
-                            '<button class="btn primary start-game-btn" data-team-id="' + team.id + '">🎮 Start New Game</button>' : 
+                        ${isSelected ?
+                            (hasCurrentGame ?
+                                '<button class="btn success continue-game-btn" data-team-id="' + team.id + '">🎮 Continue Game</button>' :
+                                '<button class="btn primary start-game-btn" data-team-id="' + team.id + '">🎮 Start New Game</button>'
+                            ) :
                             ''
                         }
                         <button class="btn secondary edit-team-btn" data-team-id="${team.id}">✏️ Edit</button>
@@ -991,7 +1648,10 @@ class SoccerApp {
                 </div>
             `;
         }).join('');
-        
+
+        // Add Create Team card at the end
+        container.innerHTML = teamsHTML + createTeamCard;
+
         // Add event listeners for team interactions
         this.attachTeamEventListeners();
     }
@@ -999,12 +1659,12 @@ class SoccerApp {
     attachTeamEventListeners() {
         // Team card selection
         document.querySelectorAll('.team-card').forEach(card => {
-            card.addEventListener('click', (e) => {
+            card.addEventListener('click', async (e) => {
                 // Don't trigger if clicking on action buttons
                 if (e.target.closest('.team-actions')) return;
-                
+
                 const teamId = card.dataset.teamId;
-                this.selectTeam(teamId);
+                await this.selectTeam(teamId);
             });
         });
         
@@ -1019,10 +1679,10 @@ class SoccerApp {
         
         // Delete buttons
         document.querySelectorAll('.delete-team-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const teamId = btn.dataset.teamId;
-                this.deleteTeam(teamId);
+                await this.deleteTeam(teamId);
             });
         });
         
@@ -1034,8 +1694,30 @@ class SoccerApp {
                 this.showGameModal();
             });
         });
+
+        // Continue game buttons
+        document.querySelectorAll('.continue-game-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const teamId = btn.dataset.teamId;
+                this.continueGame(teamId);
+            });
+        });
+
+        // Create team button is now handled globally in setupEventListeners()
     }
     
+    continueGame(teamId) {
+        // The current game should already be loaded and this.currentTeam should be set
+        if (this.currentGame && this.currentGame.teamId === teamId) {
+            // Switch to field tab to continue the game
+            this.switchTab('fieldTab');
+        } else {
+            console.error('No active game found for team:', teamId);
+            this.showErrorMessage('No active game found for this team');
+        }
+    }
+
     editTeam(teamId) {
         const team = this.teams.find(t => t.id === teamId);
         if (team) {
@@ -1123,7 +1805,7 @@ class SoccerApp {
         `;
     }
     
-    handleGameSubmit(e) {
+    async handleGameSubmit(e) {
         e.preventDefault();
         
         const opponent = document.getElementById('gameOpponent').value.trim();
@@ -1156,12 +1838,14 @@ class SoccerApp {
             periodDuration: periodDuration,
             totalGameTime: totalGameTime,
             created: new Date().toISOString(),
+            completed: null, // null indicates active game
             lineup: lineup
         };
         
-        this.saveData();
+        await this.saveData();
         this.closeModals();
         this.showGameSection();
+        this.renderTeams(); // Re-render teams to show "Continue Game" button
         this.showSuccessMessage(`Game vs ${opponent} started! ${periodCount} periods of ${periodDuration} min each`);
     }
     
@@ -1336,26 +2020,39 @@ class SoccerApp {
         }
     }
     
-    completeGame() {
+    async completeGame() {
         if (!this.currentGame) return;
-        
+
         const opponent = this.currentGame.opponent;
         if (confirm(`Complete the game vs ${opponent}?\\n\\nThis will save the game and allow you to start a new one.`)) {
-            // Save completed game to history
-            const completedGames = JSON.parse(localStorage.getItem('soccer_completed_games') || '[]');
-            completedGames.push({
-                ...this.currentGame,
-                completed: new Date().toISOString()
-            });
-            localStorage.setItem('soccer_completed_games', JSON.stringify(completedGames));
-            
-            // Clear current game
-            this.currentGame = null;
-            this.saveData();
-            
-            // Return to team section
-            this.showTeamSection();
-            this.showSuccessMessage(`Game vs ${opponent} completed and saved!`);
+            try {
+                // Mark game as completed
+                const completedGame = {
+                    ...this.currentGame,
+                    completed: new Date().toISOString()
+                };
+
+                // Save to Firebase if authenticated, otherwise save to localStorage
+                if (window.firebaseService && window.firebaseService.isAuthenticated()) {
+                    await window.firebaseService.saveGame(completedGame);
+                } else {
+                    // Fallback to localStorage
+                    const completedGames = JSON.parse(localStorage.getItem('soccer_completed_games') || '[]');
+                    completedGames.push(completedGame);
+                    localStorage.setItem('soccer_completed_games', JSON.stringify(completedGames));
+                }
+
+                // Clear current game
+                this.currentGame = null;
+                await this.saveData();
+
+                // Return to team section
+                this.showTeamSection();
+                this.showSuccessMessage(`Game vs ${opponent} completed and saved!`);
+            } catch (error) {
+                console.error('Error completing game:', error);
+                this.showErrorMessage('Failed to complete game. Please try again.');
+            }
         }
     }
     
@@ -1972,10 +2669,6 @@ class SoccerApp {
         
         if (!player) return;
         
-        console.log(`🔍 showPositionSelectionModal called for player: ${playerName}`);
-        console.log(`Player's preferred positions:`, player.positions);
-        console.log(`Current lineup positions:`, currentLineup.positions);
-        console.log(`Current team formation:`, this.currentTeam.formation);
         
         title.textContent = `Select Position for ${playerName}`;
         
@@ -1991,8 +2684,6 @@ class SoccerApp {
             }
         }
         
-        console.log(`Player's current position:`, currentPlayerPosition);
-        console.log(`All occupied positions:`, Array.from(occupiedPositions));
         
         // Generate available position options
         const availablePositions = [];
@@ -2000,14 +2691,10 @@ class SoccerApp {
         // Add field positions based on formation
         const teamSize = this.currentTeam.teamSize;
         const formation = this.currentTeam.formation;
-        console.log(`Team size: ${teamSize}, Team formation: ${formation}`);
-        console.log(`Available formations:`, Object.keys(this.formations || {}));
         
         if (teamSize && formation && this.formations[teamSize] && this.formations[teamSize][formation]) {
             const formationData = this.formations[teamSize][formation];
             const formationPositions = formationData.positions;
-            console.log(`Formation data:`, formationData);
-            console.log(`Formation positions:`, formationPositions);
             
             formationPositions.forEach(pos => {
                 const occupiedByOtherPlayer = currentLineup.positions[pos] && currentLineup.positions[pos] !== playerName;
@@ -2015,7 +2702,6 @@ class SoccerApp {
                 const canPlay = player.positions.includes(positionGroup) || player.positions.includes('All');
                 const isCurrent = currentPlayerPosition === pos;
                 
-                console.log(`Position ${pos}: occupiedByOther=${occupiedByOtherPlayer}, positionGroup=${positionGroup}, canPlay=${canPlay}, isCurrent=${isCurrent}`);
                 
                 // Include position if it's not occupied by another player
                 if (!occupiedByOtherPlayer) {
@@ -2025,13 +2711,9 @@ class SoccerApp {
                         canPlay: canPlay,
                         isCurrent: isCurrent
                     });
-                    console.log(`✅ Added position ${pos} to available positions`);
-                } else {
-                    console.log(`❌ Position ${pos} occupied by ${currentLineup.positions[pos]}`);
                 }
             });
         } else {
-            console.log(`❌ No formation found or formations not loaded`);
         }
         
         // Add bench option
@@ -2081,7 +2763,6 @@ class SoccerApp {
             `;
         }).join('');
         
-        console.log(`📋 Final available positions for ${playerName}:`, availablePositions.map(p => `${p.position} (canPlay: ${p.canPlay}, isCurrent: ${p.isCurrent})`));
         
         modal.style.display = 'flex';
     }
@@ -2914,7 +3595,7 @@ class SoccerApp {
     }
 
     // ===== HISTORY FUNCTIONALITY =====
-    renderGameHistory() {
+    async renderGameHistory() {
         const gameHistoryList = document.getElementById('gameHistoryList');
         const historicalGameView = document.getElementById('historicalGameView');
 
@@ -2922,7 +3603,18 @@ class SoccerApp {
         gameHistoryList.style.display = 'block';
         historicalGameView.style.display = 'none';
 
-        const completedGames = JSON.parse(localStorage.getItem('soccer_completed_games') || '[]');
+        // Load completed games from Firebase if authenticated, otherwise from localStorage
+        let completedGames = [];
+        try {
+            if (window.firebaseService && window.firebaseService.isAuthenticated()) {
+                completedGames = await window.firebaseService.getCompletedGames();
+            } else {
+                completedGames = JSON.parse(localStorage.getItem('soccer_completed_games') || '[]');
+            }
+        } catch (error) {
+            console.error('Error loading game history:', error);
+            completedGames = JSON.parse(localStorage.getItem('soccer_completed_games') || '[]');
+        }
 
         if (completedGames.length === 0) {
             gameHistoryList.innerHTML = '<p class="empty-state">No completed games yet. Complete a game to see it here!</p>';
@@ -2964,9 +3656,9 @@ class SoccerApp {
 
         // Add event listeners for view game buttons
         document.querySelectorAll('.view-game-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
                 const gameId = e.target.dataset.gameId;
-                this.viewHistoricalGame(gameId);
+                await this.viewHistoricalGame(gameId);
             });
         });
 
@@ -2979,11 +3671,26 @@ class SoccerApp {
         });
     }
 
-    viewHistoricalGame(gameId) {
-        const completedGames = JSON.parse(localStorage.getItem('soccer_completed_games') || '[]');
+    async viewHistoricalGame(gameId) {
+        // Load completed games from the same source as renderGameHistory
+        let completedGames = [];
+        try {
+            if (window.firebaseService && window.firebaseService.isAuthenticated()) {
+                completedGames = await window.firebaseService.getCompletedGames();
+            } else {
+                completedGames = JSON.parse(localStorage.getItem('soccer_completed_games') || '[]');
+            }
+        } catch (error) {
+            console.error('Error loading completed games:', error);
+            completedGames = JSON.parse(localStorage.getItem('soccer_completed_games') || '[]');
+        }
+
         const game = completedGames.find(g => g.id === gameId);
 
-        if (!game) return;
+        if (!game) {
+            console.error('Game not found:', gameId);
+            return;
+        }
 
         this.historicalGame = game;
         this.isViewingHistory = true;
@@ -2995,17 +3702,29 @@ class SoccerApp {
         const gameHistoryList = document.getElementById('gameHistoryList');
         const historicalGameView = document.getElementById('historicalGameView');
 
+        if (!gameHistoryList || !historicalGameView) {
+            console.error('Required elements not found for historical game view');
+            return;
+        }
+
         gameHistoryList.style.display = 'none';
         historicalGameView.style.display = 'block';
 
         // Update game title and info
         const gameDate = new Date(game.date).toLocaleDateString();
-        document.getElementById('historicalGameTitle').textContent = `${team ? team.name : 'Unknown Team'} vs ${game.opponent}`;
-        document.getElementById('historicalGameDate').textContent = `${gameDate} • ${game.periodCount} periods`;
+        const historicalGameTitle = document.getElementById('historicalGameTitle');
+        const historicalGameDate = document.getElementById('historicalGameDate');
+
+        if (historicalGameTitle) {
+            historicalGameTitle.textContent = `${team ? team.name : 'Unknown Team'} vs ${game.opponent}`;
+        }
+        if (historicalGameDate) {
+            historicalGameDate.textContent = `${gameDate} • ${game.periodCount} periods`;
+        }
 
         // Show back to current game button if there's a current game
         const backToCurrentBtn = document.getElementById('backToCurrentBtn');
-        if (this.currentGame) {
+        if (backToCurrentBtn && this.currentGame) {
             backToCurrentBtn.style.display = 'inline-flex';
         }
 
@@ -3013,10 +3732,21 @@ class SoccerApp {
         this.showHistoricalView('table');
     }
 
-    deleteHistoricalGame(gameId) {
-        const completedGames = JSON.parse(localStorage.getItem('soccer_completed_games') || '[]');
-        const game = completedGames.find(g => g.id === gameId);
+    async deleteHistoricalGame(gameId) {
+        // Find the game to get details for confirmation
+        let completedGames = [];
+        try {
+            if (window.firebaseService && window.firebaseService.isAuthenticated()) {
+                completedGames = await window.firebaseService.getCompletedGames();
+            } else {
+                completedGames = JSON.parse(localStorage.getItem('soccer_completed_games') || '[]');
+            }
+        } catch (error) {
+            console.error('Error loading completed games:', error);
+            completedGames = JSON.parse(localStorage.getItem('soccer_completed_games') || '[]');
+        }
 
+        const game = completedGames.find(g => g.id === gameId);
         if (!game) return;
 
         const team = this.teams.find(t => t.id === game.teamId);
@@ -3024,20 +3754,30 @@ class SoccerApp {
         const gameDate = new Date(game.date).toLocaleDateString();
 
         if (confirm(`Are you sure you want to delete this game?\n\n${teamName} vs ${game.opponent}\n${gameDate}\n\nThis action cannot be undone.`)) {
-            // Remove the game from completed games
-            const updatedGames = completedGames.filter(g => g.id !== gameId);
-            localStorage.setItem('soccer_completed_games', JSON.stringify(updatedGames));
+            try {
+                // Delete from Firebase if authenticated, otherwise from localStorage
+                if (window.firebaseService && window.firebaseService.isAuthenticated()) {
+                    await window.firebaseService.deleteGame(gameId);
+                } else {
+                    // Fallback to localStorage
+                    const updatedGames = completedGames.filter(g => g.id !== gameId);
+                    localStorage.setItem('soccer_completed_games', JSON.stringify(updatedGames));
+                }
 
-            // If we're currently viewing this historical game, go back to history list
-            if (this.isViewingHistory && this.historicalGame && this.historicalGame.id === gameId) {
-                this.isViewingHistory = false;
-                this.historicalGame = null;
+                // If we're currently viewing this historical game, go back to history list
+                if (this.isViewingHistory && this.historicalGame && this.historicalGame.id === gameId) {
+                    this.isViewingHistory = false;
+                    this.historicalGame = null;
+                }
+
+                // Re-render the game history to update the list
+                await this.renderGameHistory();
+
+                this.showSuccessMessage(`Game vs ${game.opponent} deleted from history`);
+            } catch (error) {
+                console.error('Error deleting game:', error);
+                this.showErrorMessage('Failed to delete game. Please try again.');
             }
-
-            // Re-render the game history to update the list
-            this.renderGameHistory();
-
-            this.showSuccessMessage(`Game vs ${game.opponent} deleted from history`);
         }
     }
 
@@ -3249,10 +3989,12 @@ class SoccerApp {
 
 // ===== INITIALIZE APP =====
 let app;
-document.addEventListener('DOMContentLoaded', () => {
-        app = new SoccerApp();
+document.addEventListener('DOMContentLoaded', async () => {
+    app = new SoccerApp();
     // Make app globally accessible for onclick handlers
     window.app = app;
+    // Initialize the app asynchronously
+    await app.init();
 });
 
 // ===== LOGO UPLOAD FUNCTIONALITY =====
