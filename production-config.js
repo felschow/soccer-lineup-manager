@@ -26,25 +26,8 @@
         window.ANALYTICS_ENABLED = false; // Keep disabled for now
         window.ERROR_REPORTING_ENABLED = true;
 
-        // Performance optimizations
-        if ('requestIdleCallback' in window) {
-            window.requestIdleCallback(function() {
-                // Preload critical resources when browser is idle
-                const criticalResources = [
-                    'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js',
-                    'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js',
-                    'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js'
-                ];
-
-                criticalResources.forEach(url => {
-                    const link = document.createElement('link');
-                    link.rel = 'preload';
-                    link.as = 'script';
-                    link.href = url;
-                    document.head.appendChild(link);
-                });
-            });
-        }
+        // Performance optimizations removed - causing CSP issues
+        // Resources will load naturally as needed
 
         // Security: Remove development helpers
         delete window.eval;
