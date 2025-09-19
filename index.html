@@ -75,13 +75,27 @@
                 <span class="app-icon">⚽</span>
                 <h1>SimpleSquad Manager</h1>
             </div>
-            <button id="userIcon" class="user-icon-btn" style="display: none;" title="User Menu">
-                <div class="user-icon-avatar">
-                    <img id="userIconAvatar" src="" alt="User" onerror="this.style.display='none'">
-                    <span id="userIconInitials" class="user-icon-initials"></span>
-                </div>
-            </button>
+            <div class="header-actions">
+                <button id="installAppBtn" class="install-app-btn" style="display: none;" title="Install App">
+                    <span class="install-icon">📱</span>
+                    <span class="install-text">Install</span>
+                </button>
+                <button id="userIcon" class="user-icon-btn" style="display: none;" title="User Menu">
+                    <div class="user-icon-avatar">
+                        <img id="userIconAvatar" src="" alt="User" onerror="this.style.display='none'">
+                        <span id="userIconInitials" class="user-icon-initials"></span>
+                    </div>
+                </button>
+            </div>
         </header>
+
+        <!-- Pull to Refresh Indicator -->
+        <div id="pullToRefresh" class="pull-to-refresh">
+            <div class="pull-indicator">
+                <div class="pull-icon">↓</div>
+                <span class="pull-text">Pull to refresh</span>
+            </div>
+        </div>
 
         <!-- Main Content Area -->
         <main class="content-area">

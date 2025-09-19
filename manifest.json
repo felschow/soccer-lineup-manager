@@ -10,6 +10,19 @@
   "scope": "/",
   "lang": "en-US",
   "categories": ["sports", "productivity", "utilities"],
+  "edge_side_panel": {
+    "preferred_width": 480
+  },
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+simplesquad",
+      "url": "/?team=%s"
+    }
+  ],
   "icons": [
     {
       "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white'>⚽</text></svg>",
