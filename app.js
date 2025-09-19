@@ -26,23 +26,49 @@ window.addEventListener('unhandledrejection', (event) => {
     }
 });
 
-// Suppress network errors from browser extensions
+// Comprehensive console error suppression for browser extensions
 const originalConsoleError = console.error;
+const originalConsoleWarn = console.warn;
+const originalConsoleLog = console.log;
+
+// Function to check if message is extension-related
+function isExtensionError(message) {
+    const extensionPatterns = [
+        'chrome-extension://',
+        'net::ERR_FILE_NOT_FOUND',
+        'completion_list.html',
+        'utils.js',
+        'Redefinitions.js',
+        'extensionState.js',
+        'hhablaj',
+        'pejdijmoen',
+        'Failed to load resource',
+        'GET chrome-extension',
+        'Fail chrome-extension'
+    ];
+
+    return extensionPatterns.some(pattern => message.includes(pattern));
+}
+
 console.error = function(...args) {
     const message = args.join(' ');
-
-    // Suppress extension-related errors
-    if (message.includes('chrome-extension://') ||
-        message.includes('net::ERR_FILE_NOT_FOUND') ||
-        message.includes('completion_list.html') ||
-        message.includes('utils.js') ||
-        message.includes('Redefinitions.js') ||
-        message.includes('extensionState.js')) {
-        return;
+    if (!isExtensionError(message)) {
+        originalConsoleError.apply(console, args);
     }
+};
 
-    // Call original console.error for legitimate errors
-    originalConsoleError.apply(console, args);
+console.warn = function(...args) {
+    const message = args.join(' ');
+    if (!isExtensionError(message)) {
+        originalConsoleWarn.apply(console, args);
+    }
+};
+
+console.log = function(...args) {
+    const message = args.join(' ');
+    if (!isExtensionError(message)) {
+        originalConsoleLog.apply(console, args);
+    }
 };
 
 class SoccerApp {

@@ -41,6 +41,39 @@
 
     <link rel="stylesheet" href="styles.css">
 
+    <!-- Early console error suppression for browser extensions -->
+    <script>
+    (function() {
+        'use strict';
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        function isExtensionError(message) {
+            return message && (
+                message.includes('chrome-extension://') ||
+                message.includes('net::ERR_FILE_NOT_FOUND') ||
+                message.includes('Failed to load resource') ||
+                message.includes('hhablaj') ||
+                message.includes('pejdijmoen')
+            );
+        }
+
+        console.error = function(...args) {
+            const message = args.join(' ');
+            if (!isExtensionError(message)) {
+                originalError.apply(console, args);
+            }
+        };
+
+        console.warn = function(...args) {
+            const message = args.join(' ');
+            if (!isExtensionError(message)) {
+                originalWarn.apply(console, args);
+            }
+        };
+    })();
+    </script>
+
     <!-- Load configuration and security first -->
     <script src="config.js"></script>
     <script src="production-config.js"></script>
