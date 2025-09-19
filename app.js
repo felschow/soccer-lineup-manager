@@ -771,7 +771,7 @@ class SoccerApp {
     handleUserSignedOut() {
         // Mark as not authenticated and enforce login
         this.isAuthenticated = false;
-        this.enforceAuthentication();
+        this.setupAuthenticationEnforcement();
 
         // Clear all user data
         this.clearLocalData();
