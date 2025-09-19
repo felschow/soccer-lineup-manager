@@ -541,12 +541,14 @@ class SoccerApp {
     async onUserSignedIn(user) {
 
         try {
-            // Show user icon, hide auth modal
+            // Show user icon, hide auth modal, show app
             const userIcon = document.getElementById('userIcon');
             const authModal = document.getElementById('authModal');
+            const appContainer = document.querySelector('.app-container');
 
             if (userIcon) userIcon.style.display = 'block';
             if (authModal) authModal.style.display = 'none';
+            if (appContainer) appContainer.style.display = 'block';
         } catch (error) {
             console.error('Error updating UI elements:', error);
         }
@@ -4091,8 +4093,8 @@ class MobileInteractions {
     }
 
     initializeMobileInteractions() {
-        this.setupPullToRefresh();
-        this.setupSwipeNavigation();
+        // Disabled: this.setupPullToRefresh();
+        // Disabled: this.setupSwipeNavigation();
         this.setupTouchRipples();
         this.setupHapticFeedback();
         this.setupFloatingActionButton();
@@ -4662,7 +4664,6 @@ class AppStartup {
         new ScrollBehaviorManager();
         new PerformanceOptimizer();
         new PWAInstallManager();
-        new PullToRefresh();
 
         // Signal that app is ready
         window.dispatchEvent(new CustomEvent('appReady'));
@@ -4670,156 +4671,6 @@ class AppStartup {
 }
 
 // PWA Installation and App Badge Management
-// Pull-to-Refresh functionality
-class PullToRefresh {
-    constructor() {
-        this.isEnabled = 'ontouchstart' in window;
-        this.pullContainer = document.getElementById('pullToRefresh');
-        this.contentArea = document.querySelector('.content-area');
-        this.threshold = 80;
-        this.resistance = 2.5;
-
-        this.startY = 0;
-        this.currentY = 0;
-        this.distance = 0;
-        this.isPulling = false;
-        this.isRefreshing = false;
-
-        if (this.isEnabled && this.pullContainer && this.contentArea) {
-            this.init();
-        }
-    }
-
-    init() {
-        // Add touch event listeners
-        this.contentArea.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
-        this.contentArea.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
-        this.contentArea.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: true });
-    }
-
-    handleTouchStart(e) {
-        if (this.isRefreshing || this.contentArea.scrollTop > 0) return;
-
-        this.startY = e.touches[0].clientY;
-        this.isPulling = false;
-    }
-
-    handleTouchMove(e) {
-        if (this.isRefreshing || this.contentArea.scrollTop > 0) return;
-
-        this.currentY = e.touches[0].clientY;
-        this.distance = (this.currentY - this.startY) / this.resistance;
-
-        if (this.distance > 0 && this.contentArea.scrollTop === 0) {
-            e.preventDefault();
-            this.isPulling = true;
-
-            // Update pull indicator
-            this.updatePullIndicator();
-        }
-    }
-
-    handleTouchEnd(e) {
-        if (!this.isPulling || this.isRefreshing) return;
-
-        if (this.distance >= this.threshold) {
-            this.triggerRefresh();
-        } else {
-            this.resetPull();
-        }
-    }
-
-    updatePullIndicator() {
-        if (!this.pullContainer) return;
-
-        const progress = Math.min(this.distance / this.threshold, 1);
-        const pullIcon = this.pullContainer.querySelector('.pull-icon');
-        const pullText = this.pullContainer.querySelector('.pull-text');
-
-        // Show pull container
-        this.pullContainer.classList.add('active');
-        this.pullContainer.style.transform = `translateY(${Math.min(this.distance - 80, 0)}px)`;
-
-        // Update text based on progress
-        if (progress >= 1) {
-            pullText.textContent = 'Release to refresh';
-            pullIcon.style.transform = 'rotate(180deg)';
-        } else {
-            pullText.textContent = 'Pull to refresh';
-            pullIcon.style.transform = `rotate(${progress * 180}deg)`;
-        }
-    }
-
-    async triggerRefresh() {
-        if (this.isRefreshing) return;
-
-        this.isRefreshing = true;
-        const pullText = this.pullContainer.querySelector('.pull-text');
-
-        // Show refreshing state
-        this.pullContainer.classList.add('refreshing');
-        pullText.textContent = 'Refreshing...';
-
-        // Add haptic feedback
-        this.vibrate(50);
-
-        try {
-            // Trigger actual refresh - reload teams and game data
-            await this.performRefresh();
-
-            // Show success
-            pullText.textContent = 'Updated!';
-            setTimeout(() => {
-                this.resetPull();
-            }, 500);
-
-        } catch (error) {
-            console.error('Refresh failed:', error);
-            pullText.textContent = 'Failed to refresh';
-            setTimeout(() => {
-                this.resetPull();
-            }, 1000);
-        }
-    }
-
-    async performRefresh() {
-        // Simulate refresh delay and trigger app refresh
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Trigger data refresh in the main app
-        if (window.app && window.app.loadTeams) {
-            await window.app.loadTeams();
-        }
-
-        // Refresh current team data if in field view
-        if (window.app && window.app.currentTeam) {
-            await window.app.loadCurrentTeamData();
-        }
-    }
-
-    resetPull() {
-        this.isPulling = false;
-        this.isRefreshing = false;
-        this.distance = 0;
-
-        if (this.pullContainer) {
-            this.pullContainer.classList.remove('active', 'refreshing');
-            this.pullContainer.style.transform = 'translateY(-100%)';
-
-            const pullIcon = this.pullContainer.querySelector('.pull-icon');
-            const pullText = this.pullContainer.querySelector('.pull-text');
-
-            pullIcon.style.transform = 'rotate(0deg)';
-            pullText.textContent = 'Pull to refresh';
-        }
-    }
-
-    vibrate(duration = 50) {
-        if ('vibrate' in navigator) {
-            navigator.vibrate(duration);
-        }
-    }
-}
 
 class PWAInstallManager {
     constructor() {
