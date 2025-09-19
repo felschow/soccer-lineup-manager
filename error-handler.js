@@ -4,6 +4,12 @@ class ErrorHandler {
         this.setupGlobalErrorHandling();
         this.errorQueue = [];
         this.maxErrors = 10; // Prevent error spam
+        this.isInitializing = true;
+
+        // Don't show errors for the first 3 seconds during app initialization
+        setTimeout(() => {
+            this.isInitializing = false;
+        }, 3000);
     }
 
     setupGlobalErrorHandling() {
@@ -58,6 +64,12 @@ class ErrorHandler {
     }
 
     handleError(errorInfo) {
+        // Don't show errors during app initialization
+        if (this.isInitializing) {
+            console.warn('Suppressed error during initialization:', errorInfo);
+            return;
+        }
+
         // Prevent error spam
         if (this.errorQueue.length >= this.maxErrors) {
             return;

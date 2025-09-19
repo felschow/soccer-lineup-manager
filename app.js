@@ -159,6 +159,7 @@ class SoccerApp {
 
         // Set up auth form event listeners
         this.setupAuthEventListeners();
+        this.setupAuthTabs();
 
         // Check initial auth state
         if (window.firebaseService.isAuthenticated()) {
@@ -166,7 +167,30 @@ class SoccerApp {
             this.showUserMenu();
             this.loadCloudData();
         } else {
-            this.showAuthModal();
+            this.showAuthPage();
+        }
+    }
+
+    setupAuthTabs() {
+        const loginTab = document.getElementById('loginTabBtn');
+        const signupTab = document.getElementById('signupTabBtn');
+        const loginForm = document.getElementById('signInForm');
+        const signupForm = document.getElementById('signUpForm');
+
+        if (loginTab && signupTab && loginForm && signupForm) {
+            loginTab.addEventListener('click', () => {
+                loginTab.classList.add('active');
+                signupTab.classList.remove('active');
+                loginForm.classList.add('active');
+                signupForm.classList.remove('active');
+            });
+
+            signupTab.addEventListener('click', () => {
+                signupTab.classList.add('active');
+                loginTab.classList.remove('active');
+                signupForm.classList.add('active');
+                loginForm.classList.remove('active');
+            });
         }
     }
 
@@ -411,11 +435,23 @@ class SoccerApp {
         }
     }
 
-    hideAuthModal() {
+    showAuthPage() {
+        const authPage = document.getElementById('authPage');
+        if (authPage) {
+            authPage.style.display = 'block';
+        }
+    }
+
+    hideAuthPage() {
         const authPage = document.getElementById('authPage');
         if (authPage) {
             authPage.style.display = 'none';
         }
+    }
+
+    // Legacy method for compatibility
+    hideAuthModal() {
+        this.hideAuthPage();
     }
 
     showUserMenu() {

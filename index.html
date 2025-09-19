@@ -486,22 +486,24 @@
         <!-- Authentication Page -->
         <div id="authPage" class="auth-page" style="display: block;">
             <div class="auth-container">
+                <!-- Logo and Title -->
                 <div class="auth-header">
-                    <div class="auth-logo">
-                        <span class="logo-icon">⚽</span>
-                        <h2>SimpleSquad Manager</h2>
-                        <p>Your cloud-based soccer team management solution</p>
-                    </div>
+                    <div class="auth-logo">⚽</div>
+                    <h1 class="auth-title">SimpleSquad</h1>
+                    <p class="auth-subtitle">Soccer Team Management</p>
+                </div>
+
+                <!-- Auth Mode Toggle -->
+                <div class="auth-toggle">
+                    <button id="loginTabBtn" class="auth-tab-btn active" data-form="signInForm">Sign In</button>
+                    <button id="signupTabBtn" class="auth-tab-btn" data-form="signUpForm">Sign Up</button>
                 </div>
 
                 <div class="auth-forms-container">
                     <!-- Sign In Form -->
                     <div id="signInForm" class="auth-form active">
-                        <h3>Welcome Back</h3>
-                        <p class="auth-subtitle">Sign in to access your teams and games from any device</p>
-
-                        <button id="googleSignInBtn" class="btn auth-google">
-                            <span class="google-icon">🔗</span>
+                        <button id="googleSignInBtn" class="auth-google-btn">
+                            <span class="google-icon">G</span>
                             Continue with Google
                         </button>
 
@@ -509,30 +511,17 @@
                             <span>or</span>
                         </div>
 
-                        <form id="emailSignInForm">
-                            <div class="form-group">
-                                <label for="signInEmail">Email</label>
-                                <input type="email" id="signInEmail" required placeholder="your@email.com">
-                            </div>
-                            <div class="form-group">
-                                <label for="signInPassword">Password</label>
-                                <input type="password" id="signInPassword" required placeholder="Enter your password">
-                            </div>
-                            <button type="submit" class="btn primary auth-submit">Sign In</button>
+                        <form id="emailSignInForm" class="auth-email-form">
+                            <input type="email" id="signInEmail" placeholder="Email" required>
+                            <input type="password" id="signInPassword" placeholder="Password" required>
+                            <button type="submit" class="auth-submit-btn">Sign In</button>
                         </form>
-
-                        <div class="auth-switch">
-                            <p>Don't have an account? <button id="showSignUpBtn" class="link-btn">Sign up</button></p>
-                        </div>
                     </div>
 
                     <!-- Sign Up Form -->
                     <div id="signUpForm" class="auth-form">
-                        <h3>Create Account</h3>
-                        <p class="auth-subtitle">Join thousands of coaches managing their teams in the cloud</p>
-
-                        <button id="googleSignUpBtn" class="btn auth-google">
-                            <span class="google-icon">🔗</span>
+                        <button id="googleSignUpBtn" class="auth-google-btn">
+                            <span class="google-icon">G</span>
                             Continue with Google
                         </button>
 
@@ -540,25 +529,12 @@
                             <span>or</span>
                         </div>
 
-                        <form id="emailSignUpForm">
-                            <div class="form-group">
-                                <label for="signUpEmail">Email</label>
-                                <input type="email" id="signUpEmail" required placeholder="your@email.com">
-                            </div>
-                            <div class="form-group">
-                                <label for="signUpPassword">Password</label>
-                                <input type="password" id="signUpPassword" required placeholder="Create a password" minlength="6">
-                            </div>
-                            <div class="form-group">
-                                <label for="confirmPassword">Confirm Password</label>
-                                <input type="password" id="confirmPassword" required placeholder="Confirm your password">
-                            </div>
-                            <button type="submit" class="btn primary auth-submit">Create Account</button>
+                        <form id="emailSignUpForm" class="auth-email-form">
+                            <input type="email" id="signUpEmail" placeholder="Email" required>
+                            <input type="password" id="signUpPassword" placeholder="Password (6+ characters)" required minlength="6">
+                            <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+                            <button type="submit" class="auth-submit-btn">Create Account</button>
                         </form>
-
-                        <div class="auth-switch">
-                            <p>Already have an account? <button id="showSignInBtn" class="link-btn">Sign in</button></p>
-                        </div>
                     </div>
                 </div>
 
