@@ -14,6 +14,10 @@ class SoccerApp {
         this.historicalGame = null;
         this.isViewingHistory = false;
 
+        // Authentication enforcement
+        this.isAuthenticated = false;
+        this.enforceAuthentication();
+
         // Game Timer functionality
         this.gameTimer = {
             isRunning: false,
@@ -408,9 +412,9 @@ class SoccerApp {
     }
 
     hideAuthModal() {
-        const authModal = document.getElementById('authModal');
-        if (authModal) {
-            authModal.style.display = 'none';
+        const authPage = document.getElementById('authPage');
+        if (authPage) {
+            authPage.style.display = 'none';
         }
     }
 
@@ -541,13 +545,17 @@ class SoccerApp {
     async onUserSignedIn(user) {
 
         try {
-            // Show user icon, hide auth modal, show app
+            // Mark as authenticated and unblock app
+            this.isAuthenticated = true;
+            this.unblockAllInteractions();
+
+            // Show user icon, hide auth page, show app
             const userIcon = document.getElementById('userIcon');
-            const authModal = document.getElementById('authModal');
+            const authPage = document.getElementById('authPage');
             const appContainer = document.querySelector('.app-container');
 
             if (userIcon) userIcon.style.display = 'block';
-            if (authModal) authModal.style.display = 'none';
+            if (authPage) authPage.style.display = 'none';
             if (appContainer) appContainer.style.display = 'block';
         } catch (error) {
             console.error('Error updating UI elements:', error);
@@ -624,6 +632,10 @@ class SoccerApp {
     }
 
     handleUserSignedOut() {
+        // Mark as not authenticated and enforce login
+        this.isAuthenticated = false;
+        this.enforceAuthentication();
+
         // Clear all user data
         this.clearLocalData();
 
@@ -4589,6 +4601,65 @@ class AppStartup {
         this.startTime = Date.now();
 
         this.initializeApp();
+    }
+
+    // Authentication enforcement - NOBODY gets past without login
+    enforceAuthentication() {
+        // Ensure app container is hidden until authenticated
+        const appContainer = document.querySelector('.app-container');
+        const authPage = document.getElementById('authPage');
+
+        if (appContainer) appContainer.style.display = 'none';
+        if (authPage) authPage.style.display = 'block';
+
+        // Block all app functionality until authenticated
+        this.blockAllInteractions();
+    }
+
+    blockAllInteractions() {
+        // Disable all buttons and interactions
+        const buttons = document.querySelectorAll('button');
+        const inputs = document.querySelectorAll('input');
+        const selects = document.querySelectorAll('select');
+
+        buttons.forEach(btn => {
+            if (!btn.closest('#authPage')) {
+                btn.disabled = true;
+                btn.style.pointerEvents = 'none';
+            }
+        });
+
+        inputs.forEach(input => {
+            if (!input.closest('#authPage')) {
+                input.disabled = true;
+            }
+        });
+
+        selects.forEach(select => {
+            if (!select.closest('#authPage')) {
+                select.disabled = true;
+            }
+        });
+    }
+
+    unblockAllInteractions() {
+        // Re-enable all buttons and interactions after authentication
+        const buttons = document.querySelectorAll('button');
+        const inputs = document.querySelectorAll('input');
+        const selects = document.querySelectorAll('select');
+
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            btn.style.pointerEvents = 'auto';
+        });
+
+        inputs.forEach(input => {
+            input.disabled = false;
+        });
+
+        selects.forEach(select => {
+            select.disabled = false;
+        });
     }
 
     async initializeApp() {
