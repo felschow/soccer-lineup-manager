@@ -482,12 +482,24 @@ class SoccerApp {
         this.hideAuthModal();
         this.showUserMenu();
         this.updateUserDisplay(user);
+
+        // Always redirect to teams tab after login
+        this.justLoggedIn = true; // Flag to prevent auto-switch to field
+        this.switchTab('teamsTab');
+
         this.loadCloudData();
     }
 
     onUserSignedOut() {
         this.hideUserMenu();
-        this.showAuthModal();
+
+        // Show authentication page (not modal)
+        const authPage = document.getElementById('authPage');
+        const appContainer = document.querySelector('.app-container');
+
+        if (authPage) authPage.style.display = 'block';
+        if (appContainer) appContainer.style.display = 'none';
+
         this.clearLocalData();
     }
 
