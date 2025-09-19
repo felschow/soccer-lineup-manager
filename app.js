@@ -1,6 +1,27 @@
 // ===== SOCCER LINEUP MANAGER - SIMPLE VERSION =====
 // Clean, simple implementation with all requested features
 
+// Global error handling for browser extension interference
+window.addEventListener('error', (event) => {
+    // Suppress common browser extension errors that don't affect app functionality
+    if (event.message?.includes('message channel closed') ||
+        event.message?.includes('Extension context invalidated') ||
+        event.filename?.includes('extensions/')) {
+        event.preventDefault();
+        return;
+    }
+});
+
+// Handle unhandled promise rejections from browser extensions
+window.addEventListener('unhandledrejection', (event) => {
+    // Suppress extension-related promise rejections
+    if (event.reason?.message?.includes('message channel closed') ||
+        event.reason?.message?.includes('Extension context invalidated')) {
+        event.preventDefault();
+        return;
+    }
+});
+
 class SoccerApp {
     constructor() {
         this.teams = [];
