@@ -499,22 +499,7 @@ class SoccerApp {
         this.loadCloudData();
     }
 
-    onUserSignedOut() {
-        // Hide user icon and menu
-        const userIcon = document.getElementById('userIcon');
-        const userMenu = document.getElementById('userMenu');
-        if (userIcon) userIcon.style.display = 'none';
-        if (userMenu) userMenu.style.display = 'none';
-
-        // Show authentication page (not modal)
-        const authPage = document.getElementById('authPage');
-        const appContainer = document.querySelector('.app-container');
-
-        if (authPage) authPage.style.display = 'block';
-        if (appContainer) appContainer.style.display = 'none';
-
-        this.clearLocalData();
-    }
+    // This method is now handled by the second onUserSignedOut method below
 
     updateUserDisplay(user) {
         const userDisplayName = document.getElementById('userDisplayName');
@@ -806,7 +791,6 @@ class SoccerApp {
     handleUserSignedOut() {
         // Mark as not authenticated and enforce login
         this.isAuthenticated = false;
-        this.setupAuthenticationEnforcement();
 
         // Clear all user data
         this.clearLocalData();
@@ -814,11 +798,8 @@ class SoccerApp {
         // Re-render teams (will show empty state for non-authenticated user)
         this.renderTeams();
 
-        // Switch back to teams tab
-        this.switchTab('teamsTab');
-
-        // Update UI
-        this.updateUI();
+        // DON'T switch to teams tab - stay on auth page
+        // DON'T call updateUI - it might interfere with auth page display
     }
 
     toggleUserMenu() {
