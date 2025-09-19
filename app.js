@@ -688,6 +688,7 @@ class SoccerApp {
             if (appContainer) appContainer.style.display = 'block';
 
             // Always redirect to teams tab after login
+            this.justLoggedIn = true; // Flag to prevent auto-switch to field
             this.switchTab('teamsTab');
         } catch (error) {
             console.error('Error updating UI elements:', error);
@@ -3416,13 +3417,20 @@ class SoccerApp {
 
     // ===== UI HELPERS =====
     updateUI() {
+        // Don't auto-switch to game view immediately after login
+        if (this.justLoggedIn) {
+            this.justLoggedIn = false; // Reset flag
+            this.showTeamSection(); // Keep on teams tab
+            return;
+        }
+
         // Show appropriate sections
         if (this.currentGame && this.currentTeam) {
             this.showGameSection();
         } else {
             this.showTeamSection();
         }
-        
+
         // Update new game button visibility (if it exists)
         const newGameBtn = document.getElementById('newGameBtn');
         if (newGameBtn) {
