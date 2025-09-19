@@ -686,6 +686,9 @@ class SoccerApp {
             if (userIcon) userIcon.style.display = 'block';
             if (authPage) authPage.style.display = 'none';
             if (appContainer) appContainer.style.display = 'block';
+
+            // Always redirect to teams tab after login
+            this.switchTab('teamsTab');
         } catch (error) {
             console.error('Error updating UI elements:', error);
         }
@@ -753,8 +756,12 @@ class SoccerApp {
         document.getElementById('userIcon').style.display = 'none';
         document.getElementById('userMenu').style.display = 'none';
 
-        // Show authentication modal
-        document.getElementById('authModal').style.display = 'block';
+        // Show authentication page (not modal)
+        const authPage = document.getElementById('authPage');
+        const appContainer = document.querySelector('.app-container');
+
+        if (authPage) authPage.style.display = 'block';
+        if (appContainer) appContainer.style.display = 'none';
 
         // Clear user data and switch to localStorage
         this.handleUserSignedOut();
