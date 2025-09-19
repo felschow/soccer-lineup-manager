@@ -6,7 +6,9 @@ window.addEventListener('error', (event) => {
     // Suppress common browser extension errors that don't affect app functionality
     if (event.message?.includes('message channel closed') ||
         event.message?.includes('Extension context invalidated') ||
-        event.filename?.includes('extensions/')) {
+        event.filename?.includes('extensions/') ||
+        event.filename?.includes('chrome-extension://') ||
+        event.message?.includes('net::ERR_FILE_NOT_FOUND')) {
         event.preventDefault();
         return;
     }
@@ -16,11 +18,32 @@ window.addEventListener('error', (event) => {
 window.addEventListener('unhandledrejection', (event) => {
     // Suppress extension-related promise rejections
     if (event.reason?.message?.includes('message channel closed') ||
-        event.reason?.message?.includes('Extension context invalidated')) {
+        event.reason?.message?.includes('Extension context invalidated') ||
+        event.reason?.message?.includes('net::ERR_FILE_NOT_FOUND') ||
+        event.reason?.message?.includes('chrome-extension://')) {
         event.preventDefault();
         return;
     }
 });
+
+// Suppress network errors from browser extensions
+const originalConsoleError = console.error;
+console.error = function(...args) {
+    const message = args.join(' ');
+
+    // Suppress extension-related errors
+    if (message.includes('chrome-extension://') ||
+        message.includes('net::ERR_FILE_NOT_FOUND') ||
+        message.includes('completion_list.html') ||
+        message.includes('utils.js') ||
+        message.includes('Redefinitions.js') ||
+        message.includes('extensionState.js')) {
+        return;
+    }
+
+    // Call original console.error for legitimate errors
+    originalConsoleError.apply(console, args);
+};
 
 class SoccerApp {
     constructor() {
