@@ -479,8 +479,17 @@ class SoccerApp {
     }
 
     onUserSignedIn(user) {
-        this.hideAuthModal();
-        this.showUserMenu();
+        // Hide auth page and show app
+        const authPage = document.getElementById('authPage');
+        const appContainer = document.querySelector('.app-container');
+
+        if (authPage) authPage.style.display = 'none';
+        if (appContainer) appContainer.style.display = 'block';
+
+        // Show user icon
+        const userIcon = document.getElementById('userIcon');
+        if (userIcon) userIcon.style.display = 'block';
+
         this.updateUserDisplay(user);
 
         // Always redirect to teams tab after login
@@ -491,7 +500,11 @@ class SoccerApp {
     }
 
     onUserSignedOut() {
-        this.hideUserMenu();
+        // Hide user icon and menu
+        const userIcon = document.getElementById('userIcon');
+        const userMenu = document.getElementById('userMenu');
+        if (userIcon) userIcon.style.display = 'none';
+        if (userMenu) userMenu.style.display = 'none';
 
         // Show authentication page (not modal)
         const authPage = document.getElementById('authPage');
@@ -635,8 +648,18 @@ class SoccerApp {
 
             // Refresh UI with cloud data
             this.renderTeams();
-            this.updateUI();
+
+            // Don't auto-switch to game view if user just logged in
+            if (!this.justLoggedIn) {
+                this.updateUI();
+            }
+
             this.initializeNavigation();
+
+            // Reset login flag after processing is complete
+            if (this.justLoggedIn) {
+                this.justLoggedIn = false;
+            }
 
         } catch (error) {
             console.error('Error loading cloud data:', error);
