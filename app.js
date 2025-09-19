@@ -16,7 +16,7 @@ class SoccerApp {
 
         // Authentication enforcement
         this.isAuthenticated = false;
-        this.enforceAuthentication();
+        // Authentication setup will be handled in initializeApp
 
         // Game Timer functionality
         this.gameTimer = {
@@ -161,6 +161,9 @@ class SoccerApp {
         this.setupAuthEventListeners();
         this.setupAuthTabs();
 
+        // Set up authentication enforcement
+        this.setupAuthenticationEnforcement();
+
         // Check initial auth state
         if (window.firebaseService.isAuthenticated()) {
             this.hideAuthModal();
@@ -169,6 +172,105 @@ class SoccerApp {
         } else {
             this.showAuthPage();
         }
+    }
+
+    setupAuthenticationEnforcement() {
+        // Ensure app container is hidden until authenticated
+        const appContainer = document.querySelector('.app-container');
+        const authPage = document.getElementById('authPage');
+
+        if (appContainer) appContainer.style.display = 'none';
+        if (authPage) authPage.style.display = 'block';
+
+        // Block all app functionality until authenticated
+        this.blockAllInteractions();
+
+        // Setup auth tab switching
+        this.setupAuthTabs();
+    }
+
+    setupAuthTabs() {
+        // Add event listeners for tab switching
+        const signInTab = document.querySelector('.auth-tab[data-tab="signin"]');
+        const signUpTab = document.querySelector('.auth-tab[data-tab="signup"]');
+
+        if (signInTab) {
+            signInTab.addEventListener('click', () => this.switchAuthTab('signin'));
+        }
+
+        if (signUpTab) {
+            signUpTab.addEventListener('click', () => this.switchAuthTab('signup'));
+        }
+    }
+
+    switchAuthTab(tabName) {
+        // Update tab appearance
+        const tabs = document.querySelectorAll('.auth-tab');
+        tabs.forEach(tab => {
+            if (tab.dataset.tab === tabName) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        });
+
+        // Update form content
+        const signInForm = document.getElementById('signInForm');
+        const signUpForm = document.getElementById('signUpForm');
+
+        if (tabName === 'signin') {
+            if (signInForm) signInForm.style.display = 'block';
+            if (signUpForm) signUpForm.style.display = 'none';
+        } else {
+            if (signInForm) signInForm.style.display = 'none';
+            if (signUpForm) signUpForm.style.display = 'block';
+        }
+    }
+
+    blockAllInteractions() {
+        // Disable all buttons and interactions
+        const buttons = document.querySelectorAll('button');
+        const inputs = document.querySelectorAll('input');
+        const selects = document.querySelectorAll('select');
+
+        buttons.forEach(btn => {
+            if (!btn.closest('#authPage')) {
+                btn.disabled = true;
+                btn.style.pointerEvents = 'none';
+            }
+        });
+
+        inputs.forEach(input => {
+            if (!input.closest('#authPage')) {
+                input.disabled = true;
+            }
+        });
+
+        selects.forEach(select => {
+            if (!select.closest('#authPage')) {
+                select.disabled = true;
+            }
+        });
+    }
+
+    unblockAllInteractions() {
+        // Re-enable all buttons and interactions after authentication
+        const buttons = document.querySelectorAll('button');
+        const inputs = document.querySelectorAll('input');
+        const selects = document.querySelectorAll('select');
+
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            btn.style.pointerEvents = 'auto';
+        });
+
+        inputs.forEach(input => {
+            input.disabled = false;
+        });
+
+        selects.forEach(select => {
+            select.disabled = false;
+        });
     }
 
     setupAuthTabs() {
@@ -4628,65 +4730,6 @@ class AppStartup {
         this.startTime = Date.now();
 
         this.initializeApp();
-    }
-
-    // Authentication enforcement - NOBODY gets past without login
-    enforceAuthentication() {
-        // Ensure app container is hidden until authenticated
-        const appContainer = document.querySelector('.app-container');
-        const authPage = document.getElementById('authPage');
-
-        if (appContainer) appContainer.style.display = 'none';
-        if (authPage) authPage.style.display = 'block';
-
-        // Block all app functionality until authenticated
-        this.blockAllInteractions();
-    }
-
-    blockAllInteractions() {
-        // Disable all buttons and interactions
-        const buttons = document.querySelectorAll('button');
-        const inputs = document.querySelectorAll('input');
-        const selects = document.querySelectorAll('select');
-
-        buttons.forEach(btn => {
-            if (!btn.closest('#authPage')) {
-                btn.disabled = true;
-                btn.style.pointerEvents = 'none';
-            }
-        });
-
-        inputs.forEach(input => {
-            if (!input.closest('#authPage')) {
-                input.disabled = true;
-            }
-        });
-
-        selects.forEach(select => {
-            if (!select.closest('#authPage')) {
-                select.disabled = true;
-            }
-        });
-    }
-
-    unblockAllInteractions() {
-        // Re-enable all buttons and interactions after authentication
-        const buttons = document.querySelectorAll('button');
-        const inputs = document.querySelectorAll('input');
-        const selects = document.querySelectorAll('select');
-
-        buttons.forEach(btn => {
-            btn.disabled = false;
-            btn.style.pointerEvents = 'auto';
-        });
-
-        inputs.forEach(input => {
-            input.disabled = false;
-        });
-
-        selects.forEach(select => {
-            select.disabled = false;
-        });
     }
 
     // Authentication enforcement - NOBODY gets past without login
