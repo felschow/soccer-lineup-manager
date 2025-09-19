@@ -339,8 +339,12 @@ class FirebaseService {
     onAuthStateChanged(user) {
         if (user) {
             console.log('User signed in:', user.email);
+            console.log('Dispatching userSignedIn event with user:', user);
             // Trigger app to load user data
-            window.dispatchEvent(new CustomEvent('userSignedIn', { detail: user }));
+            const event = new CustomEvent('userSignedIn', { detail: user });
+            console.log('Created event:', event);
+            window.dispatchEvent(event);
+            console.log('userSignedIn event dispatched');
         } else {
             console.log('User signed out');
             // Trigger app to clear data and show login
@@ -352,6 +356,10 @@ class FirebaseService {
 
     isAuthenticated() {
         return !!this.currentUser;
+    }
+
+    getCurrentUser() {
+        return this.currentUser;
     }
 
     getCurrentUserId() {

@@ -220,10 +220,22 @@ class SoccerApp {
 
         // Set up authentication event listeners
         window.addEventListener('userSignedIn', (event) => {
-            this.onUserSignedIn(event.detail);
+            console.log('userSignedIn event received', event.detail);
+            console.log('Event object:', event);
+            console.log('About to call onUserSignedIn with:', event.detail);
+
+            // Always call onUserSignedIn, whether we have event.detail or not
+            const user = event.detail || window.firebaseService?.getCurrentUser();
+            if (user) {
+                console.log('Calling onUserSignedIn with user:', user);
+                this.onUserSignedIn(user);
+            } else {
+                console.error('No user available for onUserSignedIn');
+            }
         });
 
         window.addEventListener('userSignedOut', () => {
+            console.log('userSignedOut event received');
             this.onUserSignedOut();
         });
 
@@ -389,8 +401,16 @@ class SoccerApp {
         const emailSignInForm = document.getElementById('emailSignInForm');
         const emailSignUpForm = document.getElementById('emailSignUpForm');
 
+        console.log('Setting up email form listeners', { emailSignInForm, emailSignUpForm });
+
         if (emailSignInForm) {
-            emailSignInForm.addEventListener('submit', (e) => this.handleEmailSignIn(e));
+            console.log('Adding submit listener to emailSignInForm');
+            emailSignInForm.addEventListener('submit', (e) => {
+                console.log('Form submit event triggered', e);
+                this.handleEmailSignIn(e);
+            });
+        } else {
+            console.error('emailSignInForm not found!');
         }
 
         if (emailSignUpForm) {
@@ -501,10 +521,16 @@ class SoccerApp {
         const email = document.getElementById('signInEmail').value;
         const password = document.getElementById('signInPassword').value;
 
+        if (!window.firebaseService) {
+            this.showAuthError('Authentication service not available');
+            return;
+        }
+
         const result = await window.firebaseService.signInWithEmail(email, password);
 
         if (result.success) {
-            // Success is handled by the auth state listener
+            // Force immediate transition
+            this.forceLoginTransition();
         } else {
             this.showAuthError(result.error);
         }
@@ -548,25 +574,54 @@ class SoccerApp {
         }
     }
 
-    onUserSignedIn(user) {
-        // Hide auth page and show app
-        const authPage = document.getElementById('authPage');
-        const appContainer = document.querySelector('.app-container');
+    forceLoginTransition() {
+        console.log('🚀 FORCING LOGIN TRANSITION');
 
-        if (authPage) authPage.style.display = 'none';
-        if (appContainer) appContainer.style.display = 'block';
+        // Hide auth page with multiple methods
+        const authPage = document.getElementById('authPage');
+        if (authPage) {
+            console.log('Found authPage, hiding it');
+            authPage.style.display = 'none';
+            authPage.style.visibility = 'hidden';
+            authPage.hidden = true;
+            console.log('Auth page hidden');
+        }
+
+        // Show app container with multiple methods
+        const appContainer = document.querySelector('.app-container');
+        if (appContainer) {
+            console.log('Found appContainer, showing it');
+            appContainer.style.display = 'block';
+            appContainer.style.visibility = 'visible';
+            appContainer.hidden = false;
+            console.log('App container shown');
+        }
+
+        // Switch to teams tab
+        console.log('Switching to teams tab');
+        this.justLoggedIn = true;
+        this.switchTab('teamsTab');
 
         // Show user icon
         const userIcon = document.getElementById('userIcon');
-        if (userIcon) userIcon.style.display = 'block';
+        if (userIcon) {
+            userIcon.style.display = 'block';
+            console.log('User icon shown');
+        }
 
-        this.updateUserDisplay(user);
+        // Update user display if possible
+        const user = window.firebaseService?.getCurrentUser();
+        if (user) {
+            this.updateUserDisplay(user);
+            this.loadCloudData();
+        }
 
-        // Always redirect to teams tab after login
-        this.justLoggedIn = true; // Flag to prevent auto-switch to field
-        this.switchTab('teamsTab');
+        console.log('🎉 LOGIN TRANSITION COMPLETE');
+    }
 
-        this.loadCloudData();
+    onUserSignedIn(user) {
+        console.log('onUserSignedIn called with user:', user);
+        this.forceLoginTransition();
     }
 
     // This method is now handled by the second onUserSignedOut method below
