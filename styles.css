@@ -2474,6 +2474,77 @@ body {
     .auth-form:last-child.active {
         border-radius: 0 0 20px 0;
     }
+
+    /* Desktop Auth Page Styles - Full Screen Experience */
+    .auth-page {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+    }
+
+    .auth-container {
+        max-width: 480px;
+        width: 100%;
+        padding: 48px 40px;
+        border-radius: 20px;
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.25);
+        backdrop-filter: blur(10px);
+    }
+
+    .auth-header {
+        margin-bottom: 48px;
+    }
+
+    .auth-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .auth-toggle {
+        margin-bottom: 40px;
+        gap: 8px;
+    }
+
+    .auth-tab-btn {
+        padding: 14px 24px;
+        font-size: 1rem;
+        font-weight: 600;
+        min-width: 120px;
+    }
+
+    .auth-email-form {
+        gap: 20px;
+    }
+
+    .auth-email-form input {
+        padding: 16px 20px;
+        font-size: 1rem;
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        transition: all 0.3s ease;
+    }
+
+    .auth-email-form input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        transform: translateY(-1px);
+    }
+
+    .auth-submit-btn {
+        padding: 16px 32px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: 12px;
+        margin-top: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .auth-submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
 }
 
 /* Mobile: Keep original modal behavior with stacked forms */
