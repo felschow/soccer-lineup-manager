@@ -211,16 +211,7 @@ class SoccerApp {
         });
 
         // Google sign in buttons
-        const googleSignInBtn = document.getElementById('googleSignInBtn');
-        const googleSignUpBtn = document.getElementById('googleSignUpBtn');
-
-        if (googleSignInBtn) {
-            googleSignInBtn.addEventListener('click', () => this.handleGoogleSignIn());
-        }
-
-        if (googleSignUpBtn) {
-            googleSignUpBtn.addEventListener('click', () => this.handleGoogleSignIn());
-        }
+        // Google sign-in removed per user request
 
         // Email forms
         const emailSignInForm = document.getElementById('emailSignInForm');
@@ -4637,6 +4628,65 @@ class AppStartup {
         this.startTime = Date.now();
 
         this.initializeApp();
+    }
+
+    // Authentication enforcement - NOBODY gets past without login
+    enforceAuthentication() {
+        // Ensure app container is hidden until authenticated
+        const appContainer = document.querySelector('.app-container');
+        const authPage = document.getElementById('authPage');
+
+        if (appContainer) appContainer.style.display = 'none';
+        if (authPage) authPage.style.display = 'block';
+
+        // Block all app functionality until authenticated
+        this.blockAllInteractions();
+    }
+
+    blockAllInteractions() {
+        // Disable all buttons and interactions
+        const buttons = document.querySelectorAll('button');
+        const inputs = document.querySelectorAll('input');
+        const selects = document.querySelectorAll('select');
+
+        buttons.forEach(btn => {
+            if (!btn.closest('#authPage')) {
+                btn.disabled = true;
+                btn.style.pointerEvents = 'none';
+            }
+        });
+
+        inputs.forEach(input => {
+            if (!input.closest('#authPage')) {
+                input.disabled = true;
+            }
+        });
+
+        selects.forEach(select => {
+            if (!select.closest('#authPage')) {
+                select.disabled = true;
+            }
+        });
+    }
+
+    unblockAllInteractions() {
+        // Re-enable all buttons and interactions after authentication
+        const buttons = document.querySelectorAll('button');
+        const inputs = document.querySelectorAll('input');
+        const selects = document.querySelectorAll('select');
+
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            btn.style.pointerEvents = 'auto';
+        });
+
+        inputs.forEach(input => {
+            input.disabled = false;
+        });
+
+        selects.forEach(select => {
+            select.disabled = false;
+        });
     }
 
     // Authentication enforcement - NOBODY gets past without login

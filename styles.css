@@ -1983,28 +1983,17 @@ body {
     text-align: center;
 }
 
-/* Modern Auth Header */
+/* Simplified Auth Header */
 .auth-header {
-    margin-bottom: 32px;
-}
-
-.auth-logo {
-    font-size: 48px;
-    margin-bottom: 16px;
-    display: block;
+    margin-bottom: 40px;
 }
 
 .auth-title {
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 700;
     color: #1a1a1a;
-    margin: 0 0 8px 0;
-}
-
-.auth-subtitle {
-    font-size: 16px;
-    color: #666;
     margin: 0;
+    letter-spacing: -0.5px;
 }
 
 /* Auth Toggle Tabs */
