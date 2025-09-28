@@ -146,15 +146,20 @@ class SoccerApp {
         const userAgent = navigator.userAgent.toLowerCase();
         const mobileKeywords = ['mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'];
         const hasMobileKeyword = mobileKeywords.some(keyword => userAgent.includes(keyword));
-        
-        // Check screen size (below 768px is considered mobile)
-        const isSmallScreen = window.innerWidth <= 768;
-        
+
         // Check for touch capability
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-        
-        // Mobile if any condition is true, but prioritize screen size for responsive behavior
-        return isSmallScreen || (hasMobileKeyword && isTouchDevice);
+
+        // For true mobile devices, always consider them mobile regardless of orientation
+        if (hasMobileKeyword && isTouchDevice) {
+            return true;
+        }
+
+        // Check screen size (use smaller dimension to handle rotation properly)
+        const smallerDimension = Math.min(window.innerWidth, window.innerHeight);
+        const isSmallScreen = smallerDimension <= 1024; // Match CSS breakpoint
+
+        return isSmallScreen;
     }
     
     // Method to ensure desktop functionality is protected
@@ -179,6 +184,9 @@ class SoccerApp {
         // Add device classes to body for CSS targeting
         document.body.classList.add(this.isMobile ? 'mobile-device' : 'desktop-device');
         if (this.isTouch) document.body.classList.add('touch-device');
+
+        // Authentication state should be independent of responsive design
+        this.authStateLockedIn = false;
 
         // Initialize authentication
         this.initializeAuth();
@@ -246,6 +254,9 @@ class SoccerApp {
         // Set up authentication enforcement
         this.setupAuthenticationEnforcement();
 
+        // Handle orientation changes and visibility changes
+        this.setupOrientationHandlers();
+
         // Check initial auth state
         if (window.firebaseService.isAuthenticated()) {
             this.hideAuthModal();
@@ -269,6 +280,129 @@ class SoccerApp {
 
         // Setup auth tab switching
         this.setupAuthTabs();
+    }
+
+    setupOrientationHandlers() {
+        // Prevent authentication loss during orientation changes
+        document.addEventListener('visibilitychange', () => {
+            console.log('Visibility change - hidden:', document.hidden);
+            // When app becomes visible again after orientation change
+            if (!document.hidden && window.firebaseService) {
+                // Re-verify auth state without forcing login
+                const currentUser = window.firebaseService.getCurrentUser();
+                console.log('Visibility change - current user:', currentUser?.email || 'none');
+                if (currentUser && !this.isAppVisible()) {
+                    console.log('Fixing auth state after visibility change');
+                    // User is authenticated but app is showing auth page - fix this
+                    this.hideAuthPage();
+                    this.showUserMenu();
+                }
+            }
+        });
+
+        // Handle orientation changes specifically
+        if (screen.orientation) {
+            screen.orientation.addEventListener('change', () => {
+                console.log('Orientation changed to:', screen.orientation.angle);
+                // Multiple checks with different delays to catch auth state recovery
+                setTimeout(() => this.checkAndRecoverAuthState(), 100);
+                setTimeout(() => this.checkAndRecoverAuthState(), 500);
+                setTimeout(() => this.checkAndRecoverAuthState(), 1000);
+            });
+        }
+
+        // Fallback for older devices without screen.orientation
+        window.addEventListener('orientationchange', () => {
+            console.log('Legacy orientation change event');
+            // Multiple checks with different delays to catch auth state recovery
+            setTimeout(() => this.checkAndRecoverAuthState(), 200);
+            setTimeout(() => this.checkAndRecoverAuthState(), 700);
+            setTimeout(() => this.checkAndRecoverAuthState(), 1500);
+        });
+
+        // Removed periodic checks - too spammy
+    }
+
+    checkAndRecoverAuthState() {
+        // Robust auth state recovery - checks for mismatches and fixes them
+        if (!window.firebaseService) return;
+
+        try {
+            const isFirebaseAuthenticated = window.firebaseService.isAuthenticated();
+            const currentUser = window.firebaseService.getCurrentUser();
+            const isAppVisible = this.isAppVisible();
+            const authPage = document.getElementById('authPage');
+            const isAuthPageVisible = authPage && authPage.style.display !== 'none';
+
+            console.log('Auth state check:', {
+                isFirebaseAuthenticated,
+                hasCurrentUser: !!currentUser,
+                userEmail: currentUser?.email,
+                isAppVisible,
+                isAuthPageVisible
+            });
+
+            // If user is authenticated but auth page is showing - fix this!
+            if (isFirebaseAuthenticated && currentUser && isAuthPageVisible) {
+                console.log('🔥 RECOVERING AUTH STATE - User is authenticated but login page is showing!');
+                this.forceAuthStateRecovery(currentUser);
+                return;
+            }
+
+            // If user is authenticated but app is hidden - fix this!
+            if (isFirebaseAuthenticated && currentUser && !isAppVisible) {
+                console.log('🔥 RECOVERING AUTH STATE - User is authenticated but app is hidden!');
+                this.forceAuthStateRecovery(currentUser);
+                return;
+            }
+
+        } catch (error) {
+            console.error('Error checking auth state:', error);
+        }
+    }
+
+    forceAuthStateRecovery(user) {
+        // Force the app back to authenticated state
+        console.log('Forcing auth state recovery for user:', user.email);
+
+        // Hide auth page
+        const authPage = document.getElementById('authPage');
+        if (authPage) {
+            authPage.style.display = 'none';
+        }
+
+        // Show app container
+        const appContainer = document.querySelector('.app-container');
+        if (appContainer) {
+            appContainer.style.display = 'flex';
+        }
+
+        // Show user menu and update display
+        this.showUserMenu();
+        this.updateUserDisplay(user);
+
+        // Trigger the authenticated state
+        this.onUserSignedIn(user);
+    }
+
+    maintainAuthenticatedState() {
+        // Helper method to maintain authenticated state
+        if (window.firebaseService && window.firebaseService.isAuthenticated()) {
+            const appContainer = document.querySelector('.app-container');
+            const authPage = document.getElementById('authPage');
+
+            if (appContainer && appContainer.style.display === 'none') {
+                appContainer.style.display = 'flex';
+            }
+            if (authPage && authPage.style.display !== 'none') {
+                authPage.style.display = 'none';
+            }
+        }
+    }
+
+    isAppVisible() {
+        const appContainer = document.querySelector('.app-container');
+        return appContainer && appContainer.style.display !== 'none';
     }
 
     setupAuthTabs() {
@@ -466,7 +600,7 @@ class SoccerApp {
             signUpForm.classList.add('active');
 
             // On mobile/small screen, scroll to show the sign up form
-            if (window.innerWidth <= 768) {
+            if (window.innerWidth <= 1024) {
                 setTimeout(() => {
                     const authModal = document.querySelector('.auth-modal');
                     if (authModal && signUpForm) {
@@ -482,7 +616,7 @@ class SoccerApp {
             signInForm.classList.add('active');
 
             // On mobile/small screen, scroll to the new form
-            if (window.innerWidth <= 768) {
+            if (window.innerWidth <= 1024) {
                 setTimeout(() => {
                     const authModal = document.querySelector('.auth-modal');
                     if (authModal) {
@@ -564,41 +698,25 @@ class SoccerApp {
         }
     }
 
-    async handleSignOut() {
-        const result = await window.firebaseService.signOut();
-
-        if (result.success) {
-            // Sign out is handled by the auth state listener
-        } else {
-            console.error('Sign out error:', result.error);
-        }
-    }
 
     forceLoginTransition() {
-        console.log('🚀 FORCING LOGIN TRANSITION');
-
         // Hide auth page with multiple methods
         const authPage = document.getElementById('authPage');
         if (authPage) {
-            console.log('Found authPage, hiding it');
             authPage.style.display = 'none';
             authPage.style.visibility = 'hidden';
             authPage.hidden = true;
-            console.log('Auth page hidden');
         }
 
         // Show app container with multiple methods
         const appContainer = document.querySelector('.app-container');
         if (appContainer) {
-            console.log('Found appContainer, showing it');
             appContainer.style.display = 'block';
             appContainer.style.visibility = 'visible';
             appContainer.hidden = false;
-            console.log('App container shown');
         }
 
         // Switch to teams tab
-        console.log('Switching to teams tab');
         this.justLoggedIn = true;
         this.switchTab('teamsTab');
 
@@ -606,7 +724,6 @@ class SoccerApp {
         const userIcon = document.getElementById('userIcon');
         if (userIcon) {
             userIcon.style.display = 'block';
-            console.log('User icon shown');
         }
 
         // Update user display if possible
@@ -615,12 +732,11 @@ class SoccerApp {
             this.updateUserDisplay(user);
             this.loadCloudData();
         }
-
-        console.log('🎉 LOGIN TRANSITION COMPLETE');
     }
 
     onUserSignedIn(user) {
         console.log('onUserSignedIn called with user:', user);
+        this.authStateLockedIn = true; // Lock auth state - no more responsive changes
         this.forceLoginTransition();
     }
 
@@ -665,8 +781,17 @@ class SoccerApp {
 
     showAuthPage() {
         const authPage = document.getElementById('authPage');
+        const appContainer = document.querySelector('.app-container');
+        const userIcon = document.getElementById('userIcon');
+
         if (authPage) {
-            authPage.style.display = 'block';
+            authPage.style.display = 'flex';
+        }
+        if (appContainer) {
+            appContainer.style.display = 'none';
+        }
+        if (userIcon) {
+            userIcon.style.display = 'none';
         }
     }
 
@@ -762,6 +887,9 @@ class SoccerApp {
             // Don't auto-switch to game view if user just logged in
             if (!this.justLoggedIn) {
                 this.updateUI();
+            } else {
+                // For just logged in users, force teams tab
+                this.showTeamSection();
             }
 
             this.initializeNavigation();
@@ -800,6 +928,9 @@ class SoccerApp {
 
     async handleSignOut() {
         try {
+            // Reset the auth lock when user intentionally signs out
+            this.authStateLockedIn = false;
+
             // Sign out from Firebase
             const result = await window.firebaseService.signOut();
 
@@ -897,6 +1028,14 @@ class SoccerApp {
     }
 
     onUserSignedOut() {
+        // Only allow sign out if it's a real sign out, not a responsive change
+        if (this.authStateLockedIn && window.firebaseService && window.firebaseService.isAuthenticated()) {
+            console.log('Ignoring spurious sign out - user is still authenticated');
+            return; // Ignore this sign out event
+        }
+
+        console.log('Processing legitimate sign out');
+        this.authStateLockedIn = false;
 
         // Hide user icon and menu
         document.getElementById('userIcon').style.display = 'none';
@@ -906,7 +1045,7 @@ class SoccerApp {
         const authPage = document.getElementById('authPage');
         const appContainer = document.querySelector('.app-container');
 
-        if (authPage) authPage.style.display = 'block';
+        if (authPage) authPage.style.display = 'flex';
         if (appContainer) appContainer.style.display = 'none';
 
         // Clear user data and switch to localStorage
@@ -923,8 +1062,8 @@ class SoccerApp {
         // Re-render teams (will show empty state for non-authenticated user)
         this.renderTeams();
 
-        // DON'T switch to teams tab - stay on auth page
-        // DON'T call updateUI - it might interfere with auth page display
+        // Show the authentication page
+        this.showAuthPage();
     }
 
     toggleUserMenu() {
@@ -1055,6 +1194,11 @@ class SoccerApp {
     }
     
     initializeNavigation() {
+        // Don't auto-switch tabs if user just logged in
+        if (this.justLoggedIn) {
+            return; // Keep on teams tab as set by showTeamSection()
+        }
+
         // Start with teams tab if no current game, otherwise field tab
         if (this.currentGame) {
             this.switchTab('fieldTab');
@@ -2380,7 +2524,32 @@ class SoccerApp {
             this.showSuccessMessage(`Period ${this.currentPeriod} cleared!`);
         }
     }
-    
+
+    // Dynamic font sizing for player names in position circles
+    setPlayerNameWithDynamicFont(positionElement, playerName) {
+        if (!playerName) return;
+
+        positionElement.textContent = playerName;
+
+        // Calculate optimal font size based on name length
+        let fontSize;
+        const nameLength = playerName.length;
+
+        if (nameLength <= 6) {
+            fontSize = '0.75rem';        // Short names: normal size
+        } else if (nameLength <= 8) {
+            fontSize = '0.65rem';        // Medium names: slightly smaller
+        } else if (nameLength <= 10) {
+            fontSize = '0.6rem';         // Long names: smaller
+        } else if (nameLength <= 12) {
+            fontSize = '0.55rem';        // Very long names: very small
+        } else {
+            fontSize = '0.5rem';         // Extremely long names: minimum readable
+        }
+
+        positionElement.style.fontSize = fontSize;
+    }
+
     // ===== LINEUP MANAGEMENT =====
     renderField() {
         if (!this.currentGame || !this.currentTeam) return;
@@ -2397,12 +2566,13 @@ class SoccerApp {
         document.querySelectorAll('.position').forEach(pos => {
             const position = pos.dataset.position;
             const player = currentLineup.positions[position];
-            
+
             if (player) {
-                pos.textContent = player;
+                this.setPlayerNameWithDynamicFont(pos, player);
                 pos.classList.add('occupied');
             } else {
                 pos.textContent = position;
+                pos.style.fontSize = ''; // Reset to default font size
                 pos.classList.remove('occupied');
             }
         });
@@ -4378,7 +4548,7 @@ document.addEventListener('keydown', (e) => {
 // ===== NATIVE MOBILE INTERACTIONS =====
 class MobileInteractions {
     constructor() {
-        this.isMobile = window.innerWidth <= 768;
+        this.isMobile = window.innerWidth <= 1024;
         this.isTouch = 'ontouchstart' in window;
         this.pullToRefreshThreshold = 60;
         this.swipeThreshold = 50;
@@ -5094,7 +5264,7 @@ class PWAInstallManager {
             <div class="install-content">
                 <div class="install-icon">⚽</div>
                 <div class="install-text">
-                    <h3>Install SimpleSquad</h3>
+                    <h3>Install SimpleSquads</h3>
                     <p>Get the full app experience with offline access</p>
                 </div>
                 <div class="install-actions">
@@ -5155,7 +5325,7 @@ class PWAInstallManager {
                 <div class="toast-icon">✅</div>
                 <div class="toast-text">
                     <strong>App Installed!</strong>
-                    <p>SimpleSquad is now available on your home screen</p>
+                    <p>SimpleSquads is now available on your home screen</p>
                 </div>
             </div>
         `;

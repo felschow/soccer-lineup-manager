@@ -6,6 +6,6 @@
     if (window.appConfig && window.appConfig.isProduction()) {
         window.PRODUCTION_MODE = true;
         window.DEBUG_MODE = false;
-        console.log('🔥 SimpleSquad Production Mode Active');
+        console.log('🔥 SimpleSquads Production Mode Active');
     }
 })();

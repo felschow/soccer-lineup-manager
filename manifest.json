@@ -1,12 +1,12 @@
 {
-  "name": "SimpleSquad Manager",
-  "short_name": "SimpleSquad",
+  "name": "SimpleSquads Manager",
+  "short_name": "SimpleSquads",
   "description": "Professional soccer team lineup and game management",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#667eea",
   "theme_color": "#667eea",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "scope": "/",
   "lang": "en-US",
   "categories": ["sports", "productivity", "utilities"],
@@ -19,7 +19,7 @@
   },
   "protocol_handlers": [
     {
-      "protocol": "web+simplesquad",
+      "protocol": "web+simplesquads",
       "url": "/?team=%s"
     }
   ],

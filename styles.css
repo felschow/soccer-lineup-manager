@@ -5,23 +5,55 @@
     box-sizing: border-box;
 }
 
+/* ===== PWA MOBILE OPTIMIZATION ===== */
+/* iOS Safe Area Support */
+:root {
+    --safe-area-inset-top: env(safe-area-inset-top);
+    --safe-area-inset-right: env(safe-area-inset-right);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom);
+    --safe-area-inset-left: env(safe-area-inset-left);
+}
+
+/* Prevent content from appearing behind iOS status bar/notch */
+body {
+    padding-top: var(--safe-area-inset-top);
+    padding-left: var(--safe-area-inset-left);
+    padding-right: var(--safe-area-inset-right);
+    padding-bottom: var(--safe-area-inset-bottom);
+}
+
+/* Ensure proper mobile viewport handling */
+html {
+    height: 100%;
+    height: 100vh;
+    height: 100dvh;
+}
+
+body {
+    min-height: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
 /* ===== DEVICE EXPERIENCE PROTECTION ===== */
 /* Desktop-only features - hidden on mobile to prevent conflicts */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .desktop-only {
         display: none !important;
     }
 }
 
 /* Mobile-only features - hidden on desktop to prevent conflicts */
-@media (min-width: 769px) {
+@media (min-width: 1025px) {
     .mobile-only {
         display: none !important;
     }
 }
 
 /* Ensure desktop functionality is preserved with fallbacks */
-@media (min-width: 769px) {
+@media (min-width: 1025px) {
     .desktop-preserve {
         /* Maintains original desktop behavior regardless of mobile changes */
     }
@@ -55,8 +87,9 @@
 /* Header Actions Container */
 .header-actions {
     display: flex;
-    align-items: center;
-    gap: 12px;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: 8px;
 }
 
 /* PWA Install Button */
@@ -278,7 +311,7 @@
 }
 
 /* Enhanced mobile animations */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .btn,
     .nav-item,
     .team-card,
@@ -361,7 +394,8 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(180deg, #667eea 0%, #6366f1 40%, #764ba2 100%);
+    background-attachment: fixed;
     min-height: 100vh;
     min-height: 100dvh; /* Dynamic viewport height for mobile */
     color: #333;
@@ -643,7 +677,7 @@ body {
 }
 
 /* Mobile optimizations for install prompts */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .install-prompt {
         bottom: calc(80px + env(safe-area-inset-bottom));
         left: 16px;
@@ -684,6 +718,8 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    position: relative;
+    z-index: 1; /* Lower than auth page */
     /* Account for safe areas */
     min-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     min-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
@@ -910,7 +946,7 @@ body {
 }
 
 /* Desktop selected badge */
-@media (min-width: 769px) {
+@media (min-width: 1025px) {
     .team-card.selected::before {
         content: '✓ SELECTED';
         position: absolute;
@@ -1583,8 +1619,8 @@ body {
 }
 
 .position {
-    width: 60px;
-    height: 60px;
+    width: 63px;
+    height: 63px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.9);
     display: flex;
@@ -1607,9 +1643,16 @@ body {
 }
 
 .position.occupied {
-    font-size: 0.75rem;
+    font-size: 0.75rem; /* Default size, overridden by JS */
     text-align: center;
-    line-height: 1.2;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    font-weight: 600;
 }
 
 /* Inverted colors for occupied positions */
@@ -1723,8 +1766,7 @@ body {
 
 .players-list.bench {
     min-height: 100px;
-    max-height: 120px;
-    overflow-y: auto;
+    overflow-y: visible;
 }
 
 /* Enhanced Player Items */
@@ -1964,12 +2006,20 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
+    height: 100vh;
+    height: 100dvh;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 99999;
+    z-index: 999999;
     overflow: hidden;
+    /* Ensure it covers everything and blocks interaction */
+    -webkit-overflow-scrolling: touch;
+    /* Prevent any pointer events from reaching content below */
+    pointer-events: auto;
+    /* Ensure it's always on top */
+    isolation: isolate;
 }
 
 .auth-container {
@@ -1978,18 +2028,21 @@ body {
     background: white;
     border-radius: 24px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-    padding: 40px 32px 32px;
-    margin: 20px;
+    padding: 32px 24px 24px;
+    margin: 16px;
     text-align: center;
+    /* Ensure auth container stays above everything */
+    position: relative;
+    z-index: 1000000;
 }
 
 /* Simplified Auth Header - Mobile */
 .auth-header {
-    margin-bottom: 40px;
+    margin-bottom: 24px;
 }
 
 .auth-title {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 700;
     color: #1a1a1a;
     margin: 0;
@@ -2002,7 +2055,7 @@ body {
     background: #f5f5f5;
     border-radius: 12px;
     padding: 4px;
-    margin-bottom: 32px;
+    margin-bottom: 20px;
 }
 
 .auth-tab-btn {
@@ -2027,7 +2080,7 @@ body {
 /* Auth Forms */
 .auth-forms-container {
     position: relative;
-    min-height: 280px;
+    min-height: 160px;
 }
 
 .auth-form {
@@ -2041,19 +2094,19 @@ body {
 /* Google Button */
 .auth-google-btn {
     width: 100%;
-    padding: 16px;
+    padding: 14px;
     border: 2px solid #e5e5e5;
     border-radius: 12px;
     background: white;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    margin-bottom: 24px;
+    gap: 10px;
+    margin-bottom: 18px;
     color: #333;
 }
 
@@ -2077,11 +2130,11 @@ body {
 
 /* Auth Divider */
 .auth-divider {
-    margin: 24px 0;
+    margin: 16px 0;
     position: relative;
     text-align: center;
     color: #999;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .auth-divider::before {
@@ -2104,15 +2157,15 @@ body {
 .auth-email-form {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
 }
 
 .auth-email-form input {
     width: 100%;
-    padding: 16px;
+    padding: 14px;
     border: 2px solid #e5e5e5;
     border-radius: 12px;
-    font-size: 16px;
+    font-size: 15px;
     transition: border-color 0.2s ease;
     box-sizing: border-box;
 }
@@ -2129,16 +2182,16 @@ body {
 /* Submit Button */
 .auth-submit-btn {
     width: 100%;
-    padding: 16px;
+    padding: 14px;
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
     border: none;
     border-radius: 12px;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
-    margin-top: 8px;
+    margin-top: 6px;
 }
 
 .auth-submit-btn:hover {
@@ -2437,7 +2490,7 @@ body {
 
 /* ===== AUTHENTICATION STYLES ===== */
 /* Desktop: Make auth modal wider and more page-like */
-@media (min-width: 769px) {
+@media (min-width: 1025px) {
     .auth-modal {
         max-width: 900px;
         width: 90%;
@@ -2694,14 +2747,24 @@ body {
     }
 }
 
-/* Mobile: Keep original modal behavior with stacked forms */
-@media (max-width: 768px) {
-    .auth-modal {
-        max-width: 420px;
-        width: 90%;
-        max-height: 90vh;
+/* Mobile: Optimized auth experience */
+@media (max-width: 1024px) {
+    .auth-page {
+        /* Ensure proper mobile coverage */
+        padding-top: var(--safe-area-inset-top);
+        padding-bottom: var(--safe-area-inset-bottom);
+        padding-left: var(--safe-area-inset-left);
+        padding-right: var(--safe-area-inset-right);
+    }
+
+    .auth-container {
+        margin: 16px;
+        padding: 32px 24px 24px;
+        max-width: calc(100% - 32px);
+        /* Account for safe areas */
+        max-height: calc(100vh - var(--safe-area-inset-top) - var(--safe-area-inset-bottom) - 32px);
         overflow-y: auto;
-        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+        -webkit-overflow-scrolling: touch;
     }
 
     .auth-forms-container {
@@ -2718,6 +2781,15 @@ body {
         background: transparent;
         border-radius: 0;
     }
+
+    .auth-title {
+        font-size: 28px !important;
+        margin-bottom: 16px !important;
+    }
+
+    .auth-toggle {
+        margin-bottom: 24px !important;
+    }
 }
 
 
@@ -2726,38 +2798,43 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 24px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(180deg, #667eea 0%, #6366f1 50%, rgba(103, 102, 241, 0.95) 100%);
+    backdrop-filter: blur(10px);
     color: white;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     position: sticky;
     top: 0;
     z-index: 1000;
+    min-height: 48px;
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    padding: 8px calc(50vw - 50% + 16px);
 }
 
 .app-title {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    flex: 1;
 }
 
 .app-icon {
-    font-size: 2rem;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    font-size: 1.5rem;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
 }
 
 .app-title h1 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 600;
     margin: 0;
+    letter-spacing: -0.01em;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* User Icon Button Styles (updated for header) */
 .user-icon-btn {
     position: relative;
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border: none;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.2);
@@ -2895,34 +2972,36 @@ body {
 /* User Menu Styles */
 .user-menu {
     position: fixed;
-    top: 80px;
-    right: 20px;
+    top: 65px;
+    right: 16px;
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
     border: 1px solid #e2e8f0;
-    min-width: 280px;
+    min-width: 160px;
     z-index: 1001;
+    overflow: hidden;
 }
 
 .user-info {
-    padding: 20px;
+    padding: 8px 12px;
     border-bottom: 1px solid #f1f5f9;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
 }
 
 .user-avatar {
     position: relative;
-    width: 48px;
-    height: 48px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     overflow: hidden;
     background: #f3f4f6;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 }
 
 .user-avatar img {
@@ -2945,25 +3024,40 @@ body {
     display: block;
     font-weight: 600;
     color: #1e293b;
-    margin-bottom: 2px;
+    margin-bottom: 0;
+    font-size: 0.8rem;
+    line-height: 1.1;
 }
 
 .user-email {
     display: block;
-    font-size: 0.85rem;
+    font-size: 0.7rem;
     color: #64748b;
+    line-height: 1.1;
 }
 
 .user-actions {
-    padding: 12px;
+    padding: 4px;
 }
 
 .user-action {
     width: 100%;
     justify-content: flex-start;
-    margin-bottom: 8px;
-    padding: 10px 16px;
+    margin-bottom: 2px;
+    padding: 6px 8px;
     text-align: left;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    background: transparent;
+    border: none;
+    transition: background-color 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.user-action:hover {
+    background: #f8fafc;
 }
 
 .user-action:last-child {
@@ -2971,7 +3065,7 @@ body {
 }
 
 /* Mobile Auth Styles */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .auth-modal {
         width: 95%;
         max-width: none;
@@ -3019,11 +3113,21 @@ body {
     }
 
     .app-header {
-        padding: 12px 16px;
+        padding: 10px 16px;
+        min-height: 56px;
+    }
+
+    .app-title {
+        gap: 8px;
+    }
+
+    .app-icon {
+        font-size: 1.5rem;
     }
 
     .app-title h1 {
-        font-size: 1.25rem;
+        font-size: 1.2rem;
+        font-weight: 700;
     }
 
     .user-icon-btn {
@@ -3032,10 +3136,11 @@ body {
     }
 
     .user-menu {
-        top: 70px;
-        right: 10px;
-        left: 10px;
+        top: 60px;
+        right: 12px;
+        left: 12px;
         min-width: auto;
+        max-width: none;
     }
 }
 
@@ -3109,7 +3214,7 @@ body {
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .app-container {
         padding: 12px;
     }
@@ -3205,13 +3310,7 @@ body {
     }
     
     .app-header {
-        flex-direction: column;
-        gap: 16px;
-        text-align: center;
-    }
-    
-    .app-header h1 {
-        font-size: 1.5rem;
+        text-align: left;
     }
     
     .field-and-players {
@@ -3219,6 +3318,8 @@ body {
         flex-direction: column;
         gap: 16px;
         min-height: auto;
+        height: auto !important;
+        overflow: visible !important;
     }
     
     /* Enable page scrolling on mobile */
@@ -3226,12 +3327,14 @@ body {
         height: auto !important;
         min-height: 100vh;
         overflow: visible !important;
+        -webkit-overflow-scrolling: touch;
     }
     
     .content-area {
         overflow: visible !important;
         height: auto !important;
         flex: none;
+        min-height: 0;
     }
     
     .tab-content {
@@ -3252,9 +3355,8 @@ body {
     .players-panel {
         order: 2;
         height: auto;
-        max-height: 180px !important; /* Limit height to fit on screen */
         flex: 0 0 auto;
-        padding: 12px;
+        padding: 12px 12px 20px 12px;
         gap: 8px;
         margin-top: 8px;
         overflow: visible;
@@ -3267,8 +3369,13 @@ body {
         gap: 12px !important;
     }
     
-    .bench-section, .jersey-section {
-        flex: 1 !important;
+    .bench-section {
+        flex: 2 !important;
+        min-height: 0 !important;
+    }
+
+    .jersey-section {
+        flex: 0 0 120px !important;
         min-height: 0 !important;
     }
     
@@ -3289,14 +3396,23 @@ body {
         transform: scale(0.98);
     }
     
-    .players-list.bench, .jersey-slot {
+    .players-list.bench {
         min-height: 80px !important;
-        max-height: 100px !important;
-        padding: 8px !important;
-        overflow-y: auto;
+        padding: 8px 8px 12px 8px !important;
+        overflow-y: visible;
         border: 2px dashed rgba(79, 70, 229, 0.3);
         border-radius: 6px;
         background: rgba(255, 255, 255, 0.8);
+    }
+
+    .jersey-slot {
+        min-height: 60px !important;
+        max-height: 60px !important;
+        padding: 6px !important;
+        overflow: visible;
+        border: 2px dashed #8b5cf6;
+        border-radius: 6px;
+        background: rgba(139, 92, 246, 0.05);
     }
     
     /* Compact player items for mobile bench/jersey */
@@ -3357,7 +3473,12 @@ body {
     .position {
         width: 50px;
         height: 50px;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
+    }
+
+    .position.occupied {
+        line-height: 1.0;
+        padding: 1px;
     }
     
     .teams-list {
@@ -3860,9 +3981,13 @@ body {
     }
     
     .position {
-        width: 36px;
+        width: 55px;
         height: 36px;
-        font-size: 0.65rem;
+        font-size: 0.6rem;
+    }
+
+    .position.occupied {
+        line-height: 0.9;
     }
     
     .field-and-players {
@@ -3871,8 +3996,7 @@ body {
     }
     
     .players-panel {
-        max-height: 150px;
-        padding: 12px;
+        padding: 12px 12px 20px 12px;
     }
     
     .table-container {
@@ -4754,7 +4878,7 @@ body {
 }
 
 /* Mobile responsive for player rows */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .position-checkboxes {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -4922,6 +5046,8 @@ body {
 /* ===== MOBILE ACCORDION TABLE ===== */
 .mobile-table-container {
     display: none; /* Hidden by default, shown on mobile */
+    flex-direction: column;
+    gap: 12px; /* Consistent spacing for all accordion items */
 }
 
 .lineup-accordion {
@@ -5105,17 +5231,17 @@ body {
 }
 
 /* Desktop/Mobile toggle */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .desktop-table {
         display: none !important;
     }
 
     .mobile-table-container {
-        display: block !important;
+        display: flex !important;
     }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 1025px) {
     .mobile-table-container {
         display: none !important;
     }
@@ -5283,7 +5409,7 @@ body {
 }
 
 /* Mobile Responsive */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .historical-game-header {
         flex-direction: column;
         gap: 1rem;
@@ -5313,21 +5439,21 @@ body {
 
 /* ===== GAME TIMER STYLES ===== */
 .game-timer-container {
-    padding: 1rem;
+    padding: 0.75rem;
     background: #f8fafc;
     border-radius: 12px;
-    margin: 1rem 0;
+    margin: 0.75rem 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 /* Modern Timer Display */
 .modern-timer-display {
     text-align: center;
-    padding: 2rem 1rem;
+    padding: 1.25rem 1rem;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 20px;
     color: white;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
@@ -5335,24 +5461,24 @@ body {
     display: inline-block;
     background: rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(10px);
-    padding: 0.5rem 1rem;
+    padding: 0.375rem 0.75rem;
     border-radius: 20px;
     font-size: 0.875rem;
     font-weight: 600;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .digital-clock {
-    margin: 1.5rem 0;
+    margin: 1rem 0;
 }
 
 .time-digits {
-    font-size: 4rem;
+    font-size: 3.25rem;
     font-weight: 200;
     font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Courier New', monospace;
     line-height: 1;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.375rem;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     letter-spacing: 0.1em;
 }
@@ -5366,13 +5492,13 @@ body {
 .timer-controls-modern {
     display: flex;
     justify-content: center;
-    gap: 1rem;
-    margin-top: 1.5rem;
+    gap: 0.75rem;
+    margin-top: 1rem;
 }
 
 .control-btn {
-    width: 60px;
-    height: 60px;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
     border: 2px solid rgba(255, 255, 255, 0.3);
     background: rgba(255, 255, 255, 0.1);
@@ -5396,8 +5522,8 @@ body {
 }
 
 .control-btn.primary {
-    width: 80px;
-    height: 80px;
+    width: 68px;
+    height: 68px;
     background: rgba(255, 255, 255, 0.15);
     border-color: rgba(255, 255, 255, 0.4);
 }
@@ -5408,18 +5534,18 @@ body {
 }
 
 .control-icon {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     color: white;
 }
 
 .control-btn.primary .control-icon {
-    font-size: 2rem;
+    font-size: 1.7rem;
 }
 
 /* Progress Bar */
 .timer-progress-container {
-    margin-bottom: 1.5rem;
-    padding: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
     background: white;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -5451,16 +5577,16 @@ body {
 
 /* Notifications */
 .timer-notifications {
-    margin-bottom: 1.5rem;
-    padding: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
     background: white;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .timer-notifications h3 {
-    margin: 0 0 1rem 0;
-    font-size: 1.125rem;
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
     font-weight: 600;
     color: #1e293b;
 }
@@ -5468,17 +5594,17 @@ body {
 .upcoming-subs-list {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
 }
 
 .upcoming-sub {
-    padding: 0.75rem;
+    padding: 0.5rem;
     background: #fef3c7;
     border: 1px solid #f59e0b;
-    border-radius: 8px;
+    border-radius: 6px;
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.125rem;
 }
 
 .sub-time {
@@ -5506,16 +5632,16 @@ body {
 
 /* Quick Actions */
 .timer-quick-actions {
-    margin-bottom: 1.5rem;
-    padding: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
     background: white;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .timer-quick-actions h3 {
-    margin: 0 0 1rem 0;
-    font-size: 1.125rem;
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
     font-weight: 600;
     color: #1e293b;
 }
@@ -5523,16 +5649,16 @@ body {
 .quick-actions-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
+    gap: 0.5rem;
 }
 
 .quick-action-btn {
-    min-height: 64px;
+    min-height: 52px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    border-radius: 12px;
+    border-radius: 8px;
     font-weight: 600;
     touch-action: manipulation;
     user-select: none;
@@ -5544,12 +5670,12 @@ body {
 }
 
 .quick-action-icon {
-    font-size: 1.5rem;
-    margin-bottom: 0.25rem;
+    font-size: 1.25rem;
+    margin-bottom: 0.125rem;
 }
 
 .quick-action-text {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 500;
 }
 
@@ -5608,52 +5734,64 @@ body {
 }
 
 /* Mobile Optimizations */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .game-timer-container {
         margin: 0.5rem 0;
-        padding: 0.75rem;
+        padding: 0.5rem;
     }
 
     .modern-timer-display {
-        padding: 1.5rem 1rem;
-        margin-bottom: 1rem;
+        padding: 1rem 0.75rem;
+        margin-bottom: 0.75rem;
     }
 
     .time-digits {
-        font-size: 3rem;
+        font-size: 2.75rem;
     }
 
     .timer-controls-modern {
-        gap: 0.75rem;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
     }
 
     .control-btn {
-        width: 50px;
-        height: 50px;
+        width: 44px;
+        height: 44px;
     }
 
     .control-btn.primary {
-        width: 70px;
-        height: 70px;
+        width: 60px;
+        height: 60px;
     }
 
     .control-icon {
-        font-size: 1.25rem;
+        font-size: 1.1rem;
     }
 
     .control-btn.primary .control-icon {
-        font-size: 1.75rem;
+        font-size: 1.5rem;
     }
 
     .quick-actions-grid {
         grid-template-columns: 1fr;
-        gap: 0.5rem;
+        gap: 0.375rem;
+    }
+
+    .quick-action-btn {
+        min-height: 44px;
     }
 
     .timer-notifications,
-    .timer-quick-actions {
-        padding: 0.75rem;
-        margin-bottom: 1rem;
+    .timer-quick-actions,
+    .timer-progress-container {
+        padding: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .timer-notifications h3,
+    .timer-quick-actions h3 {
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
     }
 }
 
@@ -5843,7 +5981,7 @@ body {
 }
 
 /* Mobile Error Styles */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .error-modal-content {
         width: 95%;
         margin: 20px;
